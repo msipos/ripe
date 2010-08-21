@@ -1,0 +1,13 @@
+$
+  #include <stdio.h>
+$
+
+ranges()
+  for i in 1:5
+    $
+      printf("%"PRId64"\n", val_to_int64(__i));
+    $
+
+main(args)
+  ranges()
+

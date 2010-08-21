@@ -1,0 +1,17 @@
+main(args)
+  name = "plus"
+  Test.test(name, 1+2,     3)
+  Test.test(name, 1.0+2,   3.0)
+  Test.test(name, 1+2.0,   3.0)
+  Test.test(name, 1.0+2.0, 3.0)
+  name = "minus"
+  Test.test(name, 1-2,   -1)
+  Test.test(name, -1-2,  -3)
+  Test.test(name, 2.0-3.0, -1.0)
+  name = "times"
+  Test.test(name, 2*3,   6)
+  Test.test(name, 1.0*3, 3.0)
+  name = "div"
+  Test.test(name, 3/2,   1)
+  Test.test(name, 3/2.0, 1.5)
+  

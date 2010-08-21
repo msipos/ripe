@@ -1,0 +1,9 @@
+arrays()
+  name = "arrays"
+  my_arr = [1, 2, 3, 4]
+  Test.test(name, my_arr.to_string(), "[1, 2, 3, 4]")
+  my_arr = []
+  Test.test(name, my_arr.to_string(), "[]")
+
+main(args)
+  arrays()

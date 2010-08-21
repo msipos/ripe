@@ -1,0 +1,8 @@
+main(args)
+    tf = TextFile.new("test/suite/textfile", TextFile.Read)
+    loop
+      line = tf.read_line()
+      if line == eof
+        break
+      Std.print(line)
+    tf.close()

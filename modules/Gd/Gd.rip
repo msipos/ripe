@@ -1,0 +1,73 @@
+$
+  #include <gd.h>
+$
+
+$
+  typedef struct {
+    int i;
+  } Color;
+$
+
+module Gd
+  class Image
+    $ gdImagePtr image; $
+    constructor new(x, y)
+      $
+        @image = gdImageCreateTrueColor(val_to_int64(__x),
+                                        val_to_int64(__y));
+        if (@image == NULL){
+          exc_raise("gdImageCreateTrueColor failed");
+        }
+      $
+  
+    set_pixel_rgb(x, y, r, g, b)
+      $
+        int color = gdImageColorAllocate(@image,
+                                         val_to_int64(__r),
+                                         val_to_int64(__g),
+                                         val_to_int64(__b));
+        gdImageSetPixel(@image, val_to_int64(__x)-1, val_to_int64(__y)-1, color);
+      $
+    
+    filled_rectangle_rgb(x1, y1, x2, y2, r, g, b)
+      $
+        int color = gdImageColorAllocate(@image,
+                                         val_to_int64(__r),
+                                         val_to_int64(__g),
+                                         val_to_int64(__b));
+        gdImageFilledRectangle(@image, val_to_int64(__x1)-1, val_to_int64(__y1)-1,
+                                       val_to_int64(__x2)-1, val_to_int64(__y2)-1,
+                                       color);
+      $
+    
+    filled_arc(cx, cy, w, h, s, e, color)
+      $
+        gdImageFilledArc(@image,
+                         val_to_int64(__cx),
+                         val_to_int64(__cy),
+                         val_to_int64(__w),
+                         val_to_int64(__h),
+                         val_to_int64(__s),
+                         val_to_int64(__e),
+                         val_to_int64(__color),
+                         gdArc);
+      $
+    
+    save_png(filename)
+      $
+        
+        FILE* f = fopen(val_to_string(__filename), "wb");
+        if (f == NULL) exc_raise("cannot open '%s' for writing", 
+                                 val_to_string(__filename));
+        gdImagePng(@image, f);
+        fclose(f);
+      $
+
+  color(image, r, g, b)
+    $
+      gdImagePtr* image = obj_c_data(__image);
+      return int64_to_val(gdImageColorAllocate(*image, val_to_int64(__r),
+                                                       val_to_int64(__g),
+                                                       val_to_int64(__b)));
+    $
+  

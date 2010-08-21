@@ -1,0 +1,3 @@
+includes=`pkg-config --cflags sdl`
+links=`pkg-config --libs sdl`
+

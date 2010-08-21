@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<language id="ripe" _name="Ripe" version="2.0" _section="Sources">
+  <metadata>
+    <property name="globs">*.rip</property>
+  </metadata>
+
+  <styles>
+    <style id="comment" _name="Comment" map-to="def:comment"/>
+    <style id="string" _name="String" map-to="def:string"/>
+    <style id="keyword" _name="Keyword" map-to="def:keyword"/>
+    <style id="ccode" _name="Ccode" map-to="def:comment"/>
+  </styles>
+
+  <definitions>
+    <context id="ripe">
+      <include>
+        <context id="comment" style-ref="comment">
+          <start>\#</start>
+          <end>$</end>
+        </context>
+        <context id="string" style-ref="string" end-at-line-end="true">
+          <start>"</start>
+          <end>"</end>
+        </context>
+        <context id="ccode" style-ref="ccode" end-at-line-end="false">
+          <start>\$</start>
+          <end>\$</end>
+        </context>
+        <context id="keywords" style-ref="keyword">
+          <keyword>if</keyword>
+          <keyword>elif</keyword>
+          <keyword>else</keyword>
+          <keyword>true</keyword>
+          <keyword>false</keyword>
+          <keyword>nil</keyword>
+          <keyword>eof</keyword>
+          <keyword>while</keyword>
+          <keyword>loop</keyword>
+          <keyword>for</keyword>
+          <keyword>in</keyword>
+          <keyword>break</keyword>
+          <keyword>return</keyword>
+          <keyword>continue</keyword>
+          <keyword>pass</keyword>
+          <keyword>try</keyword>
+          <keyword>catch</keyword>
+          <keyword>module</keyword>
+          <keyword>class</keyword>
+          <keyword>constructor</keyword>
+        </context>
+        
+        <context ref="def:decimal"/>
+        <context ref="def:float"/>
+      </include>
+    </context>
+  </definitions>
+</language>

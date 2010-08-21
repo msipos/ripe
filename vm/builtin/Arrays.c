@@ -1,0 +1,432 @@
+// Copyright (C) 2008  Maksim Sipos <msipos@mailc.net>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#include "vm/vm.h"
+
+///////////////////////////////////////////////////////////////////////////////
+// Array1
+///////////////////////////////////////////////////////////////////////////////
+Klass* klass_Array1;
+
+static inline Array1* val_to_array1_2(Value v_array)
+{
+  obj_verify(v_array, klass_Array1);
+  return obj_c_data(v_array);
+}
+
+Value array1_to_val2(uint16 num_args, ...)
+{
+  va_list ap;
+  va_start(ap, num_args);
+  Value* args = alloca(sizeof(Value) * num_args);
+  for (uint16 i = 0; i < num_args; i++){
+    args[i] = va_arg(ap, Value);
+  }
+  va_end(ap);
+
+  return array1_to_val(num_args, args);
+}
+
+Value array1_to_val(int64 num_elements, Value* data)
+{
+  Array1* array;
+  Value v = obj_new(klass_Array1, (void**) &array);
+  array->size = num_elements;
+  array->alloc_size = num_elements * 2;
+  array->data = mem_malloc(sizeof(Value) * array->alloc_size);
+  for (int64 i = 0; i < num_elements; i++){
+    array->data[i] = data[i];
+  }
+  return v;
+}
+
+uint64 val_to_array1(Value v_array, Value** data)
+{
+  Array1* array = val_to_array1_2(v_array);
+  *data = array->data;
+  return array->size;
+}
+
+static inline int64 array1_map_index(Array1* array, int64 idx)
+{
+  int64 size = array->size;
+
+  // Check that index is valid
+  if (idx > 0){
+    if (idx > size) goto invalid_idx;
+    return idx - 1;
+  }
+  if (idx == 0) goto invalid_idx;
+  if (idx < -size) goto invalid_idx;
+  return size + idx;
+invalid_idx:
+  exc_raise("invalid index %"PRId64" in Array of size %"PRId64,
+            idx, size);
+}
+
+Value array1_index(Value v_self, int64 idx)
+{
+  Array1* array1 = val_to_array1_2(v_self);
+  return array1->data[array1_map_index(array1, idx)];
+}
+
+static Value ripe_array1_new_const(Value v_n, Value v_val)
+{
+  Array1* array;
+  Value v = obj_new(klass_Array1, (void**) &array);
+  int64 n = val_to_int64(v_n);
+  array->size = n;
+  array->alloc_size = val_to_int64(v_n);
+  array->data = mem_malloc(sizeof(Value) * array->alloc_size);
+  for (int64 i = 0; i < array->size; i++){
+    array->data[i] = v_val;
+  }
+  return v;
+}
+
+static Value ripe_array1_to_string(Value v_self)
+{
+  Array1* array1 = obj_c_data(v_self);
+  char buf[1024];
+  buf[0] = 0;
+  strcat(buf, "[");
+  for (int i = 0; i < array1->size; i++){
+    Value v_str = method_call0(array1->data[i], dsym_get("to_string"));
+    const char* str = val_to_string(v_str);
+    strcat(buf, str);
+    if (i != array1->size - 1)
+      strcat(buf, ", ");
+  }
+  strcat(buf, "]");
+  return string_to_val(buf);
+}
+
+static Value ripe_array1_index(Value v_self, Value v_idx)
+{
+  Array1* array1 = obj_c_data(v_self);
+  return array1->data[array1_map_index(array1, val_to_int64(v_idx))];
+}
+
+static Value ripe_array1_index_set(Value v_self, Value v_idx, Value v_val)
+{
+  Array1* array1 = obj_c_data(v_self);
+  array1->data[array1_map_index(array1, val_to_int64(v_idx))] = v_val;
+  return VALUE_NIL;
+}
+
+static Value ripe_array1_get_size(Value v_self)
+{
+  Array1* array1 = obj_c_data(v_self);
+  return int64_to_val(array1->size);
+}
+
+static Value ripe_array1_push(Value v_self, Value v_val)
+{
+  Array1* array1 = obj_c_data(v_self);
+  int64 size = array1->size+1;
+  array1->size = size;
+  if (size > array1->alloc_size) {
+    array1->alloc_size *= 2;
+    if (array1->alloc_size == 0) array1->alloc_size = 2;
+    array1->data = mem_realloc(array1->data, sizeof(Value)*array1->alloc_size);
+  }
+  array1->data[size - 1] = v_val;
+  return VALUE_NIL;
+}
+
+static Value ripe_array1_set_const(Value v_self, Value v_val)
+{
+  Array1* array1 = obj_c_data(v_self);
+  int64 sz = array1->size;
+  for (int64 i = 0; i < sz; i++){
+    array1->data[i] = v_val;
+  }
+  return VALUE_NIL;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Array2
+///////////////////////////////////////////////////////////////////////////////
+
+Klass* klass_Array2;
+
+static Value ripe_array2_new_const(Value v_x, Value v_y, Value v_val)
+{
+  Array2* self;
+  Value v_self = obj_new(klass_Array2, (void**) &self);
+
+  int64 size_x = val_to_int64(v_x);
+  int64 size_y = val_to_int64(v_y);
+
+  self->size_x = size_x;
+  self->size_y = size_y;
+  if (size_x < 1 or size_y < 1)
+    exc_raise("invalid Array3 size (%"PRId64"x%"PRId64")", size_x, size_y);
+  int64 total_size = size_x * size_y;
+  Value* data = mem_malloc(total_size * sizeof(Value));
+  for (int64 t = 0; t < total_size; t++){
+    data[t] = v_val;
+  }
+  self->data = data;
+  return v_self;
+}
+
+static inline int64 array2_map_index(Array2* array, int64 x, int64 y)
+{
+  int64 size_x = array->size_x;
+  int64 size_y = array->size_y;
+  
+  if (x > 0 and x <= size_x and y > 0 and y <= size_y){
+    return (y - 1) + (x - 1) * size_y;
+  } else {
+    exc_raise("invalid Array2 index (%"PRId64", %"PRId64")", x, y);
+  }
+}
+
+Value array2_index(Value v_array, int64 x, int64 y)
+{
+  obj_verify(v_array, klass_Array2);
+  Array2* array = obj_c_data(v_array);
+  return array->data[array2_map_index(array, x, y)];
+}
+
+void array2_index_set(Value v_array, int64 x, int64 y, Value v_val)
+{
+  obj_verify(v_array, klass_Array2);
+  Array2* array = obj_c_data(v_array);
+  array->data[array2_map_index(array, x, y)] = v_val;
+}
+
+static Value ripe_array2_index(Value v_self, Value v_x, Value v_y)
+{
+  Array2* array = obj_c_data(v_self);
+  return array->data[array2_map_index(array,
+                                      val_to_int64(v_x),
+                                      val_to_int64(v_y))];
+}
+
+static Value ripe_array2_index_set(Value v_self, Value v_x, Value v_y, 
+                                   Value v_val)
+{
+  Array2* array2 = obj_c_data(v_self);
+  array2->data[array2_map_index(array2,
+                                val_to_int64(v_x),
+                                val_to_int64(v_y))] = v_val;
+  return VALUE_NIL;                                
+}
+
+static Value ripe_array2_get_size_x(Value v_self)
+{
+  Array2* array = obj_c_data(v_self);
+  return int64_to_val(array->size_x);
+}
+
+static Value ripe_array2_get_size_y(Value v_self)
+{
+  Array2* array = obj_c_data(v_self);
+  return int64_to_val(array->size_y);
+}
+
+static Value ripe_array2_set_const(Value v_self, Value v_val)
+{
+  Array2* array = obj_c_data(v_self);
+  int64 total_size = array->size_x * array->size_y;
+  for (int64 i = 0; i < total_size; i++){
+    array->data[i] = v_val;
+  }
+  return VALUE_NIL;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Array3
+///////////////////////////////////////////////////////////////////////////////
+Klass* klass_Array3;
+
+static Value ripe_array3_new_const(Value v_x, Value v_y, Value v_z, Value v_val)
+{
+  Array3* self; 
+  Value v_self = obj_new(klass_Array3, (void**) &self);
+
+  int64 size_x = val_to_int64(v_x);
+  int64 size_y = val_to_int64(v_y);
+  int64 size_z = val_to_int64(v_z);
+
+  self->size_x = size_x;
+  self->size_y = size_y;
+  self->size_z = size_z;
+  if (size_x < 1 or size_y < 1 or size_z < 1)
+    exc_raise("invalid Array3 size (%"PRId64"x%"PRId64"x%" PRId64")", size_x, size_y, size_z);
+  int64 total_size = size_x * size_y * size_z;
+  Value* data = mem_malloc(total_size * sizeof(Value));
+  for (int64 t = 0; t < total_size; t++){
+    data[t] = v_val;    
+  }
+  self->data = data;
+  return v_self;
+}
+
+static inline int64 array3_map_index(Array3* array, int64 x, int64 y, int64 z)
+{
+  int64 size_x = array->size_x;
+  int64 size_y = array->size_y;
+  int64 size_z = array->size_z;
+  
+  if (x > 0 and x <= size_x and y > 0 and y <= size_y 
+                            and z > 0 and z <= size_z){
+    // C order
+    return (x-1) + (y-1)*size_x + (z-1)*size_x*size_y;
+  } else {
+    exc_raise("invalid Array3 index (%"PRId64", %"PRId64", %"PRId64")",
+              x, y, z);
+  }
+}
+
+static Value ripe_array3_index(Value v_self, Value v_x, Value v_y, Value v_z)
+{
+  Array3* array3 = obj_c_data(v_self);
+  return array3->data[array3_map_index(array3,
+                                       val_to_int64(v_x),
+                                       val_to_int64(v_y),
+                                       val_to_int64(v_z))];
+}
+
+static Value ripe_array3_index_set(Value v_self, Value v_x, Value v_y,
+                                   Value v_z, Value v_val)
+{
+  Array3* array3 = obj_c_data(v_self);
+  array3->data[array3_map_index(array3,
+                                val_to_int64(v_x),
+                                val_to_int64(v_y),
+                                val_to_int64(v_z))] = v_val;
+  return VALUE_NIL;                                
+}
+
+static Value ripe_array3_get_size_x(Value v_self)
+{
+  Array3* array3 = obj_c_data(v_self);
+  return int64_to_val(array3->size_x);
+}
+
+static Value ripe_array3_get_size_y(Value v_self)
+{
+  Array3* array3 = obj_c_data(v_self);
+  return int64_to_val(array3->size_y);
+}
+
+static Value ripe_array3_get_size_z(Value v_self)
+{
+  Array3* array3 = obj_c_data(v_self);
+  return int64_to_val(array3->size_z);
+}
+
+static Value ripe_array3_set_const(Value v_self, Value v_val)
+{
+  Array3* array = obj_c_data(v_self);
+  int64 total_size = array->size_x * array->size_y * array->size_z;
+  for (int64 i = 0; i < total_size; i++){
+    array->data[i] = v_val;
+  }
+  return VALUE_NIL;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+// Init
+///////////////////////////////////////////////////////////////////////////////
+
+void init1_Arrays()
+{
+  klass_Array1 = klass_new(dsym_get("Array1"),
+                           dsym_get("Object"),
+                           KLASS_CDATA_OBJECT,
+                           sizeof(Array1));
+  klass_Array2 = klass_new(dsym_get("Array2"),
+                           dsym_get("Object"),
+                           KLASS_CDATA_OBJECT,
+                           sizeof(Array2));
+  klass_Array3 = klass_new(dsym_get("Array3"),
+                           dsym_get("Object"),
+                           KLASS_CDATA_OBJECT,
+                           sizeof(Array3));
+
+  // Array1
+  ssym_set("Array1.new_const", func2_to_val(ripe_array1_new_const));
+  klass_new_method(klass_Array1,
+                   dsym_get("index"),
+                   func2_to_val(ripe_array1_index));
+  klass_new_method(klass_Array1,
+                   dsym_get("index_set"),
+                   func3_to_val(ripe_array1_index_set));
+  Value v_array1_get_size = func1_to_val(ripe_array1_get_size);
+  klass_new_method(klass_Array1,
+                   dsym_get("get_size"),
+                   v_array1_get_size);
+  klass_new_virtual_reader(klass_Array1,
+                           dsym_get("size"),
+                           v_array1_get_size);
+  klass_new_method(klass_Array1,
+                   dsym_get("push"),
+                   func2_to_val(ripe_array1_push));
+  klass_new_method(klass_Array1,
+                   dsym_get("set_const"),
+                   func2_to_val(ripe_array1_set_const));
+  klass_new_method(klass_Array1,
+                   dsym_get("to_string"),
+                   func1_to_val(ripe_array1_to_string));
+  // Array2
+  ssym_set("Array2.new_const", func3_to_val(ripe_array2_new_const));
+  klass_new_method(klass_Array2,
+                   dsym_get("index"),
+                   func3_to_val(ripe_array2_index));
+  klass_new_method(klass_Array2,
+                   dsym_get("index_set"),
+                   func4_to_val(ripe_array2_index_set));
+  klass_new_method(klass_Array2,
+                   dsym_get("get_size_x"),
+                   func1_to_val(ripe_array2_get_size_x));
+  klass_new_method(klass_Array2,
+                   dsym_get("get_size_y"),
+                   func1_to_val(ripe_array2_get_size_y));
+  klass_new_method(klass_Array2,
+                   dsym_get("set_const"),
+                   func2_to_val(ripe_array2_set_const));
+      
+  // Array3
+  ssym_set("Array3.new_const", func4_to_val(ripe_array3_new_const));
+  klass_new_method(klass_Array3,
+                   dsym_get("index"),
+                   func4_to_val(ripe_array3_index));
+  klass_new_method(klass_Array3,
+                   dsym_get("index_set"),
+                   func5_to_val(ripe_array3_index_set));
+  klass_new_method(klass_Array3,
+                   dsym_get("get_size_x"),
+                   func1_to_val(ripe_array3_get_size_x));
+  klass_new_method(klass_Array3,
+                   dsym_get("get_size_y"),
+                   func1_to_val(ripe_array3_get_size_y));
+  klass_new_method(klass_Array3,
+                   dsym_get("get_size_z"),
+                   func1_to_val(ripe_array3_get_size_z));
+  klass_new_method(klass_Array3,
+                   dsym_get("set_const"),
+                   func2_to_val(ripe_array3_set_const));
+}
+
+void init2_Arrays()
+{
+
+}
+

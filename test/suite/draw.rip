@@ -1,0 +1,6 @@
+main(args)
+  image = Gd.Image.new(100, 100)
+  for x in 1:100
+    for y in 1:100
+      image.set_pixel_rgb(x, y, x, y, 0)
+  image.save_png("pic.png")

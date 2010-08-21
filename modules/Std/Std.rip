@@ -1,0 +1,103 @@
+$ 
+  #include <stdio.h> 
+  #include <stdlib.h>
+  #include "clib/stringbuf.h"
+$
+
+module Std
+  println(*args)
+    Std.print_array(args)
+    $ printf("\n"); $
+  
+  format(*args)
+    if args.size == 0
+      return ""
+    $ char buf[1024]; 
+      buf[0] = 0; $
+    for i in 1:args.size
+      str = args[i].to_string()
+      $ strcat(buf, val_to_string(__str)); $
+    return $ string_to_val(buf) $
+  
+  print(*args)
+    Std.print_array(args)
+
+  print_array(arr)
+    if arr.size == 0
+      return
+    for i in 1:arr.size
+      str = arr[i].to_string()
+      $ printf("%s", val_to_string(__str)); $
+
+  atoi(arg)
+    $
+      char* s = val_to_string(__arg);
+      return int64_to_val(atoi(s));
+    $
+    
+  atof(arg)
+    $
+      char* s = val_to_string(__arg);
+      return double_to_val(atof(s));
+    $
+  
+  strip(arg)
+    $
+      char* s = val_to_string(__arg);
+      while (*s == ' ' or *s == '\t' or *s == '\n') s++;
+      char* d = mem_strdup(s);
+      char* p = d + strlen(d) - 1;
+      while (*p == ' ' or *p == '\t' or *p == '\n'){
+        *p = 0;
+        p--;
+      }
+    $
+    return $ string_to_val(d) $
+  
+  split(arg, chars)
+    arr = []
+    word = nil
+    $
+      char* string = val_to_string(__arg);
+      char* chars = val_to_string(__chars);
+      bool in_word = false;
+      StringBuf sb;
+      sbuf_init(&sb, "");
+      while (*string != 0){
+        bool whitespace = false;
+        if (strchr(chars, *string))
+          whitespace = true;
+        if (in_word){
+          if (whitespace){
+    $
+    word = $ string_to_val(sb.str) $
+    arr.push(word)
+    $
+            in_word = false;
+          } else {
+            sbuf_catc(&sb, *string);
+          }
+        } else {
+          if (whitespace){
+            /* move on */
+          } else {
+            sbuf_clear(&sb);
+            in_word = true;
+            sbuf_catc(&sb, *string);
+          }
+        }
+        string++;
+      }
+      if (in_word){
+    $
+    word = $ string_to_val(sb.str) $
+    arr.push(word)
+    $  
+      } 
+      sbuf_deinit(&sb);
+    $
+    return arr
+  
+  whitespace_split(arg)
+    return Std.split(arg, " \t\n")
+

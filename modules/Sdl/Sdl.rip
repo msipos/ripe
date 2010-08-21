@@ -1,0 +1,52 @@
+$ #include <SDL.h> $
+
+module Sdl
+  init()
+    $
+      if (SDL_Init(SDL_INIT_VIDEO) < 0){
+        exc_raise("could not initialize SDL: %s", SDL_GetError());
+      };
+    $
+
+  quit()
+    $
+      SDL_Quit();
+    $
+
+  const SWSURFACE = $ int64_to_val(SDL_SWSURFACE) $
+  const ANYFORMAT = $ int64_to_val(SDL_ANYFORMAT) $
+  
+  class Surface
+    $
+      SDL_Surface *surf;
+    $
+  
+    constructor new_screen(w, h, bd, flags)
+      $ @surf = SDL_SetVideoMode(val_to_int64(__w),
+                                 val_to_int64(__h),
+                                 val_to_int64(__bd),
+                                 val_to_int64(__flags));
+      $
+      
+  const MOUSEMOTION = $ int64_to_val(SDL_MOUSEMOTION) $
+  const MOUSEBUTTONDOWN = $ int64_to_val(SDL_MOUSEBUTTONDOWN) $
+  const MOUSEBUTTONUP = $ int64_to_val(SDL_MOUSEBUTTONUP) $
+  
+  class Event
+    $
+      SDL_Event event;
+    $
+    
+    constructor new()
+      pass
+
+    virtual_get type()
+      return $ int64_to_val(@event.type) $
+
+  wait_event(ev)
+    $
+      SDL_Event* ev = (SDL_Event*) obj_c_data(__ev);
+      return int64_to_val(SDL_WaitEvent(ev));
+    $
+  
+  

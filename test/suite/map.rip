@@ -1,0 +1,31 @@
+main(args)
+  map = Map.new()
+  map[1] = "one"
+  map[2] = "two"
+  map[5] = "five"
+  name = "map1"
+  Test.test(name, "Map (1 => one, 2 => two, 5 => five)", map.to_string())
+  Test.test(name, map[1], "one")
+  Test.test(name, map[2], "two")
+  Test.test(name, map[5], "five")
+
+  map["England"] = "London"
+  map["Serbia"] = "Belgrade"
+  map["France"] = "Belgrade"
+  map["France"] = "Paris"
+  Std.println(map)
+  Test.test(name, map.size, 6)
+  Test.test(name, true, map.has_key?("Serbia"))
+  Test.test(name, false, map.has_key?("India"))
+
+  map = Map.new()
+  for i in 1:100000
+    map[i] = i*2
+  name = "map2"
+  x = 61898
+  Test.test(name, map[x], 2*x)
+  x = 8592
+  Test.test(name, map[x], 2*x)
+  x = 100000
+  Test.test(name, map[x], 2*x)
+  

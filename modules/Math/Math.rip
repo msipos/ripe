@@ -1,0 +1,20 @@
+$ #include <math.h> $
+
+module Math
+  bit_or(a, b)
+    return $ int64_to_val(val_to_int64(__a) | val_to_int64(__b)) $
+  
+  bit_and(a, b)
+    return $ int64_to_val(val_to_int64(__a) & val_to_int64(__b)) $
+  
+  is_odd?(i)
+    return $ pack_bool((val_to_int64(__i) % 2) == 1) $
+
+  is_even?(i)
+    return $ pack_bool((val_to_int64(__i) % 2) == 0) $
+
+  sqrt(x)
+    return $ double_to_val(sqrt(val_to_double(__x))) $
+  
+  ceil(x)
+    return $ int64_to_val((int64) ceil(val_to_double(__x))) $

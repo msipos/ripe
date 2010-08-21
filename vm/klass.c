@@ -1,0 +1,178 @@
+// Copyright (C) 2008  Maksim Sipos <msipos@mailc.net>
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#include "vm/vm.h"
+
+Array klasses;
+Dict dsym_to_klass;
+
+void klass_init()
+{
+  array_init(&klasses, Klass*);
+  // Initialize dsym_to_klass
+  dict_init(&dsym_to_klass, sizeof(Dsym), sizeof(Klass*), dict_hash_uint32,
+            dict_equal_uint32);
+}
+
+void klass_dump()
+{
+  for (int i = 0; i < klasses.size; i++){
+    Klass* klass = array_get(&klasses, Klass*, i);
+    printf("%p %s %d\n", klass, dsym_reverse_get(klass->name), klass->obj_size);
+  }
+}
+
+// Create Klass structure and add it to the dictionary.
+Klass* klass_new(Dsym name, Dsym parent, KlassType type, int cdata_size)
+{
+  if (dict_query(&dsym_to_klass, &name, NULL)){
+    fprintf(stderr, "error: class '%s' initialized twice\n", 
+            dsym_reverse_get(name));
+    exit(1);
+  }
+
+  Klass* klass = mem_new(Klass);
+  klass->name = name;
+  klass->type = type;
+  // This preliminary calculation of obj_size is necessary because of Function
+  // klass.
+  klass->obj_size = sizeof(Klass*) + cdata_size;
+  dict_init(&(klass->methods), sizeof(Dsym), sizeof(Value), dict_hash_uint32,
+            dict_equal_uint32);
+  dict_init(&(klass->readable_fields), sizeof(Dsym), sizeof(uint64), 
+            dict_hash_uint32, dict_equal_uint32);
+  dict_init(&(klass->writable_fields), sizeof(Dsym), sizeof(uint64), 
+            dict_hash_uint32, dict_equal_uint32);
+  dict_init(&(klass->fields), sizeof(Dsym), sizeof(uint64), 
+            dict_hash_uint32, dict_equal_uint32);
+  klass->num_fields = 0;
+
+  array_append(&klasses, klass);
+  dict_set(&dsym_to_klass, &name, &klass);
+  
+  return klass;
+}
+
+int klass_new_field(Klass* klass, Dsym name, int type)
+{
+  int64 field_num = klass->num_fields;
+  klass->num_fields++;
+  dict_set(&(klass->fields), &name, &field_num);
+  if (type & FIELD_READABLE){
+    dict_set(&(klass->readable_fields), &name, &field_num);
+  }
+  if (type & FIELD_WRITABLE){
+    dict_set(&(klass->writable_fields), &name, &field_num);
+  }
+  return field_num;
+}
+
+int klass_get_field_int(Klass* klass, Dsym name)
+{
+  int64 field_num;
+  if (dict_query(&(klass->fields), &name, &field_num)){
+    return field_num;
+  } else {
+    fprintf(stderr, "class '%s' does not have field '%s'\n",
+            dsym_reverse_get(klass->name),
+            dsym_reverse_get(name));
+    exit(1);
+  }
+}
+
+void klass_new_virtual_reader(Klass* klass, Dsym name, Value func)
+{
+  dict_set(&(klass->readable_fields), &name, &func);
+}
+
+void klass_new_virtual_writer(Klass* klass, Dsym name, Value func)
+{
+  dict_set(&(klass->writable_fields), &name, &func);
+}
+
+void klass_new_method(Klass* klass, Dsym name, Value method)
+{
+  dict_set(&(klass->methods), &name, &method);
+}
+
+void klass_init_phase15()
+{  
+  // Finally, go thru list again, and finalize it:
+  // put in all the methods, fields and cdata of the parent,
+  // put in all your own methods, fields and cdata,
+  // verify that only one cdata is defined by someone in the hierarchy.
+  
+  // TODO: Handle parents & fields
+}
+
+Klass* klass_get(Dsym name)
+{
+  Klass* klass;
+  if (dict_query(&dsym_to_klass, &name, &klass)){
+    return klass;
+  }
+  return NULL;
+}
+
+Value obj_new(Klass* klass, void** data)
+{
+  void* obj = mem_malloc(klass->obj_size);
+  *data = obj + sizeof(Klass*);
+  *((Klass**) obj) = klass;
+  return pack_ptr(obj);
+}
+
+Value field_get(Value v_obj, Dsym field)
+{
+  Klass* klass = obj_klass(v_obj);
+  uint64 field_num;
+  if (dict_query(&(klass->readable_fields), &field, &field_num)){
+    if (field_num < 1024){
+      Value* c_data = obj_c_data(v_obj);
+      return c_data[field_num];
+    } else {
+      return func_call1((Value) field_num, v_obj);
+    }
+  } else {
+    exc_raise("object of class %s does not have a readable field '%s'",
+              dsym_reverse_get(klass->name),
+              dsym_reverse_get(field));
+  }
+}
+
+void field_set(Value v_obj, Dsym field, Value val)
+{
+  Klass* klass = obj_klass(v_obj);
+  uint64 field_num;
+  if (dict_query(&(klass->writable_fields), &field, &field_num)){
+    if (field_num < 1024){
+      Value* c_data = obj_c_data(v_obj);
+      c_data[field_num] = val;
+    } else {
+      func_call2((Value) field_num, v_obj, val);
+    }
+  } else {
+    exc_raise("object of class %s does not have a writable field '%s'",
+              dsym_reverse_get(klass->name),
+              dsym_reverse_get(field));
+  }
+}
+
+void method_error(Klass* klass, Dsym dsym)
+{
+  exc_raise("class '%s' does not have method '%s'",
+            dsym_reverse_get(klass->name), dsym_reverse_get(dsym));
+}
+

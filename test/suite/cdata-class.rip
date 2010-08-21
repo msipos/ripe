@@ -1,0 +1,21 @@
+class TestClass
+  $
+    int64 i;
+  $
+
+  constructor new()
+    $
+      @i = 1;
+    $
+  
+  virtual_get i()
+    return $ int64_to_val(@i) $
+
+  virtual_set i(i)
+    $ @i = val_to_int64(__i); $
+
+main(args)
+  obj = TestClass.new()
+  Test.test("constructor", 1, obj.i)
+  obj.i = 10
+  Test.test("set/get", 10, obj.i)
