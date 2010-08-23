@@ -16,7 +16,7 @@ def load_meta(filename):
 def call(args):
     cmd = ' '.join(flatten(args))
     try:
-        if quiet == False:
+        if verbose == True:
             print(cmd)
         ccall(cmd, shell=True)
     except:
@@ -75,13 +75,20 @@ forcing = False
 def set_forcing(force):
     global forcing
     forcing = force
+
 quiet = False
 def set_quiet(q):
     global quiet
     quiet = q
-
 def is_quiet():
     return quiet
+
+verbose = False
+def set_verbose(v):
+    global verbose
+    verbose = v
+def is_verbose():
+    return verbose
 
 def flatten(x):
     # From:  http://kogs-www.informatik.uni-hamburg.de/~meine/python_tricks

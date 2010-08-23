@@ -42,6 +42,21 @@ extern Dsym dsym_gte, dsym_gte2;
 extern Dsym dsym_lte, dsym_lte2;
 
 //////////////////////////////////////////////////////////////////////////////
+// exceptions.c
+//////////////////////////////////////////////////////////////////////////////
+
+#include <setjmp.h>
+
+void exc_init();
+#define exc_register_any() ({ int tmp_exc_var; \
+                              tmp_exc_var = setjmp(exc_jb); \
+                              if (tmp_exc_var == 0) exc_register_any2(); \
+                              tmp_exc_var; })
+void exc_register_any2();
+jmp_buf exc_jb; // TODO: Make this thread safe.
+void exc_raise(char* format, ...) __attribute__ ((noreturn)) ;
+
+//////////////////////////////////////////////////////////////////////////////
 // klass.c
 //////////////////////////////////////////////////////////////////////////////
 
@@ -94,27 +109,28 @@ void klass_dump();
 Value obj_new(Klass* klass, void** data);
 // Verify an object is of given type.
 static inline void obj_verify(Value v_obj, Klass* klass){
+  Klass* klass_obj;
   switch(v_obj & MASK_TAIL){
     case 0b00:
-      {
-        if (*((Klass**) unpack_ptr(v_obj)) != klass) goto fail;
-      }
-      return;
+      klass_obj = *((Klass**) unpack_ptr(v_obj));
+      break;
     case 0b01:
-      if (klass != klass_integer) goto fail;
+      klass_obj = klass_integer;
       return;
     case 0b10:
-      if (klass != klass_double) goto fail;
+      klass_obj = klass_double;
       return;
     case 0b11:
-      if (klass != klass_flag) goto fail;
+      klass_obj = klass_flag;
       return;
+    default:
+      assert_never();
   }
-  assert_never();
-
-fail:
-  fprintf(stderr, "obj_verify failed\n");
-  exit(1);
+  if (klass_obj != klass){
+    exc_raise("TypeError: expected a %s, got a %s", 
+              dsym_reverse_get(klass->name),
+              dsym_reverse_get(klass_obj->name));
+  }
 }
 static inline void* obj_c_data(Value v_obj)
 {
@@ -177,21 +193,6 @@ Value op_unary_minus(Value v);
 Value op_and(Value a, Value b);
 Value op_or(Value a, Value b);
 #include "vm/ops-generated.h"
-
-//////////////////////////////////////////////////////////////////////////////
-// exceptions.c
-//////////////////////////////////////////////////////////////////////////////
-
-#include <setjmp.h>
-
-void exc_init();
-#define exc_register_any() ({ int tmp_exc_var; \
-                              tmp_exc_var = setjmp(exc_jb); \
-                              if (tmp_exc_var == 0) exc_register_any2(); \
-                              tmp_exc_var; })
-void exc_register_any2();
-jmp_buf exc_jb; // TODO: Make this thread safe.
-void exc_raise(char* format, ...) __attribute__ ((noreturn)) ;
 
 //////////////////////////////////////////////////////////////////////////////
 // Arrays.c

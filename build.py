@@ -19,6 +19,8 @@ if "force" in sys.argv:
     tools.set_forcing(True)
 if "quiet" in sys.argv:
     tools.set_quiet(True)
+if "verbose" in sys.argv:
+    tools.set_verbose(True)
 if "profile" in sys.argv:
     CFLAGS.append("-pg") 
     CFLAGS.append("-fno-omit-frame-pointer")
@@ -210,7 +212,7 @@ def cons_module(src, dest, module, extra_CFLAGS=''):
         tools.pprint('MOD', src, dest)
         args = ['product/ripe', '-n', module, '-c', src, '-o', dest,
                         '-f', '"%s"' % extra_CFLAGS]
-        if not tools.is_quiet():
+        if tools.is_verbose():
             args.append('-v')
         tools.call(args)
     
