@@ -1,6 +1,6 @@
 #!/bin/bash
 
-FLAGS="-m Std -m Test -m Gsl -m Sdl -m Math -m TextFile -m Gd"
+FLAGS="-m Test -m Gsl -m Sdl -m Math -m TextFile -m Gd"
 BIN="product/ripe"
 
 FILE=operators.rip

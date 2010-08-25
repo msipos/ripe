@@ -123,7 +123,7 @@ Klass* klass_get(Dsym name)
   if (dict_query(&dsym_to_klass, &name, &klass)){
     return klass;
   }
-  return NULL;
+  exc_raise("no such class: %s", dsym_reverse_get(name));
 }
 
 Value obj_new(Klass* klass, void** data)

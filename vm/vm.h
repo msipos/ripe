@@ -197,15 +197,21 @@ Value op_or(Value a, Value b);
 //////////////////////////////////////////////////////////////////////////////
 // Arrays.c
 //////////////////////////////////////////////////////////////////////////////
-void init1_Arrays();
-void init2_Arrays();
 
-extern Klass* klass_Array1;
 typedef struct {
   uint64 alloc_size;
   uint64 size;
   Value* data;
 } Array1;
+Array1* val_to_array1(Value array1);
+Value array1_to_val(int64 num_elements, Value* data);
+Value array1_to_val2(uint16 num_args, ...);
+void array1_index_set(Array1* array1, int64 idx, Value val);
+Value array1_index(Array1* array1, int64 idx);
+Klass* array1_get_klass();
+
+void init1_Arrays();
+void init2_Arrays();
 extern Klass* klass_Array2;
 typedef struct {
   uint64 size_x;
@@ -219,12 +225,6 @@ typedef struct {
   uint64 size_z;
   Value* data;
 } Array3;
-
-Value array1_index(Value array, int64 idx);
-Value array1_to_val(int64 num_elements, Value* data);
-Value array1_to_val2(uint16 num_args, ...);
-uint64 val_to_array1(Value array, Value** data);
-
 Value array2_index(Value v_array, int64 x, int64 y);
 void array2_index_set(Value v_array, int64 x, int64 y, Value v_val);
 

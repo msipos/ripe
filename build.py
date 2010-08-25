@@ -2,7 +2,9 @@
 
 #       USER MODIFIABLE
 # Possible build flags are "force", "quiet", "nodebug", "nogc", "profile"
-modules = ['Test', 'Std', 'Gsl', 'Sdl', 'Math', 'TextFile', 'Map', 'Gd']
+modules = ['Test', 'Std', 'Gsl', 'Sdl', 'Math', 'TextFile', 'Map', 'Gd',
+           'Array1']
+DEF_MODULES = ['Array1', 'Std']
 
 #       BUILD SCRIPT FROM HERE ON
 import os, sys, tools
@@ -199,6 +201,7 @@ for header in include_headers:
 f = open('product/ripe.conf', 'w')
 f.write('cflags=%s\n' % " ".join(CFLAGS))
 f.write('lflags=%s\n' % " ".join(LFLAGS))
+f.write('modules=%s\n' % (" ".join(DEF_MODULES)))
 f.close()
 
 ##############################################################################

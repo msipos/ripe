@@ -45,6 +45,13 @@ void module_add(const char* module_name, const char* obj_filename)
   if (verbose){
     fprintf(stderr, "module '%s' is at %s\n", module_name, obj_filename);
   }
+  
+  // Check that this module is not loaded twice
+  for (int i = 0; i < modules.size; i++){
+    Module* m = array_get(&modules, Module*, i);
+    if (strcmp(m->module_name, module_name) == 0) return;
+  }
+  
   Module* module = mem_new(Module);
   module->module_name = module_name;
   module->obj_filename = obj_filename;
@@ -62,6 +69,18 @@ void module_add(const char* module_name, const char* obj_filename)
   }
 
   array_append(&modules, module);
+}
+
+void module_add_by_name(const char* module_name)
+{
+  const char* obj_path = mem_asprintf("%s/%s.o", app_dir, module_name);
+  if (not path_exists(obj_path)){
+    fprintf(stderr, "error: cannot find module '%s' (looked for %s)\n",
+            module_name, obj_path);
+    exit(1);
+  }
+  module_add(mem_strdup(module_name),
+             obj_path);
 }
 
 const char* module_gcc()
@@ -228,6 +247,7 @@ int main(int argc, char* const* argv)
 
   module_init();
   app_dir = path_get_app_dir();
+  
   Conf conf;
   const char* conf_file = path_join(2, app_dir, "ripe.conf");
   conf_load(&conf, conf_file);
@@ -237,6 +257,24 @@ int main(int argc, char* const* argv)
       strcmp(conf_query(&conf, "verbose"), "true") == 0 or
       strcmp(conf_query(&conf, "verbose"), "yes") == 0){
     verbose = 1;
+  }
+  const char* modules = conf_query(&conf, "modules");
+
+  // Load default modules: split modules string into words
+  {
+    char* ms = mem_strdup(modules);
+    char* word = ms;
+    while (*ms != 0)
+    {
+      if (*ms == ' ' or *ms == '\t'){
+        *ms = 0;
+        if (strlen(word) > 0) module_add_by_name(word);
+        word = ms + 1;
+      }
+      ms++;
+    }
+    // Handle last word.
+    if (strlen(word) > 0) module_add_by_name(word);
   }
   
   // Extend cflags
@@ -275,16 +313,7 @@ int main(int argc, char* const* argv)
         module_name = optarg;
         break;
       case 'm':
-        {
-          const char* obj_path = mem_asprintf("%s/%s.o", app_dir, optarg);
-          if (not path_exists(obj_path)){
-            fprintf(stderr, "error: cannot find module '%s' (looked for %s)\n",
-                    optarg, obj_path);
-            exit(1);
-          }
-          module_add(mem_strdup(optarg),
-                     obj_path);
-        }
+        module_add_by_name(optarg);
         break;
       case 'f':
         {

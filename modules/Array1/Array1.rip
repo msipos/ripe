@@ -1,0 +1,60 @@
+class Array1
+  $
+    Array1 a;
+  $
+  
+  constructor new_const(n, val)
+    $
+      int64 n = val_to_int64(__n);
+      @a.size = n;
+      @a.alloc_size = n;
+      @a.data = mem_malloc(sizeof(Value) * n);
+      for (int64 i = 0; i < n; i++){
+        @a.data[i] = __val;
+      }
+    $
+  
+  index(i)
+    return $ array1_index(&(@a), val_to_int64(__i)) $
+  
+  index_set(i, val)
+    $ array1_index_set(&(@a), val_to_int64(__i), __val); $
+
+  push(val)
+    $
+      int64 size = @a.size + 1;
+      @a.size = size;
+      if (size > @a.alloc_size) {
+        @a.alloc_size *= 2;
+        if (@a.alloc_size == 0) @a.alloc_size = 2;
+        @a.data = mem_realloc(@a.data, sizeof(Value) * @a.alloc_size);
+      }
+      @a.data[size - 1] = __val;
+    $
+  
+  set_const(val)
+    $
+      int64 sz = @a.size;
+      for (int64 i = 0; i < sz; i++){
+        @a.data[i] = __val;
+      }
+    $
+
+  to_string()
+    $
+      char buf[1024];
+      buf[0] = 0;
+      strcat(buf, "[");
+      Dsym ds_to_string = dsym_get("to_string");
+      for (int i = 0; i < @a.size; i++){
+        Value v_str = method_call0(@a.data[i], ds_to_string);
+        const char* str = val_to_string(v_str);
+        strcat(buf, str);
+        if (i != @a.size - 1) strcat(buf, ", ");
+      }
+      strcat(buf, "]");
+      return string_to_val(buf);
+    $
+    
+  virtual_get size()
+    return $ int64_to_val(@a.size) $
