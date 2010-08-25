@@ -49,5 +49,4 @@ module Gsl
         fclose(file);
         if (rv != 1) exc_raise("could not read from '/dev/urandom'");
         gsl_rng_set(@rng, seed);
-        return VALUE_NIL;
       $
