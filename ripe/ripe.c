@@ -74,11 +74,6 @@ void module_add(const char* module_name, const char* obj_filename)
 void module_add_by_name(const char* module_name)
 {
   const char* obj_path = mem_asprintf("%s/%s.o", app_dir, module_name);
-  if (not path_exists(obj_path)){
-    fprintf(stderr, "error: cannot find module '%s' (looked for %s)\n",
-            module_name, obj_path);
-    exit(1);
-  }
   module_add(mem_strdup(module_name),
              obj_path);
 }
@@ -88,6 +83,11 @@ const char* module_gcc()
   const char* gcc = "";
   for (int i = 0; i < modules.size; i++){
     Module* module = array_get(&modules, Module*, i);
+    if (not path_exists(module->obj_filename)){
+      fprintf(stderr, "error: cannot find module '%s' (looked for %s)\n",
+              module->module_name, module->obj_filename);
+      exit(1);
+    }
     gcc = mem_asprintf("%s %s", gcc, module->obj_filename);
   }
   return gcc;
