@@ -964,6 +964,8 @@ static void gen_class(Node* class)
           var_type = "FIELD_READABLE";
         } else if (strcmp(annotation, "writable") == 0){
           var_type = "FIELD_READABLE | FIELD_WRITABLE";
+        } else if (strcmp(annotation, "private") == 0){
+          var_type = "0";
         } else {
           raise_error(mem_asprintf("invalid annotation '%s'", annotation), n);
         }

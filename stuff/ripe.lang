@@ -48,6 +48,12 @@
           <keyword>module</keyword>
           <keyword>class</keyword>
           <keyword>constructor</keyword>
+          <keyword>private</keyword>
+          <keyword>readable</keyword>
+          <keyword>writable</keyword>
+          <keyword>virtual_get</keyword>
+          <keyword>virtual_set</keyword>
+          <keyword>self</keyword>
         </context>
         
         <context ref="def:decimal"/>

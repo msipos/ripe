@@ -2,12 +2,15 @@ $
   #include <stdio.h>
 $
 
+arrays()
+  for element in [1, 2, 3, 4, 5]
+    Std.println(element)
+
 ranges()
   for i in 1:5
-    $
-      printf("%"PRId64"\n", val_to_int64(__i));
-    $
+    Std.println(i)
 
 main()
   ranges()
+  arrays()
 

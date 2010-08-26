@@ -13,7 +13,7 @@ main()
   map["Serbia"] = "Belgrade"
   map["France"] = "Belgrade"
   map["France"] = "Paris"
-  Std.println(map)
+  Test.test(name, map["France"], "Paris")
   Test.test(name, map.size, 6)
   Test.test(name, true, map.has_key?("Serbia"))
   Test.test(name, false, map.has_key?("India"))
