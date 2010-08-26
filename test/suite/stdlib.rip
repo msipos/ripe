@@ -10,7 +10,7 @@ gsl_roll()
       d = d + 1.0
   Std.println("after 100000 rolls, avg = ", d / 100000)
 
-main(args)
+main()
   Test.test("Std.atoi", 123, Std.atoi("123"))
   Test.test("Std.atof", 12.3, Std.atof("12.3"))
   Test.test("Math.bit_or", Math.bit_or(15, 5), 15)

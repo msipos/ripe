@@ -7,7 +7,7 @@ class Class
   test_filename(test)
     Test.test("basic-class", @filename, test)
 
-main(args)
+main()
   obj = Class.new("testfile")
   obj.test_filename("testfile")
   Test.test("basic-class", obj.filename, "testfile")

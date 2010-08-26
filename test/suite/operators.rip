@@ -1,4 +1,4 @@
-main(args)
+main()
   name = "plus"
   Test.test(name, 1+2,     3)
   Test.test(name, 1.0+2,   3.0)

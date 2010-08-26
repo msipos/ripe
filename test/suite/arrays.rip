@@ -5,5 +5,5 @@ arrays()
   my_arr = []
   Test.test(name, my_arr.to_string(), "[]")
 
-main(args)
+main()
   arrays()

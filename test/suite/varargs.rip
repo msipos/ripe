@@ -7,7 +7,7 @@ test_vars0(*args)
 test_vars3(arg1, arg2, arg3, *args)
   Std.println("test_vars3 ", arg1, " ", arg2, " ", arg3, " ", args)
 
-main(args)
+main()
   test_vars1(1)
   test_vars1(1, 2, 3)
   test_vars1(1, 2, 3, 4, 5)
@@ -18,5 +18,4 @@ main(args)
   
   test_vars3(1, 2, 3, 4, 5)
   test_vars3(1, 2, 3)
-  test_vars3(1, 2)
 

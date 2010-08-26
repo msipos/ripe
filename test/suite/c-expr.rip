@@ -1,2 +1,2 @@
-main(args)
+main()
   Test.test("c-expr", $ int64_to_val(1) $, 1)

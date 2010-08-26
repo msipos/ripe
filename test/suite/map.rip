@@ -1,4 +1,4 @@
-main(args)
+main()
   map = Map.new()
   map[1] = "one"
   map[2] = "two"

@@ -8,6 +8,6 @@ ranges()
       printf("%"PRId64"\n", val_to_int64(__i));
     $
 
-main(args)
+main()
   ranges()
 

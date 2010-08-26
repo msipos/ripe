@@ -19,8 +19,15 @@
 void ripe_module1();
 void ripe_module2();
 
+int sys_argc;
+char** sys_argv;
+
 int main(int argc, char** argv)
 {
+  // Provide argc and argv to interested modules
+  sys_argc = argc;
+  sys_argv = argv;
+
   #ifdef CLIB_GC 
   GC_INIT();
   #endif
@@ -65,14 +72,7 @@ int main(int argc, char** argv)
 
   // Lookup main symbol
   Value sym_main = ssym_get("main");
-  //klass_dump();
 
-  // Prepare arguments to main.
-  Value* args = alloca((argc - 1) * sizeof(Value));
-  for (int arg = 1; arg < argc; arg++){
-    args[arg-1] = string_to_val(argv[arg]);
-  } 
-  Value array = array1_to_val(argc - 1, args);
   // Call main.
-  func_call1(sym_main, array);
+  func_call0(sym_main);
 }

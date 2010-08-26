@@ -1,4 +1,4 @@
-main(args)
+main()
   Sdl.init()
   
   ev = Sdl.Event.new()
