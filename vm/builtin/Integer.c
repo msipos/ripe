@@ -24,18 +24,6 @@ static Value integer_to_string(Value self)
   return string_to_val(buf);
 }
 
-static Value integer_to_string_padded(Value v_self)
-{
-  char buf[128];
-  sprintf(buf, "%09"PRId64, unpack_int64(v_self));
-  return string_to_val(buf);
-}
-
-static Value ripe_to_integer(Value v)
-{
-  return int64_to_val(val_to_int64_soft(v));
-}
-
 void init1_Integer()
 {
   klass_integer = klass_new(dsym_get("Integer"),

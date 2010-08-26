@@ -24,7 +24,7 @@ if "quiet" in sys.argv:
 if "verbose" in sys.argv:
     tools.set_verbose(True)
 if "profile" in sys.argv:
-    CFLAGS.append("-pg") 
+    CFLAGS.append("-pg")
     CFLAGS.append("-fno-omit-frame-pointer")
     CFLAGS.append("-O3")
     CFLAGS.append("-DNDEBUG")

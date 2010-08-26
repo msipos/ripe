@@ -12,6 +12,8 @@
 %option outfile="ripe/scanner.c" header-file="ripe/scanner.h"
 %option noyywrap
 %option yylineno
+%option nounput
+%option noinput
 
 %%
 
