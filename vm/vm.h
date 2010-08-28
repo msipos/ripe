@@ -25,13 +25,6 @@ typedef uint64 Value;
 #include "vm/value_inline.c"
 
 //////////////////////////////////////////////////////////////////////////////
-// vm.c
-//////////////////////////////////////////////////////////////////////////////
-
-extern int sys_argc;
-extern char** sys_argv;
-
-//////////////////////////////////////////////////////////////////////////////
 // sym-table.c
 //////////////////////////////////////////////////////////////////////////////
 typedef uint32 Dsym;
@@ -134,7 +127,7 @@ static inline void obj_verify(Value v_obj, Klass* klass){
       assert_never();
   }
   if (klass_obj != klass){
-    exc_raise("TypeError: expected a %s, got a %s", 
+    exc_raise("TypeError: expected a %s, got a %s",
               dsym_reverse_get(klass->name),
               dsym_reverse_get(klass_obj->name));
   }
@@ -153,7 +146,7 @@ static inline Klass* obj_klass(Value v_obj)
     case 0b10:
       return klass_double;
     case 0b11:
-      return klass_flag;  
+      return klass_flag;
   }
   assert_never();
 }
@@ -173,6 +166,19 @@ static inline Value method_get(Value v_obj, Dsym dsym)
     return VALUE_NIL;
   }
 }
+
+//////////////////////////////////////////////////////////////////////////////
+// common.c
+//////////////////////////////////////////////////////////////////////////////
+extern int sys_argc;
+extern char** sys_argv;
+
+extern Klass* klass_Array1;
+extern Klass* klass_String;
+
+extern Dsym dsym_to_string;
+
+void common_init_phase15();
 
 //////////////////////////////////////////////////////////////////////////////
 // builtin/Function.c
@@ -215,10 +221,7 @@ Value array1_to_val(int64 num_elements, Value* data);
 Value array1_to_val2(uint16 num_args, ...);
 void array1_index_set(Array1* array1, int64 idx, Value val);
 Value array1_index(Array1* array1, int64 idx);
-Klass* array1_get_klass();
 
-void init1_Arrays();
-void init2_Arrays();
 extern Klass* klass_Array2;
 typedef struct {
   uint64 size_x;
@@ -234,6 +237,8 @@ typedef struct {
 } Array3;
 Value array2_index(Value v_array, int64 x, int64 y);
 void array2_index_set(Value v_array, int64 x, int64 y, Value v_val);
+void init1_Arrays();
+void init2_Arrays();
 
 //////////////////////////////////////////////////////////////////////////////
 // Double.c
@@ -304,8 +309,10 @@ void val_to_range(Value range, int64* start, int64* finish);
 //////////////////////////////////////////////////////////////////////////////
 // String.c
 //////////////////////////////////////////////////////////////////////////////
-void init1_String();
-void init2_String();
+typedef struct {
+  char* str;
+} String;
+
 char* val_to_string(Value v);
 Value string_to_val(char* str);
 
@@ -324,4 +331,3 @@ void init1_Complex();
 void init2_Complex();
 
 #endif
-

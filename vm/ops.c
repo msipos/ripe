@@ -25,24 +25,24 @@ Value op_or(Value a, Value b)
   return pack_bool((a == VALUE_TRUE) or (b == VALUE_TRUE));
 }
 
+static inline bool op_equal3(Value a, Value b)
+{
+  if (obj_klass(a) == klass_String 
+       and
+      obj_klass(b) == klass_String){
+    return strcmp(val_to_string(a), val_to_string(b)) == 0;
+  }
+  return a == b;
+}
+
 Value op_equal(Value a, Value b)
 {
-  if (obj_klass(a) == klass_string 
-       and
-      obj_klass(b) == klass_string){
-    return pack_bool(strcmp(val_to_string(a), val_to_string(b)) == 0);
-  }
-  return pack_bool(a == b);
+  return pack_bool(op_equal3(a, b));
 }
 
 bool op_equal2(Value a, Value b)
 {
-  if (obj_klass(a) == klass_string 
-       and
-      obj_klass(b) == klass_string){
-    return strcmp(val_to_string(a), val_to_string(b)) == 0;
-  }
-  return a == b;
+  return op_equal3(a, b);
 }
 
 

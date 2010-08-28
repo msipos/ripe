@@ -19,9 +19,6 @@
 void ripe_module1();
 void ripe_module2();
 
-int sys_argc;
-char** sys_argv;
-
 int main(int argc, char** argv)
 {
   // Provide argc and argv to interested modules
@@ -44,7 +41,6 @@ int main(int argc, char** argv)
   // Phase 1
   init1_Function();
   init1_Object();
-  init1_String();
   init1_Flags();
   init1_Integer();
   init1_Double();
@@ -55,12 +51,12 @@ int main(int argc, char** argv)
   ripe_module1();
 
   // Phase 1.5
+  common_init_phase15();
   klass_init_phase15();
   
   // Phase 2
   init2_Function();
   init2_Object();
-  init2_String();
   init2_Flags();
   init2_Integer();
   init2_Double();

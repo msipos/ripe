@@ -18,15 +18,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Array1
 ///////////////////////////////////////////////////////////////////////////////
-Klass* klass_Array1 = NULL;
-
-Klass* array1_get_klass()
-{
-  if (not klass_Array1){
-    klass_Array1 = klass_get(dsym_get("Array1"));
-  }
-  return klass_Array1;
-}
 
 Array1* val_to_array1(Value v_array)
 {
@@ -50,7 +41,7 @@ Value array1_to_val2(uint16 num_args, ...)
 Value array1_to_val(int64 num_elements, Value* data)
 {
   Array1* array;
-  Value v = obj_new(array1_get_klass(), (void**) &array);
+  Value v = obj_new(klass_Array1, (void**) &array);
   array->size = num_elements;
   array->alloc_size = num_elements * 2;
   array->data = mem_malloc(sizeof(Value) * array->alloc_size);

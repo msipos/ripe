@@ -14,29 +14,19 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "vm/vm.h"
-#include "clib/clib.h"
-#include <stdarg.h>
 
-const char* to_string(Value v)
-{
-  return val_to_string(
-    method_call0(v, dsym_to_string)
-  );
-}
+int sys_argc;
+char** sys_argv;
 
-uint64 hash(Value v)
+Klass* klass_Array1;
+Klass* klass_String;
+
+Dsym dsym_to_string;
+
+void common_init_phase15()
 {
-  switch(v & MASK_TAIL){
-    case 0b00:
-      if (obj_klass(v) == klass_String){
-        String* string = obj_c_data(v);
-        return hash_bytes((uint8*)string->str, strlen(string->str)+1, 43);
-      }
-      return (uint64) val_to_int64(method_call0(v, dsym_get("hash")));
-    case 0b01:
-    case 0b10:
-    case 0b11:
-      return (uint64) unpack_int64(v);
-  }
-  assert_never();
+  klass_Array1 = klass_get(dsym_get("Array1"));
+  klass_String = klass_get(dsym_get("String"));
+
+  dsym_to_string = dsym_get("to_string");
 }

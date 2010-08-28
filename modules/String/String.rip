@@ -1,0 +1,73 @@
+$
+  #include "clib/stringbuf.h"
+$
+
+class String
+  $
+    String s;
+  $
+
+  to_string()
+    return self
+
+  strip()
+    $
+      char* s = @s.str;
+      while (*s == ' ' or *s == '\t' or *s == '\n') s++;
+      int64 n = strlen(s);
+      char d[n + 1];
+      strcpy(d, s);
+      char* p = d + n - 1;
+      while (*p == ' ' or *p == '\t' or *p == '\n'){
+        *p = 0;
+        p--;
+      }
+    $
+    return $ string_to_val(d) $
+
+  split(chars)
+    arr = []
+    word = nil
+    $
+      char* string = @s.str;
+      char* chars = val_to_string(__chars);
+      bool in_word = false;
+      StringBuf sb;
+      sbuf_init(&sb, "");
+      while (*string != 0){
+        bool whitespace = false;
+        if (strchr(chars, *string))
+          whitespace = true;
+        if (in_word){
+          if (whitespace){
+    $
+    word = $ string_to_val(sb.str) $
+    arr.push(word)
+    $
+            in_word = false;
+          } else {
+            sbuf_catc(&sb, *string);
+          }
+        } else {
+          if (whitespace){
+            /* move on */
+          } else {
+            sbuf_clear(&sb);
+            in_word = true;
+            sbuf_catc(&sb, *string);
+          }
+        }
+        string++;
+      }
+      if (in_word){
+    $
+    word = $ string_to_val(sb.str) $
+    arr.push(word)
+    $
+      }
+      sbuf_deinit(&sb);
+    $
+    return arr
+
+  split_whitespace()
+    return self.split(" \n\t")

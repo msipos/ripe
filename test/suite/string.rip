@@ -1,0 +1,4 @@
+main()
+  s = "  test \t \n"
+  Test.test("String.strip()", s.strip(), "test")
+  Test.test("String.split()", ["red", "riding", "hood"].to_string(), "red   riding hood   ".split_whitespace().to_string())

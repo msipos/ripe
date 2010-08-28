@@ -3,8 +3,8 @@
 #       USER MODIFIABLE
 # Possible build flags are "force", "quiet", "nodebug", "nogc", "profile"
 modules = ['Test', 'Std', 'Gsl', 'Sdl', 'Math', 'TextFile', 'Map', 'Gd',
-           'Array1']
-DEF_MODULES = ['Array1', 'Std']
+           'Array1', 'String']
+DEF_MODULES = ['Array1', 'Std', 'String']
 
 #       BUILD SCRIPT FROM HERE ON
 import os, sys, tools
@@ -172,6 +172,7 @@ vm_hs = [
 # VM
 vm_srcs = [
             'vm/vm.c',
+            'vm/common.c',
             'vm/sym-table.c',
             'vm/ops.c',
             'vm/ops-generated.c',

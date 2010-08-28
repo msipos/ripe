@@ -15,44 +15,9 @@
 
 #include "vm/vm.h"
 
-typedef struct {
-  char* str;
-} String;
-
-Klass* klass_string;
-
-static Value string_to_string(Value self)
-{
-  return self;
-}
-
-static Value ripe_string_hash(Value __self)
-{
-  String* string = obj_c_data(__self);
-  return pack_int64((int64) hash_bytes((uint8*)string->str, strlen(string->str)+1, 43));
-}
-
-void init1_String()
-{
-  klass_string = klass_new(dsym_get("String"),
-                           dsym_get("Object"),
-                           KLASS_CDATA_OBJECT,
-                           sizeof(String));
-  klass_new_method(klass_string,
-                   dsym_get("to_string"), 
-                   func1_to_val(string_to_string));
-  klass_new_method(klass_string,
-                   dsym_get("hash"), 
-                   func1_to_val(ripe_string_hash));
-}
-
-void init2_String()
-{
-}
-
 char* val_to_string(Value v)
 {
-  obj_verify(v, klass_string);
+  obj_verify(v, klass_String);
   String* obj = obj_c_data(v);
   return obj->str;
 }
@@ -60,8 +25,7 @@ char* val_to_string(Value v)
 Value string_to_val(char* str)
 {
   String* obj;
-  Value v = obj_new(klass_string, (void**)&obj);
+  Value v = obj_new(klass_String, (void**)&obj);
   obj->str = mem_strdup(str);
   return v;
 }
-
