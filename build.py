@@ -3,15 +3,15 @@
 #       USER MODIFIABLE
 # Possible build flags are "force", "quiet", "nodebug", "nogc", "profile"
 modules = ['Test', 'Std', 'Gsl', 'Sdl', 'Math', 'TextFile', 'Map', 'Gd',
-           'Array1', 'String']
-DEF_MODULES = ['Array1', 'Std', 'String']
+           'Array1', 'String', 'Flags']
+DEF_MODULES = ['Array1', 'Std', 'String', 'Flags']
 
 #       BUILD SCRIPT FROM HERE ON
 import os, sys, tools
 
 CC = ["gcc"]
 LD = ["ld"]
-CFLAGS = ["-Wall", "-Wstrict-aliasing=0", 
+CFLAGS = ["-Wall", "-Wstrict-aliasing=0",
           "-Wfatal-errors", "-std=gnu99", "-I."]
 LFLAGS = ["-lgc"]
 
@@ -63,7 +63,7 @@ def cons_yacc(target, src, depends):
     # Check timestamps
     if tools.depends(target, tdepends):
         tools.pprint("YAC", src, target)
-        tools.call(['bison', src])     
+        tools.call(['bison', src])
 
 def cons_flex(target, src, depends):
     tdepends = [src] + depends
@@ -71,7 +71,7 @@ def cons_flex(target, src, depends):
     # Check timestamps
     if tools.depends(target, tdepends):
         tools.pprint("LEX", src, target)
-        tools.call(['flex', src])     
+        tools.call(['flex', src])
 
 def cons_bin(target, objs, depends):
     tdepends = objs + depends
@@ -126,7 +126,7 @@ clib_objs = cons_objs(clib_srcs, clib_hs)
 # RIPE TOOLS
 ###############################################################################
 
-cons_yacc('ripe/parser.c', 'ripe/parser.y', 
+cons_yacc('ripe/parser.c', 'ripe/parser.y',
           ['ripe/ripe.h'] + clib_hs)
 cons_flex('ripe/scanner.c', 'ripe/scanner.l',
           ['ripe/parser.h'] + clib_hs)
@@ -184,7 +184,6 @@ vm_srcs = [
             'vm/func-generated.c',
             'vm/builtin/String.c',
             'vm/builtin/Integer.c',
-            'vm/builtin/Flags.c',
             'vm/builtin/Double.c',
             'vm/builtin/Arrays.c',
             'vm/builtin/Range.c',
@@ -219,11 +218,11 @@ def cons_module(src, dest, module, extra_CFLAGS=''):
         if tools.is_verbose():
             args.append('-v')
         tools.call(args)
-    
+
 def build_module(module):
     import os.path
     out = 'product/%s.o' % module
-    
+
     # Deal with metafile
     metafile = 'modules/%s/%s.meta' % (module, module)
     if os.path.exists(metafile):
@@ -247,4 +246,3 @@ for module in modules:
 # Cleanup
 for filename in junkyard:
     tools.delete_safe(filename)
-

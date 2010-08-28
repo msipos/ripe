@@ -15,8 +15,6 @@
 
 #include "vm/vm.h"
 
-Klass* klass_integer;
-
 static Value integer_to_string(Value self)
 {
   char buf[128];
@@ -26,11 +24,11 @@ static Value integer_to_string(Value self)
 
 void init1_Integer()
 {
-  klass_integer = klass_new(dsym_get("Integer"),
+  klass_Integer = klass_new(dsym_get("Integer"),
                          dsym_get("Object"),
                          KLASS_DIRECT,
                          0);
-  klass_new_method(klass_integer,
+  klass_new_method(klass_Integer,
                    dsym_get("to_string"),
                    func1_to_val(integer_to_string));
 }
@@ -39,17 +37,10 @@ void init2_Integer()
 {
 }
 
-int64 val_to_int64(Value v)
-{
-  obj_verify(v, klass_integer);
-  return unpack_int64(v);
-}
-
 int64 val_to_int64_soft(Value v)
 {
   if (is_int64(v)) return unpack_int64(v);
   if (is_double(v)) return (int64) val_to_double(v);
-  exc_raise("Value not an Integer or Double (%s given)", 
+  exc_raise("Value not an Integer or Double (%s given)",
             dsym_reverse_get(klass_get(v)->name));
 }
-

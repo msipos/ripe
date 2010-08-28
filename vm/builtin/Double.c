@@ -15,8 +15,6 @@
 
 #include "vm/vm.h"
 
-Klass* klass_double;
-
 static Value ripe_to_string(Value self)
 {
   char buf[128];
@@ -35,26 +33,20 @@ static Value ripe_to_double(Value v)
   return double_to_val(val_to_double_soft(v));
 }
 
-double val_to_double(Value v)
-{
-  obj_verify(v, klass_double);
-  return unpack_double(v);
-}
-
 double val_to_double_soft(Value v)
 {
   if (is_int64(v)) return (double) unpack_int64(v);
-  obj_verify(v, klass_double);
+  obj_verify(v, klass_Double);
   return unpack_double(v);
 }
 
 void init1_Double()
 {
-  klass_double = klass_new(dsym_get("Double"),
+  klass_Double = klass_new(dsym_get("Double"),
                            dsym_get("Object"),
                            KLASS_DIRECT,
                            0);
-  klass_new_method(klass_double,
+  klass_new_method(klass_Double,
                    dsym_get("to_string"),
                    func1_to_val(ripe_to_string));
 

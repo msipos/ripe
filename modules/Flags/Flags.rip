@@ -1,0 +1,15 @@
+class Nil
+  to_string()
+    return "nil"
+
+class False
+  to_string()
+    return "false"
+
+class True
+  to_string()
+    return "true"
+
+class Eof
+  to_string()
+    return "eof"

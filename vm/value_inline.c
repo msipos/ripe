@@ -21,29 +21,30 @@
 // Containers:
 //   Pointer
 //     xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxx00
+//   nil
+//     00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+//   false
+//     00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000100
+//   true
+//     00000000 00000000 00000000 00000000 00000000 00000000 00000000 00001000
+//   eof
+//     00000000 00000000 00000000 00000000 00000000 00000000 00000000 00001100
 //   Integer
 //     xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxx01
 //   Double
 //     xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxx10
-//   Bool
-//     xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxx011
-//   Flag (nil or eof)
-//     xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxx111
+//   Extended
+//     xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxx11
 
 // Specific values:
-#define VALUE_TRUE  0b0011
-#define VALUE_FALSE 0b1011
-#define VALUE_NIL   0b0111
-#define VALUE_EOF   0b1111
+#define VALUE_NIL   0b0000
+#define VALUE_FALSE 0b0100
+#define VALUE_TRUE  0b1000
+#define VALUE_EOF   0b1100
 
 // Masks:
 #define MASK_TAIL     ((Value) 0b11)
-#define MASK_LONGTAIL ((Value) 0b111)
-
-#define MASK_OBJECT     0
-#define MASK_INTEGER    1
-#define MASK_DOUBLE     2
-#define MASK_BOOL       3
+#define MASK_LONGTAIL ((Value) 0b1111)
 
 static inline bool is_int64(Value v)
 {
@@ -55,12 +56,7 @@ static inline bool is_double(Value v)
 }
 static inline bool is_ptr(Value v)
 {
-  return (v & MASK_TAIL) == 0b00;
-}
-
-static inline bool is_flag(Value v)
-{
-  return (v & MASK_TAIL) == 0b11;
+  return (v & MASK_TAIL) == 0b00 and (v & MASK_LONGTAIL) != v;
 }
 
 static inline Value pack_double(double d)
@@ -100,4 +96,3 @@ static inline bool unpack_bool(Value v)
 {
   return v == VALUE_TRUE ? true : false;
 }
-

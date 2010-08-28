@@ -25,23 +25,22 @@ int main(int argc, char** argv)
   sys_argc = argc;
   sys_argv = argv;
 
-  #ifdef CLIB_GC 
+  #ifdef CLIB_GC
   GC_INIT();
   #endif
 
   // Initialize exception system
   exc_init();
-   
+
   // Initialize static symbol table
   sym_init();
-  
+
   // Initialize value klass system
   klass_init();
-  
+
   // Phase 1
   init1_Function();
   init1_Object();
-  init1_Flags();
   init1_Integer();
   init1_Double();
   init1_Arrays();
@@ -53,11 +52,10 @@ int main(int argc, char** argv)
   // Phase 1.5
   common_init_phase15();
   klass_init_phase15();
-  
+
   // Phase 2
   init2_Function();
   init2_Object();
-  init2_Flags();
   init2_Integer();
   init2_Double();
   init2_Arrays();

@@ -42,24 +42,8 @@ extern Dsym dsym_gte, dsym_gte2;
 extern Dsym dsym_lte, dsym_lte2;
 
 //////////////////////////////////////////////////////////////////////////////
-// exceptions.c
-//////////////////////////////////////////////////////////////////////////////
-
-#include <setjmp.h>
-
-void exc_init();
-#define exc_register_any() ({ int tmp_exc_var; \
-                              tmp_exc_var = setjmp(exc_jb); \
-                              if (tmp_exc_var == 0) exc_register_any2(); \
-                              tmp_exc_var; })
-void exc_register_any2();
-jmp_buf exc_jb; // TODO: Make this thread safe.
-void exc_raise(char* format, ...) __attribute__ ((noreturn)) ;
-
-//////////////////////////////////////////////////////////////////////////////
 // klass.c
 //////////////////////////////////////////////////////////////////////////////
-
 typedef enum {
   KLASS_DIRECT,
   KLASS_OBJECT,
@@ -78,11 +62,44 @@ typedef struct {
   int obj_size;
 } Klass;
 
-// Some klasses that have to be public
-extern Klass* klass_flag;
-extern Klass* klass_integer;
-extern Klass* klass_double;
-extern Klass* klass_string;
+//////////////////////////////////////////////////////////////////////////////
+// common.c
+//////////////////////////////////////////////////////////////////////////////
+extern int sys_argc;
+extern char** sys_argv;
+
+extern Klass* klass_Nil;
+extern Klass* klass_False;
+extern Klass* klass_True;
+extern Klass* klass_Eof;
+extern Klass* klass_Integer;
+extern Klass* klass_Double;
+extern Klass* klass_Array1;
+extern Klass* klass_String;
+
+extern Dsym dsym_to_string;
+
+void common_init_phase15();
+
+//////////////////////////////////////////////////////////////////////////////
+// exceptions.c
+//////////////////////////////////////////////////////////////////////////////
+
+#include <setjmp.h>
+
+void exc_init();
+#define exc_register_any() ({ int tmp_exc_var; \
+                              tmp_exc_var = setjmp(exc_jb); \
+                              if (tmp_exc_var == 0) exc_register_any2(); \
+                              tmp_exc_var; })
+void exc_register_any2();
+jmp_buf exc_jb; // TODO: Make this thread safe.
+void exc_raise(char* format, ...) __attribute__ ((noreturn)) ;
+
+//////////////////////////////////////////////////////////////////////////////
+// klass.c
+//////////////////////////////////////////////////////////////////////////////
+
 typedef struct {
   Klass* klass;
   Value values[0];
@@ -108,24 +125,42 @@ void klass_dump();
 // Used to initialize KLASS_OBJECT object.
 Value obj_new(Klass* klass, void** data);
 // Verify an object is of given type.
-static inline void obj_verify(Value v_obj, Klass* klass){
-  Klass* klass_obj;
-  switch(v_obj & MASK_TAIL){
-    case 0b00:
-      klass_obj = *((Klass**) unpack_ptr(v_obj));
-      break;
-    case 0b01:
-      klass_obj = klass_integer;
-      return;
-    case 0b10:
-      klass_obj = klass_double;
-      return;
-    case 0b11:
-      klass_obj = klass_flag;
-      return;
-    default:
+static inline Klass* obj_klass(Value v_obj)
+{
+  Value v_masked = v_obj & MASK_LONGTAIL;
+  switch(v_masked){
+    case 0b0000:
+      if (v_masked == v_obj) return klass_Nil;
+      return *((Klass**) unpack_ptr(v_obj));
+    case 0b0100:
+      if (v_masked == v_obj) return klass_False;
+      return *((Klass**) unpack_ptr(v_obj));
+    case 0b1000:
+      if (v_masked == v_obj) return klass_True;
+      return *((Klass**) unpack_ptr(v_obj));
+    case 0b1100:
+      if (v_masked == v_obj) return klass_Eof;
+      return *((Klass**) unpack_ptr(v_obj));
+    case 0b0001:
+    case 0b0101:
+    case 0b1001:
+    case 0b1101:
+      return klass_Integer;
+    case 0b0010:
+    case 0b0110:
+    case 0b1010:
+    case 0b1110:
+      return klass_Double;
+    case 0b0011:
+    case 0b0111:
+    case 0b1011:
+    case 0b1111:
       assert_never();
   }
+  assert_never();
+}
+static inline void obj_verify(Value v_obj, Klass* klass){
+  Klass* klass_obj = obj_klass(v_obj);
   if (klass_obj != klass){
     exc_raise("TypeError: expected a %s, got a %s",
               dsym_reverse_get(klass->name),
@@ -135,20 +170,6 @@ static inline void obj_verify(Value v_obj, Klass* klass){
 static inline void* obj_c_data(Value v_obj)
 {
   return &(((Object*) unpack_ptr(v_obj))->values[0]);
-}
-static inline Klass* obj_klass(Value v_obj)
-{
-  switch(v_obj & MASK_TAIL){
-    case 0b00:
-      return *((Klass**) unpack_ptr(v_obj));
-    case 0b01:
-      return klass_integer;
-    case 0b10:
-      return klass_double;
-    case 0b11:
-      return klass_flag;
-  }
-  assert_never();
 }
 
 Value field_get(Value v_obj, Dsym field);
@@ -166,28 +187,6 @@ static inline Value method_get(Value v_obj, Dsym dsym)
     return VALUE_NIL;
   }
 }
-
-//////////////////////////////////////////////////////////////////////////////
-// common.c
-//////////////////////////////////////////////////////////////////////////////
-extern int sys_argc;
-extern char** sys_argv;
-
-extern Klass* klass_Array1;
-extern Klass* klass_String;
-
-extern Dsym dsym_to_string;
-
-void common_init_phase15();
-
-//////////////////////////////////////////////////////////////////////////////
-// builtin/Function.c
-//////////////////////////////////////////////////////////////////////////////
-extern Klass* klass_func;
-void init1_Function();
-void init2_Function();
-#include "vm/func-generated.h"
-void func_set_vararg(Value v_func);
 
 //////////////////////////////////////////////////////////////////////////////
 // util.c
@@ -246,14 +245,17 @@ void init2_Arrays();
 void init1_Double();
 void init2_Double();
 #define double_to_val(x) pack_double(x)
-double val_to_double(Value v);
+#define val_to_double(v)  ({ obj_verify(v, klass_Double); unpack_double(v); })
 double val_to_double_soft(Value v);
 
 //////////////////////////////////////////////////////////////////////////////
-// Flags.c
+// builtin/Function.c
 //////////////////////////////////////////////////////////////////////////////
-void init1_Flags();
-void init2_Flags();
+extern Klass* klass_func;
+void init1_Function();
+void init2_Function();
+#include "vm/func-generated.h"
+void func_set_vararg(Value v_func);
 
 //////////////////////////////////////////////////////////////////////////////
 // Integer.c
@@ -261,7 +263,7 @@ void init2_Flags();
 void init1_Integer();
 void init2_Integer();
 #define int64_to_val(a) pack_int64(a)
-int64 val_to_int64(Value v);
+#define val_to_int64(v)  ({ obj_verify(v, klass_Integer); unpack_int64(v); })
 int64 val_to_int64_soft(Value v);
 
 //////////////////////////////////////////////////////////////////////////////
