@@ -3,8 +3,8 @@
 #       USER MODIFIABLE
 # Possible build flags are "force", "quiet", "nodebug", "nogc", "profile"
 modules = ['Test', 'Std', 'Gsl', 'Sdl', 'Math', 'TextFile', 'Map', 'Gd',
-           'Array1', 'String', 'Flags']
-DEF_MODULES = ['Array1', 'Std', 'String', 'Flags']
+           'Array1', 'String', 'Flags', 'Tuple']
+DEF_MODULES = ['Array1', 'Std', 'String', 'Flags', 'Tuple']
 
 #       BUILD SCRIPT FROM HERE ON
 import os, sys, tools
@@ -188,7 +188,8 @@ vm_srcs = [
             'vm/builtin/Arrays.c',
             'vm/builtin/Range.c',
             'vm/builtin/Complex.c',
-            'vm/builtin/Map.c'
+            'vm/builtin/Map.c',
+            'vm/builtin/Tuple.c'
           ]
 vm_objs = cons_objs(vm_srcs, vm_hs + clib_hs)
 

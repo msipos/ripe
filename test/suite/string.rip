@@ -2,3 +2,7 @@ main()
   s = "  test \t \n"
   Test.test("String.strip()", s.strip(), "test")
   Test.test("String.split()", ["red", "riding", "hood"].to_string(), "red   riding hood   ".split_whitespace().to_string())
+  cat = "cat"
+  Test.test("String.index()", cat[2], 'a')
+  cat[1] = 'm'
+  Test.test("String.index_set()", cat, "mat")

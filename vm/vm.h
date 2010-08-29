@@ -76,6 +76,7 @@ extern Klass* klass_Integer;
 extern Klass* klass_Double;
 extern Klass* klass_Array1;
 extern Klass* klass_String;
+extern Klass* klass_Tuple;
 
 extern Dsym dsym_to_string;
 
@@ -192,11 +193,11 @@ static inline Value method_get(Value v_obj, Dsym dsym)
 // util.c
 //////////////////////////////////////////////////////////////////////////////
 const char* to_string(Value v);
-uint64 hash(Value v);
 
 //////////////////////////////////////////////////////////////////////////////
 // ops.c
 //////////////////////////////////////////////////////////////////////////////
+uint64 op_hash(Value v);
 Value op_equal(Value a, Value b);
 bool op_equal2(Value a, Value b);
 Value op_not_equal(Value a, Value b);
@@ -240,6 +241,20 @@ void init1_Arrays();
 void init2_Arrays();
 
 //////////////////////////////////////////////////////////////////////////////
+// Complex.c
+//////////////////////////////////////////////////////////////////////////////
+extern Klass* klass_Complex;
+typedef struct {
+  double real;
+  double imag;
+} Complex;
+void val_to_complex_soft(Value v, double* real, double* imag);
+Value complex_to_val(double real, double imag);
+Complex* val_to_complex(Value v);
+void init1_Complex();
+void init2_Complex();
+
+//////////////////////////////////////////////////////////////////////////////
 // Double.c
 //////////////////////////////////////////////////////////////////////////////
 void init1_Double();
@@ -249,7 +264,7 @@ void init2_Double();
 double val_to_double_soft(Value v);
 
 //////////////////////////////////////////////////////////////////////////////
-// builtin/Function.c
+// Function.c
 //////////////////////////////////////////////////////////////////////////////
 extern Klass* klass_func;
 void init1_Function();
@@ -319,17 +334,15 @@ char* val_to_string(Value v);
 Value string_to_val(char* str);
 
 //////////////////////////////////////////////////////////////////////////////
-// Complex.c
+// Tuple.c
 //////////////////////////////////////////////////////////////////////////////
-extern Klass* klass_Complex;
 typedef struct {
-  double real;
-  double imag;
-} Complex;
-void val_to_complex_soft(Value v, double* real, double* imag);
-Value complex_to_val(double real, double imag);
-Complex* val_to_complex(Value v);
-void init1_Complex();
-void init2_Complex();
+  int64 size;
+  Value* data;
+} Tuple;
+Tuple* val_to_tuple(Value v_tuple);
+Value tuple_to_val(uint16 num_args, ...);
+Value tuple_index(Tuple* tuple, int64 idx);
+void tuple_index_set(Tuple* tuple, int64 idx, Value val);
 
 #endif

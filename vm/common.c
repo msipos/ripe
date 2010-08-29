@@ -26,6 +26,7 @@ Klass* klass_Integer;
 Klass* klass_Double;
 Klass* klass_Array1;
 Klass* klass_String;
+Klass* klass_Tuple;
 
 Dsym dsym_to_string;
 
@@ -39,6 +40,7 @@ void common_init_phase15()
   klass_Double = klass_get(dsym_get("Double"));
   klass_Array1 = klass_get(dsym_get("Array1"));
   klass_String = klass_get(dsym_get("String"));
+  klass_Tuple = klass_get(dsym_get("Tuple"));
 
   dsym_to_string = dsym_get("to_string");
 }

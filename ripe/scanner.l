@@ -2,7 +2,7 @@
 
 %{
   #include "ripe/parser.h"
-  
+
   // Some docs:
   // For the rules:
   //   - Rule that matches more text wins.
@@ -22,6 +22,7 @@
 \#[^\n]*                        /* Ignore */
 [ \t]+                          { return WHITESPACE; }
 \n                              { return '\n'; }
+\'.\'                           { return CHARACTER; }
 \"[^\"]*\"                      { return STRING; }
 \$[^\$]*\$                      { return C_CODE; }
 "+"                             { return '+'; }
@@ -69,7 +70,6 @@ const                           { return K_CONST; }
 [A-Za-z_][A-Za-z0-9_?]*         { return ID; }
 .                               { return UNKNOWN; }
 
-%% 
+%%
 
 /* Functions */
-

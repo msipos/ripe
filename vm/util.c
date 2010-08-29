@@ -23,20 +23,3 @@ const char* to_string(Value v)
     method_call0(v, dsym_to_string)
   );
 }
-
-uint64 hash(Value v)
-{
-  switch(v & MASK_TAIL){
-    case 0b00:
-      if (obj_klass(v) == klass_String){
-        String* string = obj_c_data(v);
-        return hash_bytes((uint8*)string->str, strlen(string->str)+1, 43);
-      }
-      return (uint64) val_to_int64(method_call0(v, dsym_get("hash")));
-    case 0b01:
-    case 0b10:
-    case 0b11:
-      return (uint64) unpack_int64(v);
-  }
-  assert_never();
-}

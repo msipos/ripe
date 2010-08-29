@@ -1,11 +1,36 @@
 $
   #include "clib/stringbuf.h"
+
+  static inline int64 strindex(char* s, int64 i)
+  {
+    int64 n = strlen(s);
+    if (i > 0){
+      if (i > n) goto bad_index;
+      return i-1;
+    }
+    if (i == 0) goto bad_index;
+    if (i < -n) goto bad_index;
+    return i+n;
+  bad_index:
+    exc_raise("bad index %"PRId64" in string of length %"PRId64,
+              i, n);
+  }
 $
 
 class String
   $
     String s;
   $
+
+  index(i)
+    $
+      return int64_to_val(@s.str[strindex(@s.str, val_to_int64(__i))]);
+    $
+
+  index_set(i, v)
+    $
+      @s.str[strindex(@s.str, val_to_int64(__i))] = (char) val_to_int64(__v);
+    $
 
   to_string()
     return self

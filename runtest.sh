@@ -58,3 +58,7 @@ $BIN $FLAGS test/suite/$FILE
 FILE=string.rip
 echo "Running $FILE ..."
 $BIN $FLAGS test/suite/$FILE
+
+FILE=tuples.rip
+echo "Running $FILE ..."
+$BIN $FLAGS test/suite/$FILE

@@ -1,0 +1,17 @@
+class Tuple
+  $
+    Tuple t;
+  $
+  to_string()
+    $
+      char buf[1024];
+      buf[0] = 0;
+      strcat(buf, "tuple(");
+      for (int i = 0; i < @t.size; i++){
+        const char* str = to_string(@t.data[i]);
+        strcat(buf, str);
+        if (i != @t.size - 1) strcat(buf, ", ");
+      }
+      strcat(buf, ")");
+      return string_to_val(buf);
+    $

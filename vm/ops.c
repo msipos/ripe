@@ -15,6 +15,36 @@
 
 #include "vm/vm.h"
 
+uint64 op_hash(Value v)
+{
+  switch(v & MASK_TAIL){
+    case 0b00:
+      {
+        Klass* k = obj_klass(v);
+        if (k == klass_String) {
+          String* string = obj_c_data(v);
+          return hash_bytes((uint8*)string->str,
+                            strlen(string->str)+1,
+                            43);
+        } else if (k == klass_Tuple) {
+          uint64 h = 89;
+          Tuple* tuple = obj_c_data(v);
+          int64 size = tuple->size;
+          for (int64 i = 0; i < size; i++){
+            h += op_hash(tuple->data[i]);
+          }
+          return h;
+        }
+        return hash_bytes((uint8*) &v, sizeof(Value), 93);
+      }
+    case 0b01:
+    case 0b10:
+    case 0b11:
+      return (uint64) unpack_int64(v);
+  }
+  assert_never();
+}
+
 Value op_and(Value a, Value b)
 {
   return pack_bool((a == VALUE_TRUE) and (b == VALUE_TRUE));
@@ -27,10 +57,24 @@ Value op_or(Value a, Value b)
 
 static inline bool op_equal3(Value a, Value b)
 {
-  if (obj_klass(a) == klass_String 
+  if (obj_klass(a) == klass_String
        and
       obj_klass(b) == klass_String){
     return strcmp(val_to_string(a), val_to_string(b)) == 0;
+  }
+  if (obj_klass(a) == klass_Tuple
+       and
+      obj_klass(b) == klass_Tuple){
+    Tuple* ta = obj_c_data(a);
+    Tuple* tb = obj_c_data(b);
+    if (ta->size != tb->size) return false;
+    int64 sz = ta->size;
+    for (int64 i = 0; i < sz; i++){
+      if (not op_equal3(ta->data[i], tb->data[i])){
+        return false;
+      }
+    }
+    return true;
   }
   return a == b;
 }
@@ -45,10 +89,9 @@ bool op_equal2(Value a, Value b)
   return op_equal3(a, b);
 }
 
-
 Value op_not_equal(Value a, Value b)
 {
-  return pack_bool(a != b);
+  return pack_bool(not op_equal3(a, b));
 }
 
 Value op_unary_not(Value v)

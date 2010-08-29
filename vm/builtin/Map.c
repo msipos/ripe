@@ -20,7 +20,7 @@ Klass* klass_Map;
 
 static void set(Bucket* buckets, int64 num_buckets, Value key, Value value)
 {
-  uint64 h = hash(key);
+  uint64 h = op_hash(key);
   for (int64 idx = 0; idx < num_buckets; idx++){
     // Quadratic probing
     int64 place = (h + idx*idx) % num_buckets;
@@ -41,12 +41,12 @@ static void set(Bucket* buckets, int64 num_buckets, Value key, Value value)
 
 bool map_query(Map* map, Value key, Value* value)
 {
-  uint64 h = hash(key);
+  uint64 h = op_hash(key);
   int64 alloc_size = map->alloc_size;
   Bucket* buckets = map->buckets;
   for (int64 idx = 0; idx < alloc_size; idx++){
     int64 place = (h + idx*idx) % alloc_size;
-    
+
     switch(buckets[place].type){
       case BUCKET_EMPTY:
         return false;
@@ -62,7 +62,7 @@ bool map_query(Map* map, Value key, Value* value)
         return false;
     }
   }
-  assert_never();  
+  assert_never();
 }
 
 void map_set(Map* map, Value key, Value value)
@@ -72,7 +72,7 @@ void map_set(Map* map, Value key, Value value)
     set(map->buckets, map->alloc_size, key, value);
     return;
   }
-  
+
   // So, map size will increase by one.
   map->size++;
 
@@ -81,16 +81,16 @@ void map_set(Map* map, Value key, Value value)
     set(map->buckets, map->alloc_size, key, value);
     return;
   }
-  
+
   // Otherwise, increase the size of the hash table and rehash..
 
   // Allocate new buckets
   int64 alloc_size = map->alloc_size;
-  int64 new_alloc_size = map_prime(alloc_size); // map_prime is in 
+  int64 new_alloc_size = map_prime(alloc_size); // map_prime is in
                                                      // clib/dict.c
   Bucket* buckets = map->buckets;
   Bucket* new_buckets = mem_calloc(new_alloc_size*sizeof(Bucket));
-  
+
   // Iterate over old buckets and rehash
   for (int64 i = 0; i < alloc_size; i++){
     if (buckets[i].type == BUCKET_FULL){
@@ -119,7 +119,7 @@ static Value ripe_map_new()
   Map* map;
   Value __self = obj_new(klass_Map, (void**) &map);
   map_init(map);
-  return __self; 
+  return __self;
 }
 
 static Value ripe_map_index(Value __self, Value __key)
@@ -152,7 +152,7 @@ static Value ripe_map_to_string(Value __self)
     if (buckets[i].type == BUCKET_FULL){
       if (passed_first){
         sbuf_printf(&sb, ", ");
-      }        
+      }
       sbuf_printf(&sb, "%s => %s", to_string(buckets[i].key), to_string(buckets[i].value));
       passed_first = true;
     }
@@ -206,4 +206,3 @@ void init1_Map()
 void init2_Map()
 {
 }
-
