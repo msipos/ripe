@@ -354,9 +354,23 @@ expr:             expr ">=" expr
 };
 expr:             expr ':' expr
 {
-  $$ = node_new(EXPR_RANGE);
+  $$ = node_new(EXPR_RANGE_BOUNDED);
   node_add_child($$, $1);
   node_add_child($$, $3);
+};
+expr:             expr ':'
+{
+  $$ = node_new(EXPR_RANGE_BOUNDED_LEFT);
+  node_add_child($$, $1);
+};
+expr:             ':' expr
+{
+  $$ = node_new(EXPR_RANGE_BOUNDED_RIGHT);
+  node_add_child($$, $2);
+};
+expr:             ':'
+{
+  $$ = node_new(EXPR_RANGE_UNBOUNDED);
 };
 expr:             '-' expr %prec '.'
 {

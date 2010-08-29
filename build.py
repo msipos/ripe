@@ -3,8 +3,8 @@
 #       USER MODIFIABLE
 # Possible build flags are "force", "quiet", "nodebug", "nogc", "profile"
 modules = ['Test', 'Std', 'Gsl', 'Sdl', 'Math', 'TextFile', 'Map', 'Gd',
-           'Array1', 'String', 'Flags', 'Tuple']
-DEF_MODULES = ['Array1', 'Std', 'String', 'Flags', 'Tuple']
+           'Array1', 'String', 'Flags', 'Tuple', 'Range']
+DEF_MODULES = ['Array1', 'Std', 'String', 'Flags', 'Tuple', 'Range']
 
 #       BUILD SCRIPT FROM HERE ON
 import os, sys, tools

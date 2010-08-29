@@ -3,14 +3,26 @@ $
 $
 
 arrays()
-  for element in [1, 2, 3, 4, 5]
+  arr = [1, 2, 3, 4, 5]
+  arr2 = []
+  for element in arr
     Std.println(element)
+    arr2.push(element)
+  Std.println(arr)
+  Std.println(arr2)
+  Test.test("Array.get_iter()", arr.to_string(), arr2.to_string())
 
 ranges()
+  arr = []
   for i in 1:5
-    Std.println(i)
+    arr.push(i)
+  arr2 = []
+  for i in 1:
+    arr2.push(i)
+    if i == 5
+      break
+  Test.test("Range.get_iter()", arr.to_string(), arr2.to_string())
 
 main()
   ranges()
   arrays()
-

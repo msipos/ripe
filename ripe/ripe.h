@@ -42,7 +42,7 @@ typedef struct {
   int type;              // Node type.
   Array children;        // Array of Node*.
   Dict props_strings;     // String properties.
-  Dict props_nodes;      // Node properties. 
+  Dict props_nodes;      // Node properties.
   // For token nodes:
   const char* text;      // Text of the token.
   const char* filename;  // Filename.
@@ -136,8 +136,12 @@ int rc_lex();
 #define EXPR_INDEX        1032
 #define EXPR_ARRAY        1033
 #define EXPR_FIELD        1034
-#define EXPR_RANGE        1035
 #define EXPR_AT_VAR       1036
+#define EXPR_RANGE_BOUNDED        1040
+#define EXPR_RANGE_BOUNDED_LEFT   1041
+#define EXPR_RANGE_BOUNDED_RIGHT  1042
+#define EXPR_RANGE_UNBOUNDED      1043
+
 // Helper nonterminal nodes
 #define ID_LIST           1050
 #define EXPR_LIST         1051

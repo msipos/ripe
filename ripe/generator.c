@@ -477,14 +477,26 @@ static const char* eval_expr(Node* expr)
                );
       }
       break;
-    case EXPR_RANGE:
+    case EXPR_RANGE_BOUNDED:
       {
         Node* left = node_get_child(expr, 0);
         Node* right = node_get_child(expr, 1);
-        return mem_asprintf("range_to_val(val_to_int64(%s), val_to_int64(%s))",
+        return mem_asprintf("range_to_val(RANGE_BOUNDED, "
+                            "val_to_int64(%s), val_to_int64(%s))",
                             eval_expr(left),
                             eval_expr(right));
       }
+    case EXPR_RANGE_BOUNDED_LEFT:
+      return mem_asprintf("range_to_val(RANGE_BOUNDED_LEFT, "
+                          "val_to_int64(%s), 0)",
+                          eval_expr(node_get_child(expr, 0)));
+    case EXPR_RANGE_BOUNDED_RIGHT:
+      return mem_asprintf("range_to_val(RANGE_BOUNDED_RIGHT, "
+                          "0, val_to_int64(%s))",
+                          eval_expr(node_get_child(expr, 0)));
+    case EXPR_RANGE_UNBOUNDED:
+      return mem_strdup("range_to_val(RANGE_UNBOUNDED, 0, 0)");
+
     case EXPR_FIELD:
       {
         // Attempt to evaluate this field as a static symbol.

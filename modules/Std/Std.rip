@@ -9,6 +9,9 @@ module Std
     $ printf("\n"); $
 
   format(*args)
+    return Std.format_array(args)
+
+  format_array(args)
     if args.size == 0
       return ""
     $ char buf[1024];
@@ -47,4 +50,10 @@ module Std
         args[arg-1] = string_to_val(sys_argv[arg]);
       }
       return array1_to_val(sys_argc - 1, args);
+    $
+
+  error(*args)
+    msg = Std.format_array(args)
+    $
+      exc_raise("%s", to_string(__msg));
     $

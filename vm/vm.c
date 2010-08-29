@@ -44,7 +44,6 @@ int main(int argc, char** argv)
   init1_Integer();
   init1_Double();
   init1_Arrays();
-  init1_Range();
   init1_Complex();
   init1_Map();
   ripe_module1();
@@ -59,7 +58,6 @@ int main(int argc, char** argv)
   init2_Integer();
   init2_Double();
   init2_Arrays();
-  init2_Range();
   init2_Complex();
   init2_Map();
   ripe_module2();

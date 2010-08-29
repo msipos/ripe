@@ -75,6 +75,7 @@ extern Klass* klass_Eof;
 extern Klass* klass_Integer;
 extern Klass* klass_Double;
 extern Klass* klass_Array1;
+extern Klass* klass_Range;
 extern Klass* klass_String;
 extern Klass* klass_Tuple;
 
@@ -317,11 +318,19 @@ void init2_Object();
 //////////////////////////////////////////////////////////////////////////////
 // Range.c
 //////////////////////////////////////////////////////////////////////////////
-extern Klass* klass_Range;
-void init1_Range();
-void init2_Range();
-Value range_to_val(int64 start, int64 finish);
-void val_to_range(Value range, int64* start, int64* finish);
+typedef enum {
+  RANGE_BOUNDED,
+  RANGE_BOUNDED_LEFT,
+  RANGE_BOUNDED_RIGHT,
+  RANGE_UNBOUNDED
+} RangeType;
+typedef struct {
+  int64 start;
+  int64 finish;
+  RangeType type;
+} Range;
+Value range_to_val(RangeType type, int64 start, int64 finish);
+Range* val_to_range(Value range);
 
 //////////////////////////////////////////////////////////////////////////////
 // String.c

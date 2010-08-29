@@ -26,8 +26,12 @@ class Array1
       @a.size = size;
       if (size > @a.alloc_size) {
         @a.alloc_size *= 2;
-        if (@a.alloc_size == 0) @a.alloc_size = 2;
-        @a.data = mem_realloc(@a.data, sizeof(Value) * @a.alloc_size);
+        if (@a.alloc_size == 0) {
+          @a.alloc_size = 2;
+          @a.data = mem_malloc(sizeof(Value) * @a.alloc_size);
+        } else {
+          @a.data = mem_realloc(@a.data, sizeof(Value) * @a.alloc_size);
+        }
       }
       @a.data[size - 1] = __val;
     $

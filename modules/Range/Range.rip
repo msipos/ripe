@@ -1,0 +1,91 @@
+$
+  #define ASCENDING 1
+  #define DESCENDING 2
+$
+
+class Range
+  $
+    Range range;
+  $
+
+  get_iter()
+    start = $ int64_to_val(@range.start) $
+    finish = $ int64_to_val(@range.finish) $
+    $
+      switch(@range.type){
+        case RANGE_BOUNDED:
+          if (@range.start > @range.finish){
+    $
+    return RangeIterator.new(RangeBounded, start, finish, RangeIteratorDescending)
+    $
+          } else {
+    $
+    return RangeIterator.new(RangeBounded, start, finish, RangeIteratorAscending)
+    $
+          }
+        case RANGE_BOUNDED_LEFT:
+    $
+    return RangeIterator.new(RangeBoundedLeft, start, 0, RangeIteratorAscending)
+    $
+        case RANGE_BOUNDED_RIGHT:
+    $
+    return RangeIterator.new(RangeBoundedLeft, finish, 0, RangeIteratorDescending)
+    $
+        case RANGE_UNBOUNDED:
+          exc_raise("attempted to iterate an unbounded range");
+      }
+    $
+
+const RangeBounded = $ int64_to_val(RANGE_BOUNDED) $
+const RangeBoundedLeft = $ int64_to_val(RANGE_BOUNDED_LEFT) $
+const RangeIteratorAscending = $ int64_to_val(ASCENDING) $
+const RangeIteratorDescending = $ int64_to_val(DESCENDING) $
+
+class RangeIterator
+  $
+    RangeType range_type;
+    int64 start;
+    int64 finish;
+    int64 cur;
+    int iter_type;
+  $
+  constructor new(range_type, start, finish, iter_type)
+    $
+      @range_type = val_to_int64(__range_type);
+      @start = val_to_int64(__start);
+      @cur = @start;
+      @finish = val_to_int64(__finish);
+      @iter_type = val_to_int64(__iter_type);
+    $
+
+  iter()
+    $
+      switch(@iter_type){
+        case ASCENDING:
+          {
+            switch(@range_type){
+              case RANGE_BOUNDED:
+                if (@cur > @finish) return VALUE_EOF;
+              case RANGE_BOUNDED_LEFT:
+                @cur++;
+                return int64_to_val(@cur - 1);
+              case RANGE_BOUNDED_RIGHT:
+              case RANGE_UNBOUNDED:
+                assert_never();
+            }
+          }
+        case DESCENDING:
+          {
+            switch(@range_type){
+              case RANGE_BOUNDED:
+                if (@cur < @finish) return VALUE_EOF;
+              case RANGE_BOUNDED_LEFT:
+                @cur--;
+                return int64_to_val(@cur + 1);
+              case RANGE_BOUNDED_RIGHT:
+              case RANGE_UNBOUNDED:
+                assert_never();
+            }
+          }
+      }
+    $
