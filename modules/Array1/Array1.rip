@@ -15,6 +15,32 @@ class Array1
     $
 
   index(i)
+    $
+      if (obj_klass(__i) == klass_Range){
+        Range* range = val_to_range(__i);
+        int64 start, finish;
+        util_index_range("Array1",
+                         range,
+                         @a.size,
+                         &start,
+                         &finish);
+        if (start <= finish){
+          Value v = array1_new(finish - start + 1);
+          Array1* arr = obj_c_data(v);
+          for (int64 i = start; i <= finish; i++){
+            arr->data[i - start] = @a.data[i];
+          }
+          return v;
+        } else {
+          Value v = array1_new(start - finish + 1);
+          Array1* arr = obj_c_data(v);
+          for (int64 i = 0; i < start - finish + 1; i++){
+            arr->data[i] = @a.data[start - i];
+          }
+          return v;
+        }
+      }
+    $
     return $ array1_index(&(@a), val_to_int64(__i)) $
 
   index_set(i, val)

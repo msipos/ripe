@@ -5,5 +5,22 @@ arrays()
   my_arr = []
   Test.test(name, my_arr.to_string(), "[]")
 
+subarrays()
+  name = "subarrays"
+  my_arr = ["one", "two", "three", "four", "five", "six"]
+  test_arr = my_arr[2:4]
+  Test.test(name, test_arr.to_string(), "[two, three, four]")
+  test_arr = my_arr[:4]
+  Test.test(name, test_arr.to_string(), "[one, two, three, four]")
+  test_arr = my_arr[5:]
+  Test.test(name, test_arr.to_string(), "[five, six]")
+  test_arr = my_arr[1:1]
+  Test.test(name, test_arr.to_string(), "[one]")
+  test_arr = my_arr[6:1]
+  Test.test(name, test_arr.to_string(), "[six, five, four, three, two, one]")
+  test_arr = my_arr[:]
+  Test.test(name, test_arr.to_string(), "[one, two, three, four, five, six]")
+
 main()
   arrays()
+  subarrays()

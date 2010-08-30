@@ -51,31 +51,24 @@ Value array1_to_val(int64 num_elements, Value* data)
   return v;
 }
 
-static inline int64 array1_map_index(Array1* array, int64 idx)
+Value array1_new(int64 num_elements)
 {
-  int64 size = array->size;
-
-  // Check that index is valid
-  if (idx > 0){
-    if (idx > size) goto invalid_idx;
-    return idx - 1;
-  }
-  if (idx == 0) goto invalid_idx;
-  if (idx < -size) goto invalid_idx;
-  return size + idx;
-invalid_idx:
-  exc_raise("invalid index %"PRId64" in Array of size %"PRId64,
-            idx, size);
+  Array1* array;
+  Value v = obj_new(klass_Array1, (void**) &array);
+  array->size = num_elements;
+  array->alloc_size = num_elements * 2;
+  array->data = mem_malloc(sizeof(Value) * num_elements);
+  return v;
 }
 
 Value array1_index(Array1* array1, int64 idx)
 {
-  return array1->data[array1_map_index(array1, idx)];
+  return array1->data[util_index("Array1", idx, array1->size)];
 }
 
 void array1_index_set(Array1* array1, int64 idx, Value val)
 {
-  array1->data[array1_map_index(array1, idx)] = val;
+  array1->data[util_index("Array1", idx, array1->size)] = val;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -109,7 +102,7 @@ static inline int64 array2_map_index(Array2* array, int64 x, int64 y)
 {
   int64 size_x = array->size_x;
   int64 size_y = array->size_y;
-  
+
   if (x > 0 and x <= size_x and y > 0 and y <= size_y){
     return (y - 1) + (x - 1) * size_y;
   } else {
@@ -139,14 +132,14 @@ static Value ripe_array2_index(Value v_self, Value v_x, Value v_y)
                                       val_to_int64(v_y))];
 }
 
-static Value ripe_array2_index_set(Value v_self, Value v_x, Value v_y, 
+static Value ripe_array2_index_set(Value v_self, Value v_x, Value v_y,
                                    Value v_val)
 {
   Array2* array2 = obj_c_data(v_self);
   array2->data[array2_map_index(array2,
                                 val_to_int64(v_x),
                                 val_to_int64(v_y))] = v_val;
-  return VALUE_NIL;                                
+  return VALUE_NIL;
 }
 
 static Value ripe_array2_get_size_x(Value v_self)
@@ -178,7 +171,7 @@ Klass* klass_Array3;
 
 static Value ripe_array3_new_const(Value v_x, Value v_y, Value v_z, Value v_val)
 {
-  Array3* self; 
+  Array3* self;
   Value v_self = obj_new(klass_Array3, (void**) &self);
 
   int64 size_x = val_to_int64(v_x);
@@ -193,7 +186,7 @@ static Value ripe_array3_new_const(Value v_x, Value v_y, Value v_z, Value v_val)
   int64 total_size = size_x * size_y * size_z;
   Value* data = mem_malloc(total_size * sizeof(Value));
   for (int64 t = 0; t < total_size; t++){
-    data[t] = v_val;    
+    data[t] = v_val;
   }
   self->data = data;
   return v_self;
@@ -204,8 +197,8 @@ static inline int64 array3_map_index(Array3* array, int64 x, int64 y, int64 z)
   int64 size_x = array->size_x;
   int64 size_y = array->size_y;
   int64 size_z = array->size_z;
-  
-  if (x > 0 and x <= size_x and y > 0 and y <= size_y 
+
+  if (x > 0 and x <= size_x and y > 0 and y <= size_y
                             and z > 0 and z <= size_z){
     // C order
     return (x-1) + (y-1)*size_x + (z-1)*size_x*size_y;
@@ -232,7 +225,7 @@ static Value ripe_array3_index_set(Value v_self, Value v_x, Value v_y,
                                 val_to_int64(v_x),
                                 val_to_int64(v_y),
                                 val_to_int64(v_z))] = v_val;
-  return VALUE_NIL;                                
+  return VALUE_NIL;
 }
 
 static Value ripe_array3_get_size_x(Value v_self)
@@ -296,7 +289,7 @@ void init1_Arrays()
   klass_new_method(klass_Array2,
                    dsym_get("set_const"),
                    func2_to_val(ripe_array2_set_const));
-      
+
   // Array3
   ssym_set("Array3.new_const", func4_to_val(ripe_array3_new_const));
   klass_new_method(klass_Array3,
@@ -323,4 +316,3 @@ void init2_Arrays()
 {
 
 }
-

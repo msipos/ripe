@@ -6,10 +6,7 @@ arrays()
   arr = [1, 2, 3, 4, 5]
   arr2 = []
   for element in arr
-    Std.println(element)
     arr2.push(element)
-  Std.println(arr)
-  Std.println(arr2)
   Test.test("Array.get_iter()", arr.to_string(), arr2.to_string())
 
 ranges()

@@ -191,11 +191,6 @@ static inline Value method_get(Value v_obj, Dsym dsym)
 }
 
 //////////////////////////////////////////////////////////////////////////////
-// util.c
-//////////////////////////////////////////////////////////////////////////////
-const char* to_string(Value v);
-
-//////////////////////////////////////////////////////////////////////////////
 // ops.c
 //////////////////////////////////////////////////////////////////////////////
 uint64 op_hash(Value v);
@@ -222,6 +217,7 @@ Value array1_to_val(int64 num_elements, Value* data);
 Value array1_to_val2(uint16 num_args, ...);
 void array1_index_set(Array1* array1, int64 idx, Value val);
 Value array1_index(Array1* array1, int64 idx);
+Value array1_new(int64 num_elements);
 
 extern Klass* klass_Array2;
 typedef struct {
@@ -353,5 +349,13 @@ Tuple* val_to_tuple(Value v_tuple);
 Value tuple_to_val(uint16 num_args, ...);
 Value tuple_index(Tuple* tuple, int64 idx);
 void tuple_index_set(Tuple* tuple, int64 idx, Value val);
+
+//////////////////////////////////////////////////////////////////////////////
+// util.c
+//////////////////////////////////////////////////////////////////////////////
+int64 util_index(const char* klass_name, int64 idx, int64 size);
+void util_index_range(const char* klass_name, Range* range, int64 size,
+                      int64* start, int64* finish);
+const char* to_string(Value v);
 
 #endif

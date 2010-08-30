@@ -1,20 +1,5 @@
 $
   #include "clib/stringbuf.h"
-
-  static inline int64 strindex(char* s, int64 i)
-  {
-    int64 n = strlen(s);
-    if (i > 0){
-      if (i > n) goto bad_index;
-      return i-1;
-    }
-    if (i == 0) goto bad_index;
-    if (i < -n) goto bad_index;
-    return i+n;
-  bad_index:
-    exc_raise("bad index %"PRId64" in string of length %"PRId64,
-              i, n);
-  }
 $
 
 class String
@@ -24,12 +9,34 @@ class String
 
   index(i)
     $
-      return int64_to_val(@s.str[strindex(@s.str, val_to_int64(__i))]);
+      if (obj_klass(__i) == klass_Range){
+        Range* range = val_to_range(__i);
+        int64 start, finish;
+        util_index_range("String",
+                         range,
+                         strlen(@s.str),
+                         &start,
+                         &finish);
+        if (start <= finish){
+          char buf[finish - start + 2];
+          memcpy(buf, @s.str + start, finish - start + 1);
+          buf[finish - start + 1] = 0;
+          return string_to_val(buf);
+        } else {
+          char buf[start - finish + 2];
+          for (int64 i = 0; i < start - finish + 1; i++){
+            buf[i] = @s.str[start - i];
+          }
+          buf[start - finish + 1] = 0;
+          return string_to_val(buf);
+        }
+      }
     $
+    return $ int64_to_val(@s.str[util_index("String", val_to_int64(__i), strlen(@s.str))]); $
 
   index_set(i, v)
     $
-      @s.str[strindex(@s.str, val_to_int64(__i))] = (char) val_to_int64(__v);
+      @s.str[util_index("String", val_to_int64(__i), strlen(@s.str))] = (char) val_to_int64(__v);
     $
 
   to_string()

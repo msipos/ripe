@@ -37,29 +37,12 @@ Value tuple_to_val(uint16 num_args, ...)
   return v;
 }
 
-static inline int64 tuple_map_index(Tuple* tuple, int64 idx)
-{
-  int64 size = tuple->size;
-
-  // Check that index is valid
-  if (idx > 0){
-    if (idx > size) goto invalid_idx;
-    return idx - 1;
-  }
-  if (idx == 0) goto invalid_idx;
-  if (idx < -size) goto invalid_idx;
-  return size + idx;
-invalid_idx:
-  exc_raise("invalid index %"PRId64" in Array of size %"PRId64,
-            idx, size);
-}
-
 Value tuple_index(Tuple* tuple, int64 idx)
 {
-  return tuple->data[tuple_map_index(tuple, idx)];
+  return tuple->data[util_index("Tuple", idx, tuple->size)];
 }
 
 void tuple_index_set(Tuple* tuple, int64 idx, Value val)
 {
-  tuple->data[tuple_map_index(tuple, idx)] = val;
+  tuple->data[util_index("Tuple", idx, tuple->size)] = val;
 }
