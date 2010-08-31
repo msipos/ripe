@@ -1,5 +1,5 @@
 $
-  #include <stdio.h> 
+  #include <stdio.h>
   #define TEXTFILE_READ 1
   #define TEXTFILE_WRITE 2
 $
@@ -10,14 +10,14 @@ module TextFile
 
 class TextFile
   $ FILE* f; $
-  
+
   constructor new(filename, mode)
     $
       int64 mode = val_to_int64(__mode);
       const char* smode;
       if (mode == TEXTFILE_READ){
         smode = "r";
-      } 
+      }
       if (mode == TEXTFILE_READ + TEXTFILE_WRITE){
         smode = "w";
       }
@@ -30,10 +30,10 @@ class TextFile
         exc_raise("failed to open '%s'", filename);
       }
     $
-  
+
   read_line()
     $
-      #define FGETS_BUF 1024
+      #define FGETS_BUF (100*1024)
       char buf[FGETS_BUF];
       if (@f == NULL){
         exc_raise("attempted to read from a closed file");
@@ -44,6 +44,12 @@ class TextFile
       }
       return string_to_val(buf);
     $
+
+  get_iter()
+    return self
+
+  iter()
+    return self.read_line()
 
   close()
     $
