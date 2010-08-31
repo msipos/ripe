@@ -103,3 +103,21 @@ class String
 
   split_whitespace()
     return self.split(" \n\t")
+
+  __plus(other)
+    $
+      const char* other = to_string(__other);
+      int bufsize = strlen(@s.str) + strlen(other) + 1;
+      char buf[bufsize];
+      snprintf(buf, bufsize, "%s%s", @s.str, other);
+      return string_to_val(buf);
+    $
+
+  __plus2(other)
+    $
+      const char* other = to_string(__other);
+      int bufsize = strlen(@s.str) + strlen(other) + 1;
+      char buf[bufsize];
+      snprintf(buf, bufsize, "%s%s", other, @s.str);
+      return string_to_val(buf);
+    $

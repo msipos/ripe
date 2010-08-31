@@ -56,6 +56,7 @@ typedef struct {
   KlassType type;
   Dict methods;
   int num_fields;
+  int cdata_size;
   Dict readable_fields;
   Dict writable_fields;
   Dict fields;

@@ -14,3 +14,8 @@ main()
   Test.test(name, my_string[:5], "12345")
   Test.test(name, my_string[:], "123456789")
   Test.test(name, my_string[5:1], "54321")
+
+  cat = "cat"
+  dog = "dog"
+  Test.test("string +", cat + dog, "catdog")
+  Test.test("string +2", 2 + cat, "2cat")

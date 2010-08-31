@@ -38,7 +38,7 @@ void klass_dump()
 Klass* klass_new(Dsym name, Dsym parent, KlassType type, int cdata_size)
 {
   if (dict_query(&dsym_to_klass, &name, NULL)){
-    fprintf(stderr, "error: class '%s' initialized twice\n", 
+    fprintf(stderr, "error: class '%s' initialized twice\n",
             dsym_reverse_get(name));
     exit(1);
   }
@@ -46,22 +46,23 @@ Klass* klass_new(Dsym name, Dsym parent, KlassType type, int cdata_size)
   Klass* klass = mem_new(Klass);
   klass->name = name;
   klass->type = type;
+  klass->cdata_size = cdata_size;
   // This preliminary calculation of obj_size is necessary because of Function
   // klass.
   klass->obj_size = sizeof(Klass*) + cdata_size;
   dict_init(&(klass->methods), sizeof(Dsym), sizeof(Value), dict_hash_uint32,
             dict_equal_uint32);
-  dict_init(&(klass->readable_fields), sizeof(Dsym), sizeof(uint64), 
+  dict_init(&(klass->readable_fields), sizeof(Dsym), sizeof(uint64),
             dict_hash_uint32, dict_equal_uint32);
-  dict_init(&(klass->writable_fields), sizeof(Dsym), sizeof(uint64), 
+  dict_init(&(klass->writable_fields), sizeof(Dsym), sizeof(uint64),
             dict_hash_uint32, dict_equal_uint32);
-  dict_init(&(klass->fields), sizeof(Dsym), sizeof(uint64), 
+  dict_init(&(klass->fields), sizeof(Dsym), sizeof(uint64),
             dict_hash_uint32, dict_equal_uint32);
   klass->num_fields = 0;
 
   array_append(&klasses, klass);
   dict_set(&dsym_to_klass, &name, &klass);
-  
+
   return klass;
 }
 
@@ -108,13 +109,19 @@ void klass_new_method(Klass* klass, Dsym name, Value method)
 }
 
 void klass_init_phase15()
-{  
+{
   // Finally, go thru list again, and finalize it:
   // put in all the methods, fields and cdata of the parent,
   // put in all your own methods, fields and cdata,
   // verify that only one cdata is defined by someone in the hierarchy.
-  
-  // TODO: Handle parents & fields
+  // TODO: Handle parents
+  for (int i = 0; i < klasses.size; i++){
+    Klass* klass = array_get(&klasses, Klass*, i);
+    if (klass->cdata_size > 0 and klass->num_fields > 0){
+      exc_raise("class '%s' has both cdata and fields", dsym_reverse_get(klass->name));
+    }
+    klass->obj_size = sizeof(Klass*) + klass->num_fields * sizeof(Value) + klass->cdata_size;
+  }
 }
 
 Klass* klass_get(Dsym name)
@@ -175,4 +182,3 @@ void method_error(Klass* klass, Dsym dsym)
   exc_raise("class '%s' does not have method '%s'",
             dsym_reverse_get(klass->name), dsym_reverse_get(dsym));
 }
-
