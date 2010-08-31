@@ -51,8 +51,15 @@ static const char* util_replace(const char* str, const char c,
 
 static const char* util_make_c_name(const char* ripe_name)
 {
-  // TODO: Deal with ? and !
-  return mem_asprintf("__%s", ripe_name);
+  char* c_name = mem_asprintf("__%s", ripe_name);
+  char* s = c_name;
+  while (*s != 0){
+    if (*s == '?' or *s == '!' or *s == '.'){
+      *s = '_';
+    }
+    s++;
+  }
+  return c_name;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -822,13 +829,16 @@ static void compile_function(Node* function)
 
   // Generate
   push_locals();
-  sbuf_printf(&sb_contents, "static Value func%u(%s){\n",
-              counter, gen_params(param_list));
-  sbuf_printf(&sb_init1, "  Value v_func%u = func%u_to_val(func%u);\n",
-              counter, num_params, counter);
+  const char* c_name = mem_asprintf("__func%u_%s",
+                                    counter,
+                                    util_make_c_name(name));
+  sbuf_printf(&sb_contents, "static Value %s(%s){\n",
+              c_name, gen_params(param_list));
+  sbuf_printf(&sb_init1, "  Value v_%s = func%u_to_val(%s);\n",
+              c_name, num_params, c_name);
   if (check_vararg(param_list))
-    sbuf_printf(&sb_init1, "  func_set_vararg(v_func%u);\n", counter);
-  sbuf_printf(&sb_init1, "  ssym_set(\"%s\", v_func%u);\n", name, counter);
+    sbuf_printf(&sb_init1, "  func_set_vararg(v_%s);\n", c_name);
+  sbuf_printf(&sb_init1, "  ssym_set(\"%s\", v_%s);\n", name, c_name);
   gen_func_code(stmt_list);
   pop_locals();
 
@@ -855,9 +865,10 @@ static void gen_constructor(Node* constructor)
   // Get basic stuff.
   static int counter = 0;
   counter++;
-  const char* c_constructor_name = mem_asprintf("constructor%d", counter);
   const char* r_constructor_name = mem_asprintf("%s%s.%s",
     module_prefix, context_class_name, node_get_string(constructor, "name"));
+  const char* c_constructor_name = mem_asprintf("__cons%d_%s", counter,
+                                        util_make_c_name(r_constructor_name));
 
   Node* param_list = node_get_child(constructor, 0);
   Node* stmt_list = node_get_child(constructor, 1);
@@ -892,9 +903,10 @@ static void gen_method(const char* method_name, Node* param_list, Node* stmt_lis
 
   static int counter = 0;
   counter++;
-  const char* c_method_name = mem_asprintf("method%d", counter);
   const char* r_method_name = mem_asprintf("%s%s.%s",
     module_prefix, context_class_name, method_name);
+  const char* c_method_name = mem_asprintf("__met%d_%s", counter,
+                                util_make_c_name(r_method_name));
 
   node_prepend_child(param_list, node_new_token(ID, "self", NULL, 0));
   int num_params = param_list->children.size;
