@@ -1,17 +1,162 @@
-gsl()
-  gsl_roll()
-
-gsl_roll()
+Gsl()
   rng = Gsl.Rng.new()
   rng.seed_random()
   d = 0.0
-  for i in 1:100000
+  N = 1000000
+  for i in 1:N
     if rng.roll(0.5)
       d = d + 1.0
-  Std.println("after 100000 rolls, avg = ", d / 100000)
+  avg = d / N
+  Test.test("Gsl.roll()", avg < 0.501, true)
+  Test.test("Gsl.roll()", avg > 0.499, true)
+
+Map()
+  map = Map.new()
+  map[1] = "one"
+  map[2] = "two"
+  map[5] = "five"
+  name = "map1"
+  Test.test(name, "Map (1 => one, 2 => two, 5 => five)", map.to_string())
+  Test.test(name, map[1], "one")
+  Test.test(name, map[2], "two")
+  Test.test(name, map[5], "five")
+
+  map["England"] = "London"
+  map["Serbia"] = "Belgrade"
+  map["France"] = "Belgrade"
+  map["France"] = "Paris"
+  Test.test(name, map["France"], "Paris")
+  Test.test(name, map.size, 6)
+  Test.test(name, true, map.has_key?("Serbia"))
+  Test.test(name, false, map.has_key?("India"))
+
+  map = Map.new()
+  for i in 1:100000
+    map[i] = i*2
+  name = "map2"
+  x = 61898
+  Test.test(name, map[x], 2*x)
+  x = 8592
+  Test.test(name, map[x], 2*x)
+  x = 100000
+  Test.test(name, map[x], 2*x)
+
+Set()
+  set = Set.new()
+  set.add("hello")
+  set.add("world")
+  set.add("world")
+  Test.test("Set.size", set.size, 2)
+  Test.test("Set.has?", set.has?("hello"), true)
+
+arrays()
+  name = "arrays"
+  my_arr = [1, 2, 3, 4]
+  Test.test(name, my_arr.to_string(), "[1, 2, 3, 4]")
+  my_arr = []
+  Test.test(name, my_arr.to_string(), "[]")
+
+subarrays()
+  name = "subarrays"
+  my_arr = ["one", "two", "three", "four", "five", "six"]
+  test_arr = my_arr[2:4]
+  Test.test(name, test_arr.to_string(), "[two, three, four]")
+  test_arr = my_arr[:4]
+  Test.test(name, test_arr.to_string(), "[one, two, three, four]")
+  test_arr = my_arr[5:]
+  Test.test(name, test_arr.to_string(), "[five, six]")
+  test_arr = my_arr[1:1]
+  Test.test(name, test_arr.to_string(), "[one]")
+  test_arr = my_arr[6:1]
+  Test.test(name, test_arr.to_string(), "[six, five, four, three, two, one]")
+  test_arr = my_arr[:]
+  Test.test(name, test_arr.to_string(), "[one, two, three, four, five, six]")
+
+TextFile()
+    tf = TextFile.new("test/suite/textfile", TextFile.Read)
+    name = "TextFile"
+    Test.test(name, tf.read_line(), "line 1\n")
+    Test.test(name, tf.read_line(), "line 2\n")
+    Test.test(name, tf.read_line(), "line 3\n")
+    Test.test(name, tf.read_line(), "\n")
+    Test.test(name, tf.read_line(), eof)
+    tf.close()
+
+Tuple()
+  t = tuple(1, 2, 3)
+  Test.test("tuple", t.to_string(), "tuple(1, 2, 3)")
+  u = tuple(1, 2, 3)
+  v = tuple(1, 2)
+  m = Map.new()
+  m[t] = 123
+  m[v] = 12
+  name = "tuple hashing/equality"
+  Test.test(name, m.has_key?(u), true)
+  Test.test(name, m[u], 123)
+  m[u] = 147
+  Test.test(name, m.size, 2)
+  Test.test(name, m[t], 147)
+
+array_iterators()
+  arr = [1, 2, 3, 4, 5]
+  arr2 = []
+  for element in arr
+    arr2.push(element)
+  Test.test("Array.get_iter()", arr.to_string(), arr2.to_string())
+
+range_iterators()
+  arr = []
+  for i in 1:5
+    arr.push(i)
+  arr2 = []
+  for i in 1:
+    arr2.push(i)
+    if i == 5
+      break
+  Test.test("Range.get_iter()", arr.to_string(), arr2.to_string())
+
+String()
+  s = "  test \t \n"
+  Test.test("String.strip()", s.strip(), "test")
+  Test.test("String.split()", ["red", "riding", "hood"].to_string(), "red   riding hood   ".split_whitespace().to_string())
+  cat = "cat"
+  Test.test("String.index()", cat[2], 'a')
+  cat[1] = 'm'
+  Test.test("String.index_set()", cat, "mat")
+
+  name = "substring"
+  my_string = "123456789"
+  Test.test(name, my_string[3:7], "34567")
+  Test.test(name, my_string[5:], "56789")
+  Test.test(name, my_string[:5], "12345")
+  Test.test(name, my_string[:], "123456789")
+  Test.test(name, my_string[5:1], "54321")
+
+  cat = "cat"
+  dog = "dog"
+  Test.test("string +", cat + dog, "catdog")
+  Test.test("string +2", 2 + cat, "2cat")
 
 main()
+  Test.set_verbose(false)
+  Gsl()
+  Map()
+  Set()
+  arrays()
+  subarrays()
+  TextFile()
+  Tuple()
+  String()
+  array_iterators()
+  range_iterators()
   Test.test("Std.atoi", 123, Std.atoi("123"))
   Test.test("Std.atof", 12.3, Std.atof("12.3"))
   Test.test("Math.bit_or", Math.bit_or(15, 5), 15)
   Test.test("Math.bit_and", Math.bit_and(15, 5), 5)
+
+  arr = Test.get_results()
+  correct = arr[1] - arr[2]
+  total = arr[1]
+  Std.println("stdlib test results: ", correct, "/", total)
+  if correct < total
+    Std.println("there were ", total - correct, " errors")

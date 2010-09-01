@@ -1,0 +1,48 @@
+$
+  #include "clib/stringbuf.h"
+$
+
+class Set
+  $
+    HashTable ht;
+  $
+  constructor new()
+    $
+      ht_init(&(@ht));
+    $
+
+  has?(key)
+    $
+      return pack_bool(ht_query(&(@ht), __key));
+    $
+
+  add(key)
+    $
+      ht_set(&(@ht), __key);
+    $
+
+  to_string()
+    $
+      StringBuf sb;
+      sbuf_init(&sb, "");
+      sbuf_printf(&sb, "Set (");
+      const int64 alloc_size = @ht.alloc_size;
+      bool passed_first = false;
+
+      for (int64 i = 0; i < alloc_size; i++){
+        if (@ht.buckets[i] == BUCKET_FULL){
+          if (passed_first){
+            sbuf_printf(&sb, ", ");
+          }
+          sbuf_printf(&sb, "%s", to_string(@ht.keys[i]));
+          passed_first = true;
+        }
+      }
+      sbuf_printf(&sb, ")");
+      Value rv = string_to_val(sb.str);
+      sbuf_deinit(&sb);
+      return rv;
+    $
+
+  virtual_get size()
+    return $ int64_to_val(@ht.size) $

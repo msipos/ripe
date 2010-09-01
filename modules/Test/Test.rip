@@ -13,13 +13,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+c_total = 0
+c_false = 0
+verbose = true
+
 module Test
+  set_verbose(v)
+    verbose = v
+
+  get_results()
+    return [c_total, c_false]
+
   test(name, a, b)
+    c_total = c_total + 1
     if a == b
-      Std.print(name)
-      Std.println(" OK")
+      if verbose
+        Std.print(name)
+        Std.println(" OK")
     else
-      Std.print(name)
-      Std.println(" FAIL")
-
-
+      c_false = c_false + 1
+      if verbose
+        Std.print(name)
+        Std.println(" FAIL")
