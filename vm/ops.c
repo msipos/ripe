@@ -15,7 +15,7 @@
 
 #include "vm/vm.h"
 
-uint64 op_hash(Value v)
+int64 op_hash(Value v)
 {
   switch(v & MASK_TAIL){
     case 0b00:
@@ -40,7 +40,7 @@ uint64 op_hash(Value v)
     case 0b01:
     case 0b10:
     case 0b11:
-      return (uint64) unpack_int64(v);
+      return unpack_int64(v);
   }
   assert_never();
 }

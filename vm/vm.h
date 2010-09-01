@@ -194,7 +194,7 @@ static inline Value method_get(Value v_obj, Dsym dsym)
 //////////////////////////////////////////////////////////////////////////////
 // ops.c
 //////////////////////////////////////////////////////////////////////////////
-uint64 op_hash(Value v);
+int64 op_hash(Value v);
 Value op_equal(Value a, Value b);
 bool op_equal2(Value a, Value b);
 Value op_not_equal(Value a, Value b);
@@ -271,6 +271,29 @@ void init2_Function();
 void func_set_vararg(Value v_func);
 
 //////////////////////////////////////////////////////////////////////////////
+// HashTable.c
+//////////////////////////////////////////////////////////////////////////////
+typedef enum {
+  BUCKET_EMPTY = 0,
+  BUCKET_FULL
+} BucketType;
+
+typedef struct {
+  uint64 size;
+  uint64 alloc_size;
+  BucketType* buckets;
+  Value* keys;
+  Value* values;
+} HashTable;
+
+bool ht_query(HashTable* ht, Value key);
+bool ht_query2(HashTable* ht, Value key, Value* value);
+void ht_set(HashTable* ht, Value key);
+void ht_set2(HashTable* ht, Value key, Value value);
+void ht_init(HashTable* ht);
+void ht_init2(HashTable* ht);
+
+//////////////////////////////////////////////////////////////////////////////
 // Integer.c
 //////////////////////////////////////////////////////////////////////////////
 void init1_Integer();
@@ -278,33 +301,6 @@ void init2_Integer();
 #define int64_to_val(a) pack_int64(a)
 #define val_to_int64(v)  ({ obj_verify(v, klass_Integer); unpack_int64(v); })
 int64 val_to_int64_soft(Value v);
-
-//////////////////////////////////////////////////////////////////////////////
-// Map.c
-//////////////////////////////////////////////////////////////////////////////
-typedef enum {
-  BUCKET_EMPTY = 0,
-  BUCKET_WAS_FULL,
-  BUCKET_FULL
-} BucketType;
-
-typedef struct {
-  BucketType type;
-  Value key;
-  Value value;
-} Bucket;
-
-typedef struct {
-  Bucket* buckets;
-  int64 size;
-  int64 alloc_size;
-} Map;
-
-void init1_Map();
-void init2_Map();
-bool map_query(Map* map, Value key, Value* value);
-void map_set(Map* map, Value key, Value value);
-void map_init(Map* map);
 
 //////////////////////////////////////////////////////////////////////////////
 // Object.c

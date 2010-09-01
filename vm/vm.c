@@ -45,7 +45,6 @@ int main(int argc, char** argv)
   init1_Double();
   init1_Arrays();
   init1_Complex();
-  init1_Map();
   ripe_module1();
 
   // Phase 1.5
@@ -59,7 +58,6 @@ int main(int argc, char** argv)
   init2_Double();
   init2_Arrays();
   init2_Complex();
-  init2_Map();
   ripe_module2();
 
   // Lookup main symbol

@@ -1,0 +1,56 @@
+$
+  #include "clib/stringbuf.h"
+$
+
+class Map
+  $
+    HashTable ht;
+  $
+  constructor new()
+    $
+      ht_init2(&(@ht));
+    $
+
+  index(key)
+    $
+      Value result;
+      if (ht_query2(&(@ht), __key, &result))
+        return result;
+      exc_raise("key error: '%s'", to_string(__key));
+    $
+
+  has_key?(key)
+    $
+      return pack_bool(ht_query2(&(@ht), __key, NULL));
+    $
+
+  index_set(key, value)
+    $
+      ht_set2(&(@ht), __key, __value);
+    $
+
+  to_string()
+    $
+      StringBuf sb;
+      sbuf_init(&sb, "");
+      sbuf_printf(&sb, "Map (");
+      const int64 alloc_size = @ht.alloc_size;
+      bool passed_first = false;
+
+      for (int64 i = 0; i < alloc_size; i++){
+        if (@ht.buckets[i] == BUCKET_FULL){
+          if (passed_first){
+            sbuf_printf(&sb, ", ");
+          }
+          sbuf_printf(&sb, "%s => %s", to_string(@ht.keys[i]), to_string(@ht.values[i]));
+          passed_first = true;
+        }
+      }
+      sbuf_printf(&sb, ")");
+      Value rv = string_to_val(sb.str);
+      sbuf_deinit(&sb);
+      return rv;
+    $
+
+  virtual_get size()
+    return $ int64_to_val(@ht.size) $
