@@ -5,7 +5,7 @@
 modules = ['Test', 'Std', 'Gsl', 'Sdl', 'Math', 'TextFile', 'Map', 'Gd',
            'Array1', 'String', 'Flags', 'Tuple', 'Range', 'Set']
 DEF_MODULES = ['Array1', 'Std', 'String', 'Flags', 'Tuple', 'Range', 'Map',
-               'Set',]
+               'Set', 'TextFile']
 
 #       BUILD SCRIPT FROM HERE ON
 import os, sys, tools
