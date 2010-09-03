@@ -35,6 +35,9 @@
           <keyword>false</keyword>
           <keyword>nil</keyword>
           <keyword>eof</keyword>
+          <keyword>and</keyword>
+          <keyword>or</keyword>
+          <keyword>not</keyword>
           <keyword>while</keyword>
           <keyword>loop</keyword>
           <keyword>for</keyword>
