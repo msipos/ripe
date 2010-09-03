@@ -275,6 +275,7 @@ void func_set_vararg(Value v_func);
 //////////////////////////////////////////////////////////////////////////////
 typedef enum {
   BUCKET_EMPTY = 0,
+  BUCKET_WAS_FULL,
   BUCKET_FULL
 } BucketType;
 
@@ -290,6 +291,7 @@ bool ht_query(HashTable* ht, Value key);
 bool ht_query2(HashTable* ht, Value key, Value* value);
 void ht_set(HashTable* ht, Value key);
 void ht_set2(HashTable* ht, Value key, Value value);
+bool ht_remove(HashTable* ht, Value key);
 void ht_init(HashTable* ht);
 void ht_init2(HashTable* ht);
 

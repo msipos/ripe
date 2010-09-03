@@ -18,6 +18,8 @@
 static uint64 query(BucketType* buckets, Value* keys, uint64 size, Value key)
 {
   const uint64 h = op_hash(key);
+  bool first_empty = false;
+  uint64 first_empty_place;
 
   for (uint64 idx = 0; idx < size; idx++){
     // Quadratic probing
@@ -25,12 +27,20 @@ static uint64 query(BucketType* buckets, Value* keys, uint64 size, Value key)
 
     switch(buckets[place]){
       case BUCKET_EMPTY:
+        if (first_empty) return first_empty_place;
         return place;
+      case BUCKET_WAS_FULL:
+        if (not first_empty){
+          first_empty = true;
+          first_empty_place = place;
+        }
+        break;
       case BUCKET_FULL:
         if (op_equal2(key, keys[place])) return place;
         break;
     }
   }
+  if (first_empty) return first_empty_place;
   assert_never();
 }
 
@@ -64,15 +74,27 @@ static void rehash(HashTable* ht, bool do_values)
 bool ht_query(HashTable* ht, Value key)
 {
   uint64 place = query(ht->buckets, ht->keys, ht->alloc_size, key);
-  return ht->buckets[place] != BUCKET_EMPTY;
+  return ht->buckets[place] == BUCKET_FULL;
 }
 
 bool ht_query2(HashTable* ht, Value key, Value* value)
 {
   uint64 place = query(ht->buckets, ht->keys, ht->alloc_size, key);
-  if (ht->buckets[place] == BUCKET_EMPTY) return false;
+  if (ht->buckets[place] != BUCKET_FULL) return false;
   if (value != NULL) *value = ht->values[place];
   return true;
+}
+
+bool ht_remove(HashTable* ht, Value key)
+{
+  uint64 place = query(ht->buckets, ht->keys, ht->alloc_size, key);
+  if (ht->buckets[place] == BUCKET_FULL){
+    ht->size--;
+    ht->buckets[place] = BUCKET_WAS_FULL;
+    ht->keys[place] = VALUE_NIL;
+    return true;
+  }
+  return false;
 }
 
 // TODO: This function is almost carbon copy of ht_set2. Maybe there's a

@@ -7,6 +7,10 @@ FILE=operators.rip
 echo "Running $FILE ..."
 $BIN $FLAGS test/suite/$FILE
 
+FILE=stdlib.rip
+echo "Running $FILE ..."
+$BIN $FLAGS test/suite/$FILE
+
 FILE=varargs.rip
 echo "Running $FILE ..."
 $BIN $FLAGS test/suite/$FILE
@@ -23,18 +27,10 @@ FILE=cdata-class.rip
 echo "Running $FILE ..."
 $BIN $FLAGS test/suite/$FILE
 
-FILE=fields.rip
-echo "Running $FILE ..."
-$BIN $FLAGS test/suite/$FILE
-
 FILE=sdl.rip
 echo "Running $FILE ..."
 $BIN $FLAGS test/suite/$FILE
 
 FILE=draw.rip
-echo "Running $FILE ..."
-$BIN $FLAGS test/suite/$FILE
-
-FILE=stdlib.rip
 echo "Running $FILE ..."
 $BIN $FLAGS test/suite/$FILE

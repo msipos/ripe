@@ -1,4 +1,0 @@
-main()
-  Test.test("array.size", [1, 2, 3].size, 3)
-
-

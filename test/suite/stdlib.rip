@@ -43,17 +43,34 @@ Map()
 
 Set()
   set = Set.new()
-  set.add("hello")
-  set.add("world")
-  set.add("world")
-  Test.test("Set.size", set.size, 2)
-  Test.test("Set.has?", set.has?("hello"), true)
-  Test.test("Set.has?", set.has?("duck"), false)
+  set.add("Serbia")
+  set.add("France")
+  set.add("England")
+  set.add("Portugal")
+  set.add("Spain")
+
+  Test.test("Set.size", set.size, 5)
+  Test.test("Set.has?", set.has?("Serbia"), true)
+  Test.test("Set.has?", set.has?("Hungary"), false)
+
+  set.remove("Serbia")
+  Test.test("Set.remove()", set.has?("Serbia"), false)
+  Test.test("Set.remove()", set.size, 4)
+
   n = 0
   for v in set
     n = n + 1
     Test.test("Set.has?", set.has?(v), true)
-  Test.test("Set iterator", n, 2)
+  Test.test("Set iterator", n, 4)
+
+  n = 0
+  for i in 1:set.alloc_size
+    v = set.get_bucket(i)
+    if v != nil
+      Test.test("Set.has?", set.has?(v), true)
+      n = n + 1
+  Test.test("Set.get_bucket", n, 4)
+
 
 arrays()
   name = "arrays"

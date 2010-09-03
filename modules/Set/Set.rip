@@ -25,6 +25,11 @@ class Set
       ht_set(&(@ht), __key);
     $
 
+  remove(key)
+    $
+      return pack_bool(ht_remove(&(@ht), __key));
+    $
+
   to_string()
     $
       StringBuf sb;
@@ -48,8 +53,23 @@ class Set
       return rv;
     $
 
+  get_bucket(bucket)
+    $
+      int64 idx = val_to_int64(__bucket);
+      if (idx < 1 or idx > @ht.alloc_size)
+        exc_raise("invalid index %" PRId64 " in Set with %" PRId64" buckets",
+                  idx, @ht.alloc_size);
+      if (@ht.buckets[idx-1] == BUCKET_FULL){
+        return @ht.keys[idx-1];
+      }
+      return VALUE_NIL;
+    $
+
   virtual_get size()
     return $ int64_to_val(@ht.size) $
+
+  virtual_get alloc_size()
+    return $ int64_to_val(@ht.alloc_size) $
 
 class SetIterator
   $
