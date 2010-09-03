@@ -48,6 +48,12 @@ Set()
   set.add("world")
   Test.test("Set.size", set.size, 2)
   Test.test("Set.has?", set.has?("hello"), true)
+  Test.test("Set.has?", set.has?("duck"), false)
+  n = 0
+  for v in set
+    n = n + 1
+    Test.test("Set.has?", set.has?(v), true)
+  Test.test("Set iterator", n, 2)
 
 arrays()
   name = "arrays"

@@ -6,6 +6,10 @@ class Set
   $
     HashTable ht;
   $
+
+  get_iter()
+    return SetIterator.new(self)
+
   constructor new()
     $
       ht_init(&(@ht));
@@ -46,3 +50,26 @@ class Set
 
   virtual_get size()
     return $ int64_to_val(@ht.size) $
+
+class SetIterator
+  $
+    HashTable* ht;
+    int64 cur;
+  $
+  constructor new(set)
+    $
+      @ht = obj_c_data(__set);
+      @cur = 0;
+    $
+
+  iter()
+    $
+      while (@cur < @ht->alloc_size){
+        if (@ht->buckets[@cur] == BUCKET_FULL){
+          @cur++;
+          return @ht->keys[@cur - 1];
+        }
+        @cur++;
+      }
+      return VALUE_EOF;
+    $
