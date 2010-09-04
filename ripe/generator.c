@@ -252,12 +252,19 @@ static void module_pop()
 // CURRENT CONTEXT
 ///////////////////////////////////////////////////////////////////////////////
 
+typedef enum {
+  CLASS_VIRTUAL_OBJECT,
+  CLASS_CDATA_OBJECT,
+  CLASS_FIELD_OBJECT
+} ClassType;
+
 int context;
 #define CONTEXT_NONE 1
 #define CONTEXT_CLASS 2
 const char* context_class_name;
 const char* context_class_c_name;
 const char* context_class_typedef;
+ClassType context_class_type;
 Dict* context_class_dict;
 int context2;
 #define CONTEXT_FUNC        1
@@ -534,6 +541,10 @@ static const char* eval_expr(Node* expr)
           raise_error(mem_asprintf("'@%s' in something that's not a class", name),
                       expr);
         }
+        if (context_class_type != CLASS_FIELD_OBJECT){
+          raise_error(mem_asprintf("'@%s' in a class that's not a field class",
+                                   name), expr);
+        }
         char* field_int_var;
         if (not dict_query(context_class_dict, &name, &field_int_var)){
           static int counter = 0; counter++;
@@ -546,11 +557,15 @@ static const char* eval_expr(Node* expr)
         return mem_asprintf("_c_data[%s]", field_int_var);
       }
     case C_CODE:
-      if (context2 == CONTEXT_METHOD or context2 == CONTEXT_CONSTRUCTOR){
+      {
         const char* str = util_trim_ends(expr->text);
-        return util_replace(str, '@', "_c_data->");
+        if (context2 == CONTEXT_METHOD or context2 == CONTEXT_CONSTRUCTOR){
+          if (strchr(str, '@') != NULL and context_class_type != CLASS_CDATA_OBJECT)
+            raise_error("@ in C code in a class that is not cdata", expr);
+          return util_replace(str, '@', "_c_data->");
+        }
+        return str;
       }
-      return util_trim_ends(expr->text);
     default:
       assert_never();
   }
@@ -926,93 +941,105 @@ static void gen_method(const char* method_name, Node* param_list, Node* stmt_lis
 
   sbuf_printf(&sb_contents, "static Value %s(%s){\n",
               c_method_name, gen_params(param_list));
-  sbuf_printf(&sb_contents, "  %s* _c_data;\n", context_class_typedef);
-  sbuf_printf(&sb_contents, "  _c_data = (%s*) obj_c_data(__self);\n",
-              context_class_typedef);
+  if (context_class_type == CLASS_CDATA_OBJECT
+      or context_class_type == CLASS_FIELD_OBJECT){
+    sbuf_printf(&sb_contents, "  %s* _c_data;\n", context_class_typedef);
+    sbuf_printf(&sb_contents, "  _c_data = (%s*) obj_c_data(__self);\n",
+                context_class_typedef);
+  }
   gen_func_code(stmt_list);
   pop_locals();
 
   sbuf_printf(&sb_contents, "}\n");
 }
 
-static void gen_class(Node* class)
+static void gen_class(Node* klass)
 {
   push_locals();
   static int counter = 0;
   counter++;
   context = CONTEXT_CLASS;
-  context_class_name = node_get_child(class, 0)->text;
+  context_class_name = node_get_string(klass, "name");
   context_class_c_name = mem_asprintf("klass%d", counter);
   context_class_dict = dict_new(sizeof(char*), sizeof(char*),
                                 dict_hash_string, dict_equal_string);
   sbuf_printf(&sb_header, "static Klass* %s;\n", context_class_c_name);
-  Node* ast = node_get_child(class, 1);
+  Node* ast = node_get_child(klass, 0);
 
   // Figure out the type of the object
-  bool class_type_cdata = false;
-  bool class_type_fields = false;
+  context_class_type = CLASS_VIRTUAL_OBJECT;
   for (int i = 0; i < ast->children.size; i++){
     Node* n = node_get_child(ast, i);
     if (n->type == C_CODE){
-      class_type_cdata = true;
+      if (context_class_type == CLASS_FIELD_OBJECT){
+        raise_error(mem_asprintf("class %s with both cdata and fields",
+                                 context_class_name), klass);
+      }
+      context_class_type = CLASS_CDATA_OBJECT;
     }
     if (n->type == TL_VAR){
-      class_type_fields = true;
-    }
-  }
-  if (class_type_cdata and class_type_fields){
-    raise_error("Can't make a class with cdata and fields together",
-                class);
-  }
-
-  if (not class_type_cdata and not class_type_fields){
-    class_type_cdata = true;
-  }
-
-  // Construct the typedef
-  if (class_type_cdata) {
-    context_class_typedef = mem_asprintf("KlassCData%d", counter);
-    sbuf_printf(&sb_header, "typedef struct {\n");
-    for (int i = 0; i < ast->children.size; i++){
-      Node* n = node_get_child(ast, i);
-      if (n->type == C_CODE){
-        sbuf_printf(&sb_header, "%s", util_trim_ends(n->text));
+      if (context_class_type == CLASS_CDATA_OBJECT){
+        raise_error(mem_asprintf("class %s with both cdata and fields",
+                                 context_class_name), klass);
       }
+      context_class_type = CLASS_FIELD_OBJECT;
     }
-    sbuf_printf(&sb_header, "} %s;\n", context_class_typedef);
-    // TODO: Class parents
-    sbuf_printf(&sb_init1, "  %s = klass_new(dsym_get(\"%s\"), "
-                           "dsym_get(\"%s\"), KLASS_OBJECT, sizeof(%s));\n",
-                context_class_c_name, context_class_name, "Object",
-                context_class_typedef);
-  } else {
-    // _c_data is of the type Value* for field objects
-    context_class_typedef = "Value";
-    sbuf_printf(&sb_init1, "  %s = klass_new(dsym_get(\"%s\"), "
-                           "dsym_get(\"%s\"), KLASS_OBJECT, 0);\n",
-                context_class_c_name, context_class_name, "Object");
-    for (int i = 0; i < ast->children.size; i++){
-      Node* n = node_get_child(ast, i);
-      if (n->type == TL_VAR){
-        const char* var_name = node_get_string(n, "name");
-        const char* annotation = node_get_string(n, "annotation");
-        const char* var_type = "";
-        if (strcmp(annotation, "readable") == 0){
-          var_type = "FIELD_READABLE";
-        } else if (strcmp(annotation, "writable") == 0){
-          var_type = "FIELD_READABLE | FIELD_WRITABLE";
-        } else if (strcmp(annotation, "private") == 0){
-          var_type = "0";
-        } else {
-          raise_error(mem_asprintf("invalid annotation '%s'", annotation), n);
+  }
+
+  // Generate class and any of the cdata/fields
+  switch(context_class_type){
+    case CLASS_CDATA_OBJECT:
+      context_class_typedef = mem_asprintf("KlassCData%d", counter);
+      sbuf_printf(&sb_header, "typedef struct {\n");
+      for (int i = 0; i < ast->children.size; i++){
+        Node* n = node_get_child(ast, i);
+        if (n->type == C_CODE){
+          sbuf_printf(&sb_header, "%s", util_trim_ends(n->text));
         }
-        sbuf_printf(&sb_init1, "  klass_new_field(%s, dsym_get(\"%s\"), "
-                                 "%s);\n", context_class_c_name, var_name,
-                                 var_type);
       }
-    }
+      sbuf_printf(&sb_header, "} %s;\n", context_class_typedef);
+      // TODO: Class parents
+      sbuf_printf(&sb_init1, "  %s = klass_new(dsym_get(\"%s\"), "
+                             "dsym_get(\"%s\"), KLASS_CDATA_OBJECT, sizeof(%s));\n",
+                  context_class_c_name, context_class_name, "Object",
+                  context_class_typedef);
+      break;
+    case CLASS_FIELD_OBJECT:
+      // _c_data is of the type Value* for field objects
+      context_class_typedef = "Value";
+      sbuf_printf(&sb_init1, "  %s = klass_new(dsym_get(\"%s\"), "
+                             "dsym_get(\"%s\"), KLASS_FIELD_OBJECT, 0);\n",
+                  context_class_c_name, context_class_name, "Object");
+
+      for (int i = 0; i < ast->children.size; i++){
+        Node* n = node_get_child(ast, i);
+        if (n->type == TL_VAR){
+          const char* var_name = node_get_string(n, "name");
+          const char* annotation = node_get_string(n, "annotation");
+          const char* var_type = "";
+          if (strcmp(annotation, "readable") == 0){
+            var_type = "FIELD_READABLE";
+          } else if (strcmp(annotation, "writable") == 0){
+            var_type = "FIELD_READABLE | FIELD_WRITABLE";
+          } else if (strcmp(annotation, "private") == 0){
+            var_type = "0";
+          } else {
+            raise_error(mem_asprintf("invalid annotation '%s'", annotation), n);
+          }
+          sbuf_printf(&sb_init1, "  klass_new_field(%s, dsym_get(\"%s\"), "
+                                   "%s);\n", context_class_c_name, var_name,
+                                   var_type);
+        }
+      }
+      break;
+    case CLASS_VIRTUAL_OBJECT:
+      context_class_typedef = NULL;
+      sbuf_printf(&sb_init1, "  %s = klass_new(dsym_get(\"%s\"), "
+                             "dsym_get(\"%s\"), KLASS_VIRTUAL_OBJECT, 0);\n",
+                  context_class_c_name, context_class_name, "Object");
   }
 
+  // Generate all the methods and constructors
   for (int i = 0; i < ast->children.size; i++){
     Node* n = node_get_child(ast, i);
     switch(n->type){

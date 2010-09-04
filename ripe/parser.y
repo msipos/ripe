@@ -136,7 +136,7 @@ toplevel:         C_CODE
 toplevel:         "class" ID START toplevel_list END
 {
   $$ = node_new(CLASS);
-  node_add_child($$, $2);
+  node_set_string($$, "name", $2->text);
   node_add_child($$, $4);
 };
 toplevel:         ID ID

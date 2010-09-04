@@ -44,9 +44,12 @@ extern Dsym dsym_lte, dsym_lte2;
 //////////////////////////////////////////////////////////////////////////////
 // klass.c
 //////////////////////////////////////////////////////////////////////////////
+// Rules are the following: Anything can inherit from a VIRTUAL_OBJECT.
+// VIRTUAL_OBJECT can also inherit anyone. FIELD_OBJECT may inherit another
+// FIELD_OBJECT. No other combinations are allowed.
 typedef enum {
   KLASS_DIRECT,
-  KLASS_OBJECT,
+  KLASS_VIRTUAL_OBJECT,
   KLASS_CDATA_OBJECT,
   KLASS_FIELD_OBJECT
 } KlassType;
