@@ -96,10 +96,15 @@ void common_init_phase15();
 
 void stack_init();
 void stack_push(Value func);
+void stack_push_catch_all();
+void stack_push_catch(Klass* exc_type);
 void stack_pop();
 
-#define exc_register_any() 0
-void exc_register_any2();
+#define exc_register_catch_all()   ({ \
+                                     int _tmp = setjmp(exc_jb); \
+                                     stack_push_catch_all(); \
+                                     _tmp; \
+                                   })
 jmp_buf exc_jb; // TODO: Make this thread safe.
 void exc_raise(char* format, ...) __attribute__ ((noreturn)) ;
 

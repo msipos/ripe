@@ -49,17 +49,24 @@ static const char* util_replace(const char* str, const char c,
   return out;
 }
 
-static const char* util_make_c_name(const char* ripe_name)
+// Replace all occurences of '?', '!' and '.' with '_'
+static const char* util_escape(const char* input)
 {
-  char* c_name = mem_asprintf("__%s", ripe_name);
-  char* s = c_name;
+  char* output = mem_strdup(input);
+  char* s = output;
   while (*s != 0){
     if (*s == '?' or *s == '!' or *s == '.'){
       *s = '_';
     }
     s++;
   }
-  return c_name;
+  return output;
+}
+
+static const char* util_make_c_name(const char* ripe_name)
+{
+  char* c_name = mem_asprintf("__%s", ripe_name);
+  return util_escape(c_name);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -147,66 +154,84 @@ static void dump_output(FILE* f, const char* module_name)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// DYNAMIC AND STATIC SYMBOL TABLES
+// DYNAMIC SYMBOL, STATIC SYMBOL AND TYPE TABLES
 ///////////////////////////////////////////////////////////////////////////////
 
-static Dict static_symbols; // symbol_name -> integer 0...
-static Dict dynamic_symbols; // symbol name -> integer 0...
+static Dict tbl_ssym; // symbol_name -> string name of C variable of type Value
+static Dict tbl_dsym; // symbol name -> integer 0...
+static Dict tbl_types; // type name -> string name of C variable of type Klass*
 
 static void tables_init()
 {
-  dict_init(&static_symbols, sizeof(char*), sizeof(uint64),
+  dict_init(&tbl_ssym, sizeof(char*), sizeof(char*),
             dict_hash_string, dict_equal_string);
-  dict_init(&dynamic_symbols, sizeof(char*), sizeof(uint64),
+  dict_init(&tbl_dsym, sizeof(char*), sizeof(char*),
+            dict_hash_string, dict_equal_string);
+  dict_init(&tbl_types, sizeof(char*), sizeof(char*),
             dict_hash_string, dict_equal_string);
 }
 
-static uint64 static_symbol2(const char* name)
+// Returns the name of the global static C variable of type Klass* that
+// corresponds to that typename.
+static const char* tbl_get_type(const char* type)
 {
+  char* klassp_c_var;
+  if (dict_query(&tbl_types, &type, &klassp_c_var))
+    return klassp_c_var;
+
   static uint64 counter = 0;
-
-  uint64 value;
-  // Already is in the symbol table
-  if (dict_query(&static_symbols, &name, &value)){
-    return value;
-  }
-
-  // Add it to the symbol table
-  dict_set(&static_symbols, &name, &counter);
-  sbuf_printf(&sb_header, "static Value ssym%"PRIu64";\n", counter);
-  sbuf_printf(&sb_init2, "  ssym%"PRIu64" = ssym_get(\"%s\");\n",
-                         counter, name);
   counter++;
-  return counter-1;
-}
-static const char* static_symbol(const char* name)
-{
-  return mem_asprintf("ssym%"PRIu64, static_symbol2(name));
+  klassp_c_var = mem_asprintf("_klass%"PRIu64"_%s",
+                              counter,
+                              util_escape(type));
+  sbuf_printf(&sb_header, "static Klass* %s;\n",
+              klassp_c_var);
+  sbuf_printf(&sb_init2, "  %s = klass_get(dsym_get(\"%s\"));\n",
+              klassp_c_var, type);
+  dict_set(&tbl_types, &type, &klassp_c_var);
+  return klassp_c_var;
 }
 
-// Register a dynamic symbol and return a string that can be used
-// C code to identify this symbol.
-static uint64 dynamic_symbol2(const char* name)
+// Returns the name of the global static C variable of type Value that
+// corresponds to that symbol.
+static const char* tbl_get_ssym(const char* symbol)
 {
+  char* ssym_c_var;
+  if (dict_query(&tbl_ssym, &symbol, &ssym_c_var))
+    return ssym_c_var;
+
   static uint64 counter = 0;
-
-  uint64 value;
-  if (dict_query(&dynamic_symbols, &name, &value)){
-    return value;
-  }
-
-  // Add it to the symbol table
-  const char* dsym = mem_asprintf("dsym%"PRIu64, counter);
-  dict_set(&dynamic_symbols, &name, &counter);
-  sbuf_printf(&sb_header, "static Value %s;\n", dsym);
-  sbuf_printf(&sb_init1, "  %s = dsym_get(\"%s\");\n",
-                         dsym, name);
   counter++;
-  return counter-1;
+
+  ssym_c_var = mem_asprintf("_ssym%"PRIu64"_%s",
+                            counter,
+                            util_escape(symbol));
+  sbuf_printf(&sb_header, "static Value %s;\n", ssym_c_var);
+  sbuf_printf(&sb_init2, "  %s = ssym_get(\"%s\");\n",
+                         ssym_c_var, symbol);
+  dict_set(&tbl_ssym, &symbol, &ssym_c_var);
+  return ssym_c_var;
 }
-static const char* dynamic_symbol(const char* name)
+
+// Returns the name of the global static C variable of type Dsym that
+// corresponds to that symbol.
+static const char* tbl_get_dsym(const char* symbol)
 {
-  return mem_asprintf("dsym%"PRIu64, dynamic_symbol2(name));
+  char* dsym_c_var;
+  if (dict_query(&tbl_dsym, &symbol, &dsym_c_var))
+    return dsym_c_var;
+
+  static uint64 counter = 0;
+  counter++;
+
+  dsym_c_var = mem_asprintf("_dsym%"PRIu64"_%s",
+                            counter,
+                            util_escape(symbol));
+  sbuf_printf(&sb_header, "static Dsym %s;\n", dsym_c_var);
+  sbuf_printf(&sb_init2, "  %s = dsym_get(\"%s\");\n",
+                         dsym_c_var, symbol);
+  dict_set(&tbl_dsym, &symbol, &dsym_c_var);
+  return dsym_c_var;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -346,7 +371,7 @@ static const char* obj_call(const char* obj, const char* method, int num_args,
                             const char* comma_args)
 {
   return mem_asprintf("method_call%d(%s, %s %s)",
-                      num_args, obj, dynamic_symbol(method), comma_args);
+                      num_args, obj, tbl_get_dsym(method), comma_args);
 }
 
 // Returns code for accessing index (if assign = NULL), or setting index
@@ -389,6 +414,31 @@ static const char* eval_expr_as_static(Node* expr)
   }
 }
 
+// Attempt to evaluate the expression as an identifier with dots, otherwise
+// return NULL.
+// I.e. Std.println would evaluate and return "Std.println", but (1+1).to_string
+// would not.
+static const char* eval_expr_as_id(Node* expr)
+{
+  switch(expr->type){
+    case ID:
+      return expr->text;
+    case EXPR_FIELD:
+      {
+        Node* parent = node_get_child(expr, 0);
+        Node* field = node_get_child(expr, 1);
+        assert(field->type == ID);
+        const char* s = eval_expr_as_id(parent);
+        if (s != NULL) return mem_asprintf("%s.%s", s, field->text);
+        else return NULL;
+      }
+    default:
+      // Anything other than ID or EXPR_FIELD means that it cannot be a
+      // static symbol.
+      return NULL;
+  }
+}
+
 static const char* eval_expr(Node* expr)
 {
   if (is_unary_op(expr))
@@ -413,7 +463,7 @@ static const char* eval_expr(Node* expr)
     case ID:
       {
         const char* local = query_local(expr->text);
-        if (local == NULL) return static_symbol(expr->text);
+        if (local == NULL) return tbl_get_ssym(expr->text);
         return mem_strdup(local);
       }
     case INT:
@@ -455,7 +505,7 @@ static const char* eval_expr(Node* expr)
           return mem_asprintf(
                    "func_call%u(%s %s)",
                    node_num_children(arg_list),
-                   static_symbol(mem_asprintf("%s.%s", s, field->text)),
+                   tbl_get_ssym(mem_asprintf("%s.%s", s, field->text)),
                    eval_comma_expr_list(arg_list)
                  );
         } else {
@@ -486,7 +536,7 @@ static const char* eval_expr(Node* expr)
         return mem_asprintf(
                  "func_call%u(%s %s)",
                  node_num_children(arg_list),
-                 static_symbol(left->text),
+                 tbl_get_ssym(left->text),
                  eval_comma_expr_list(arg_list)
                );
       }
@@ -522,7 +572,7 @@ static const char* eval_expr(Node* expr)
 
           return mem_asprintf("field_get(%s, %s)",
                               eval_expr(parent),
-                              dynamic_symbol(field->text));
+                              tbl_get_dsym(field->text));
         } else {
           // Could be a global variable.
           const char* global_var = query_local(s);
@@ -530,7 +580,7 @@ static const char* eval_expr(Node* expr)
             return global_var;
           }
 
-          return static_symbol(s);
+          return tbl_get_ssym(s);
         }
       }
       break;
@@ -635,7 +685,7 @@ static void compile_stmt(Node* stmt)
       break;
     case STMT_TRY:
       {
-        sbuf_printf(&sb_contents, "  if (exc_register_any() == 0){\n");
+        sbuf_printf(&sb_contents, "  if (exc_register_catch_all() == 0){\n");
         compile_stmtlist(node_get_child(stmt, 0));
         sbuf_printf(&sb_contents, "  } else {\n");
         compile_stmtlist(node_get_child(stmt, 1));
@@ -690,7 +740,7 @@ static void compile_stmt(Node* stmt)
           case EXPR_FIELD:
             sbuf_printf(&sb_contents, "  field_set(%s, %s, %s);\n",
                         eval_expr(node_get_child(left, 0)),
-                        dynamic_symbol(node_get_child(left, 1)->text),
+                        tbl_get_dsym(node_get_child(left, 1)->text),
                         eval_expr(right));
             break;
           case EXPR_AT_VAR:
@@ -844,9 +894,9 @@ static void compile_function(Node* function)
 
   // Generate
   push_locals();
-  const char* c_name = mem_asprintf("__func%u_%s",
+  const char* c_name = mem_asprintf("_func%u_%s",
                                     counter,
-                                    util_make_c_name(name));
+                                    util_escape(name));
   sbuf_printf(&sb_contents, "static Value %s(%s){\n",
               c_name, gen_params(param_list));
   sbuf_printf(&sb_init1, "  Value v_%s = func%u_to_val(%s);\n",
@@ -882,8 +932,8 @@ static void gen_constructor(Node* constructor)
   counter++;
   const char* r_constructor_name = mem_asprintf("%s%s.%s",
     module_prefix, context_class_name, node_get_string(constructor, "name"));
-  const char* c_constructor_name = mem_asprintf("__cons%d_%s", counter,
-                                        util_make_c_name(r_constructor_name));
+  const char* c_constructor_name = mem_asprintf("_cons%d_%s", counter,
+                                        util_escape(r_constructor_name));
 
   Node* param_list = node_get_child(constructor, 0);
   Node* stmt_list = node_get_child(constructor, 1);
@@ -920,8 +970,8 @@ static void gen_method(const char* method_name, Node* param_list, Node* stmt_lis
   counter++;
   const char* r_method_name = mem_asprintf("%s%s.%s",
     module_prefix, context_class_name, method_name);
-  const char* c_method_name = mem_asprintf("__met%d_%s", counter,
-                                util_make_c_name(r_method_name));
+  const char* c_method_name = mem_asprintf("_met%d_%s", counter,
+                                util_escape(r_method_name));
 
   node_prepend_child(param_list, node_new_token(ID, "self", NULL, 0));
   int num_params = param_list->children.size;

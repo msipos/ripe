@@ -234,6 +234,12 @@ stmt:             "return"
   $$ = node_new(STMT_RETURN);
   node_add_child($$, node_new(K_NIL));
 };
+stmt:             "try" block SEP "catch" block
+{
+  $$ = node_new(STMT_TRY);
+  node_add_child($$, $2);
+  node_add_child($$, $5);
+};
 stmt:             "while" expr block
 {
   $$ = node_new(STMT_WHILE);

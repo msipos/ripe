@@ -71,6 +71,20 @@ vararg()
   var_arr = []
   test_vars3(1, 2, 3)
 
+exceptions()
+  val = false
+  try
+    pass
+  catch
+    val = true
+  Test.test("no throw", val, false)
+
+  try
+    Test.error()
+  catch
+    val = true
+  Test.test("throw", val, true)
+
 main()
   Test.set_verbose(false)
   operators()
@@ -86,6 +100,8 @@ main()
   Test.test("constructor", 1, obj.i)
   obj.i = 10
   Test.test("set/get", 10, obj.i)
+
+  exceptions()
 
   arr = Test.get_results()
   correct = arr[1] - arr[2]

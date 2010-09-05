@@ -17,11 +17,14 @@
 #include <setjmp.h>
 #include <stdarg.h>
 
-#define TYPE_STACK 1
-
+#define TYPE_STACK     1
+#define TYPE_CATCH     2
+#define TYPE_CATCH_ALL 3
 typedef struct {
   int type;
   Value func;
+  Klass* exc_type;
+  char jb[sizeof(jmp_buf)];
 } Element;
 
 #define STACK_SIZE 1000
@@ -30,7 +33,23 @@ int64 stack_idx = 0;
 
 void stack_init()
 {
+}
 
+#define copy_jmp_buf(d, s)  memcpy(d, s, sizeof(jmp_buf))
+
+void stack_push_catch_all()
+{
+  stack[stack_idx].type = TYPE_CATCH_ALL;
+  copy_jmp_buf(stack[stack_idx].jb, exc_jb);
+  stack_idx++;
+}
+
+void stack_push_catch(Klass* exc_type)
+{
+  stack[stack_idx].type = TYPE_CATCH;
+  stack[stack_idx].exc_type = exc_type;
+  copy_jmp_buf(stack[stack_idx].jb, exc_jb);
+  stack_idx++;
 }
 
 void stack_push(Value func)
@@ -49,6 +68,12 @@ void stack_pop()
 void exc_raise(char* format, ...)
 {
   // TODO: Go up the stack and try to match an exception.
+  for(int64 i = stack_idx - 1; i >= 0; i--){
+    if (stack[i].type == TYPE_CATCH_ALL){
+      copy_jmp_buf(exc_jb, stack[i].jb);
+      longjmp(exc_jb, 1);
+    }
+  }
 
   for(int64 i = 0; i < stack_idx; i++){
     const char* name;
@@ -69,8 +94,4 @@ void exc_raise(char* format, ...)
   fprintf(stderr, "\n");
   va_end (ap);
   exit(1);
-}
-
-void exc_register_any2()
-{
 }
