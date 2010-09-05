@@ -178,7 +178,7 @@ vm_srcs = [
             'vm/ops-generated.c',
             'vm/util.c',
             'vm/klass.c',
-            'vm/exceptions.c',
+            'vm/stack.c',
             'vm/builtin/Object.c',
             'vm/builtin/Function.c',
             'vm/func-generated.c',

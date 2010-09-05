@@ -44,22 +44,22 @@ int64 map_prime(int64 n)
 }
 
 
-void dict_init(Dict* d, uint16 key_size, uint16 value_size, 
+void dict_init(Dict* d, uint16 key_size, uint16 value_size,
                DictHashFunc hash_func, DictEqualFunc equal_func)
 {
   assert(key_size > 0); assert(value_size > 0);
-  
+
   d->key_size = key_size;
   // key_size_align must be a multiple of sizeof(void*)
   uint16 remainder = key_size % sizeof(void*);
   if (remainder == 0) d->key_size_align = d->key_size;
   else d->key_size_align = d->key_size + sizeof(void*) - remainder;
-  
+
   d->value_size = value_size;
   remainder = value_size % sizeof(void*);
   if (remainder == 0) d->value_size_align = d->value_size;
   else d->value_size_align = d->value_size + sizeof(void*) - remainder;
-  
+
   d->total_size = d->key_size_align + d->value_size_align + sizeof(Flag);
   d->hash_func = hash_func;
   d->equal_func = equal_func;
@@ -124,7 +124,7 @@ void dict_set(Dict* d, void* key, void* value)
     // Expand buckets
     uint64 new_size = map_prime(2*(d->size+1));
     void* new_data = mem_calloc(new_size * d->total_size);
-    
+
     // Rehash each old bucket into new buckets
     for (uint64 i = 0; i < d->alloc_size; i++){
       Flag* p_flag = get_flag(d, d->data, i);
@@ -134,7 +134,7 @@ void dict_set(Dict* d, void* key, void* value)
         set(d, old_key, old_value, new_data, new_size);
       }
     }
-    
+
     // Throw away old stuff
     mem_free(d->data);
     d->alloc_size = new_size;
@@ -165,7 +165,7 @@ bool dict_query(Dict* d, void* key, void* value)
       return true;
     }
   }
-  
+
   assert_never();
   return false;
 }
@@ -191,4 +191,12 @@ bool dict_equal_uint32(void* key1, void* key2)
   return (*((uint32*) key1)) == (*((uint32*) key2));
 }
 
+uint64 dict_hash_uint64(void* key)
+{
+  return *((uint64*) key);
+}
 
+bool dict_equal_uint64(void* key1, void* key2)
+{
+  return (*((uint64*) key1)) == (*((uint64*) key2));
+}

@@ -17,6 +17,7 @@
 #include "vm/vm.h"
 
 Dict static_sym_table;
+Dict static_sym_rev_table;
 Dict dynamic_sym_table;
 Dict dynamic_sym_rev_table;
 Dsym dsym_plus, dsym_minus, dsym_star, dsym_slash;
@@ -30,6 +31,8 @@ void sym_init()
 {
   dict_init(&static_sym_table, sizeof(char*), sizeof(Value),
             dict_hash_string, dict_equal_string);
+  dict_init(&static_sym_rev_table, sizeof(Value), sizeof(char*),
+            dict_hash_uint64, dict_equal_uint64);
   dict_init(&dynamic_sym_table, sizeof(char*), sizeof(Dsym),
             dict_hash_string, dict_equal_string);
   dict_init(&dynamic_sym_rev_table, sizeof(Dsym), sizeof(char*),
@@ -59,6 +62,7 @@ Value ssym_set(const char* name, Value val)
     exc_raise("defining a symbol '%s' that was already defined", name);
   }
   dict_set(&static_sym_table, &name, &val);
+  dict_set(&static_sym_rev_table, &val, &name);
   return val;
 }
 
@@ -71,7 +75,7 @@ Dsym dsym_get(const char* name)
   }
   counter++;
   dict_set(&dynamic_sym_table, &name, &counter);
-  dict_set(&dynamic_sym_rev_table, &counter, &name);  
+  dict_set(&dynamic_sym_rev_table, &counter, &name);
   return counter;
 }
 
@@ -84,3 +88,11 @@ const char* dsym_reverse_get(Dsym dsym)
   assert_never();
 }
 
+const char* ssym_reverse_get(Value value)
+{
+  char* name;
+  if (dict_query(&static_sym_rev_table, &value, &name)){
+    return name;
+  }
+  return NULL;
+}

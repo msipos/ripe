@@ -37,7 +37,7 @@ typedef struct {
   void* data;
 } Dict;
 
-void dict_init(Dict* d, uint16 key_size, uint16 value_size, 
+void dict_init(Dict* d, uint16 key_size, uint16 value_size,
                DictHashFunc hash_func, DictEqualFunc equal_func);
 Dict* dict_new(uint16 key_size, uint16 value_size, DictHashFunc hash_func,
                DictEqualFunc equal_func);
@@ -51,5 +51,8 @@ bool dict_equal_string(void* key1, void* key2);
 
 uint64 dict_hash_uint32(void* key);
 bool dict_equal_uint32(void* key1, void* key2);
+
+uint64 dict_hash_uint64(void* key);
+bool dict_equal_uint64(void* key1, void* key2);
 
 #endif

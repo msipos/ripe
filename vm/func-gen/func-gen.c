@@ -41,7 +41,7 @@ void gen_c()
 {
   puts(header);
   printf("// func source code file\n\n");
-  
+
   printf("#include \"vm/vm.h\"\n\n");
 
   printf(
@@ -84,49 +84,59 @@ void gen_c()
     printf("  return f;\n");
     printf("}\n");
   }
-    
+
   printf("\n// callers\n");
   for (int n = 0; n <= MAX_PARAMS; n++){
     printf("Value func_call%d(Value func", n);
     print_mult("Value arg", n, 1, 1);
     printf("){\n");
     printf("  obj_verify(func, klass_func);\n");
+    printf("  stack_push(func);\n");
     printf("  Func* c_data = obj_c_data(func);\n");
     printf("  if (c_data->var_params){\n");
     if (n > 0){
       printf("    Value args[%d] = {", n);
       print_mult("arg", n, 0, 1);
       printf("};\n");
-      printf("    return func_call_opt_helper(c_data, %d, args);\n", n);
+      printf("    Value rv = func_call_opt_helper(c_data, %d, args);\n", n);
+      printf("    stack_pop();\n");
+      printf("    return rv;\n");
     } else {
-      printf("    return func_call_opt_helper(c_data, 0, NULL);\n");
+      printf("    Value rv = func_call_opt_helper(c_data, 0, NULL);\n");
+      printf("    stack_pop();\n");
+      printf("    return rv;\n");
     }
     printf("  }\n");
     printf("  if (c_data->num_params != %d){\n", n);
     printf("    exc_raise(\"function that takes %%d arguments called with %%d\"\n");
     printf("              \" arguments\", c_data->num_params, %d);\n", n);
     printf("  }\n");
-    printf("  return c_data->func%d(", n);
+    printf("  Value rv = c_data->func%d(", n);
     print_mult("arg", n, 0, 1);
     printf(");\n");
-    printf("}\n");    
+    printf("  stack_pop();\n");
+    printf("  return rv;\n");
+    printf("}\n");
   }
-  
+
   for (int n = 0; n < MAX_PARAMS; n++){
     printf("Value method_call%d(Value v_obj, Dsym dsym", n);
     print_mult("Value arg", n, 1, 1);
     printf("){\n");
     printf("  Value method = method_get(v_obj, dsym);\n");
+    printf("  stack_push(method);\n");
     printf("  Func* c_data = obj_c_data(method);\n");
 
     printf("  if (c_data->num_params != %d){\n", n+1);
     printf("    exc_raise(\"method that takes %%d arguments called with %%d\"\n");
     printf("              \" arguments\", c_data->num_params-1, %d);\n", n);
     printf("  }\n");
-    printf("  return c_data->func%d(v_obj", n+1);
+    printf("  Value rv = c_data->func%d(v_obj", n+1);
     print_mult("arg", n, 1, 1);
     printf(");\n");
-    printf("}\n");    
+    printf("  stack_pop();\n");
+    printf("  return rv;\n");
+    printf("}\n");
 
   }
 }
@@ -160,7 +170,7 @@ void gen_h()
   for (int i = 0; i <= MAX_PARAMS; i++){
     printf("Value func%d_to_val(CFunc%d);\n", i, i);
   }
-  
+
   printf("\n// callers\n\n");
   for (int i = 0; i <= MAX_PARAMS; i++){
     printf("Value func_call%d(Value", i);
@@ -172,7 +182,7 @@ void gen_h()
     print_mult("Value arg", i, 1, 1);
     printf(");\n");
   }
-  
+
   printf("\n#endif\n");
 }
 

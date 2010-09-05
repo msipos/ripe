@@ -33,6 +33,7 @@ Value ssym_get(const char* name);
 Value ssym_set(const char* name, Value val);
 Dsym dsym_get(const char* name);
 const char* dsym_reverse_get(Dsym dsym);
+const char* ssym_reverse_get(Value value);
 
 extern Dsym dsym_plus,  dsym_minus,  dsym_star,  dsym_slash;
 extern Dsym dsym_plus2, dsym_minus2, dsym_star2, dsym_slash2;
@@ -88,16 +89,16 @@ extern Dsym dsym_to_string;
 void common_init_phase15();
 
 //////////////////////////////////////////////////////////////////////////////
-// exceptions.c
+// stack.c
 //////////////////////////////////////////////////////////////////////////////
 
 #include <setjmp.h>
 
-void exc_init();
-#define exc_register_any() ({ int tmp_exc_var; \
-                              tmp_exc_var = setjmp(exc_jb); \
-                              if (tmp_exc_var == 0) exc_register_any2(); \
-                              tmp_exc_var; })
+void stack_init();
+void stack_push(Value func);
+void stack_pop();
+
+#define exc_register_any() 0
 void exc_register_any2();
 jmp_buf exc_jb; // TODO: Make this thread safe.
 void exc_raise(char* format, ...) __attribute__ ((noreturn)) ;

@@ -29,8 +29,8 @@ int main(int argc, char** argv)
   GC_INIT();
   #endif
 
-  // Initialize exception system
-  exc_init();
+  // Initialize stack and exception system
+  stack_init();
 
   // Initialize static symbol table
   sym_init();

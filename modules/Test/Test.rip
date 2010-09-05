@@ -35,3 +35,7 @@ module Test
       if verbose
         Std.print(name)
         Std.println(" FAIL")
+  error()
+    $
+      exc_raise("Test.error()");
+    $
