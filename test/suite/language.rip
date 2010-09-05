@@ -1,0 +1,96 @@
+class CDataClass
+  $
+    int64 i;
+  $
+
+  constructor new()
+    $
+      @i = 1;
+    $
+
+  virtual_get i()
+    return $ int64_to_val(@i) $
+
+  virtual_set i(i)
+    $ @i = val_to_int64(__i); $
+
+class Class
+  writable filename
+
+  constructor new(filename)
+    @filename = filename
+
+  test_filename(test)
+    Test.test("basic-class", @filename, test)
+
+operators()
+  name = "plus"
+  Test.test(name, 1+2,     3)
+  Test.test(name, 1.0+2,   3.0)
+  Test.test(name, 1+2.0,   3.0)
+  Test.test(name, 1.0+2.0, 3.0)
+  name = "minus"
+  Test.test(name, 1-2,   -1)
+  Test.test(name, -1-2,  -3)
+  Test.test(name, 2.0-3.0, -1.0)
+  name = "times"
+  Test.test(name, 2*3,   6)
+  Test.test(name, 1.0*3, 3.0)
+  name = "div"
+  Test.test(name, 3/2,   1)
+  Test.test(name, 3/2.0, 1.5)
+
+var_arr = nil
+
+test_vars1(arg1, *arg2)
+  Test.test("vararg", arg2.to_string(), var_arr.to_string())
+
+test_vars0(*args)
+  Test.test("vararg", args.to_string(), var_arr.to_string())
+
+test_vars3(arg1, arg2, arg3, *args)
+  Test.test("vararg", args.to_string(), var_arr.to_string())
+
+vararg()
+  var_arr = []
+  test_vars1(1)
+  var_arr = [2,3]
+  test_vars1(1, 2, 3)
+  var_arr = [2,3,4,5]
+  test_vars1(1, 2, 3, 4, 5)
+
+  var_arr = []
+  test_vars0()
+  var_arr = [1,2,3]
+  test_vars0(1, 2, 3)
+  var_arr = [1,2,3,4,5]
+  test_vars0(1, 2, 3, 4, 5)
+
+  var_arr = [4,5]
+  test_vars3(1, 2, 3, 4, 5)
+  var_arr = []
+  test_vars3(1, 2, 3)
+
+main()
+  Test.set_verbose(false)
+  operators()
+  vararg()
+
+  obj = Class.new("testfile")
+  obj.test_filename("testfile")
+  Test.test("basic-class", obj.filename, "testfile")
+  obj.filename = "hello"
+  Test.test("basic-class", obj.filename, "hello")
+
+  obj = CDataClass.new()
+  Test.test("constructor", 1, obj.i)
+  obj.i = 10
+  Test.test("set/get", 10, obj.i)
+
+  arr = Test.get_results()
+  correct = arr[1] - arr[2]
+  total = arr[1]
+  Std.println("language test results: ", correct, "/", total)
+  if correct < total
+    Std.println("there were ", total - correct, " errors")
+  Test.test("c-expr", $ int64_to_val(1) $, 1)
