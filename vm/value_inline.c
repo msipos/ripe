@@ -34,8 +34,7 @@
 //   Double
 //     xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxx10
 //   Extended:
-//   Character
-//     xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxx0011
+//     xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxx11
 
 // Specific values:
 #define VALUE_NIL   0b0000

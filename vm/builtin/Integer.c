@@ -15,28 +15,6 @@
 
 #include "vm/vm.h"
 
-static Value integer_to_string(Value self)
-{
-  char buf[128];
-  sprintf(buf, "%"PRId64, unpack_int64(self));
-  return string_to_val(buf);
-}
-
-void init1_Integer()
-{
-  klass_Integer = klass_new(dsym_get("Integer"),
-                         dsym_get("Object"),
-                         KLASS_DIRECT,
-                         0);
-  klass_new_method(klass_Integer,
-                   dsym_get("to_string"),
-                   func1_to_val(integer_to_string));
-}
-
-void init2_Integer()
-{
-}
-
 int64 val_to_int64_soft(Value v)
 {
   if (is_int64(v)) return unpack_int64(v);

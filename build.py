@@ -3,9 +3,9 @@
 #       USER MODIFIABLE
 # Possible build flags are "force", "quiet", "nodebug", "nogc", "profile"
 modules = ['Test', 'Std', 'Gsl', 'Sdl', 'Math', 'TextFile', 'Map', 'Gd',
-           'Array1', 'String', 'Flags', 'Tuple', 'Range', 'Set']
+           'Array1', 'String', 'Flags', 'Tuple', 'Range', 'Set', 'Integer', 'Double']
 DEF_MODULES = ['Array1', 'Std', 'String', 'Flags', 'Tuple', 'Range', 'Map',
-               'Set', 'TextFile']
+               'Set', 'TextFile', 'Integer', 'Double']
 
 #       BUILD SCRIPT FROM HERE ON
 import os, sys, tools
@@ -37,8 +37,7 @@ else:
 
 # Construct required directories
 required_dirs = ['bin', 'product', 'product/include', 'product/include/clib',
-                 'product/include/vm', 'product/include/modules',
-                 'product/include/vm/builtin/']
+                 'product/include/vm', 'product/include/modules']
 for d in required_dirs:
     tools.mkdir_safe(d)
 

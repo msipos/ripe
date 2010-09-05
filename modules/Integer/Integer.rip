@@ -1,0 +1,30 @@
+# Convert arg to an integer
+Integer(arg)
+  $
+    switch(__arg & MASK_TAIL){
+      case 0b00:
+        if (obj_klass(__arg) == klass_String){
+          char* s = val_to_string(__arg);
+          return int64_to_val(atoi(s));
+        }
+        goto err;
+      case 0b01:
+        return __arg;
+      case 0b10:
+        return int64_to_val((int64) unpack_double(__arg));
+      case 0b11:
+        goto err;
+    }
+
+    err:
+    exc_raise("Cannot convert %s into Integer",
+              dsym_reverse_get(obj_klass(__arg)->name));
+  $
+
+class Integer
+  to_string()
+    $
+      char buf[128];
+      sprintf(buf, "%"PRId64, unpack_int64(__self));
+      return string_to_val(buf);
+    $

@@ -3,6 +3,7 @@ $
   #include <stdlib.h>
 $
 
+
 module Std
   println(*args)
     Std.print_array(args)
@@ -30,18 +31,6 @@ module Std
     for i in 1:arr.size
       str = arr[i].to_string()
       $ printf("%s", val_to_string(__str)); $
-
-  atoi(arg)
-    $
-      char* s = val_to_string(__arg);
-      return int64_to_val(atoi(s));
-    $
-
-  atof(arg)
-    $
-      char* s = val_to_string(__arg);
-      return double_to_val(atof(s));
-    $
 
   get_args()
     $

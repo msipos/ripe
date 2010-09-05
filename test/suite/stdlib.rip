@@ -160,6 +160,12 @@ String()
   Test.test("string +", cat + dog, "catdog")
   Test.test("string +2", 2 + cat, "2cat")
 
+Std()
+  Test.test("Integer()", 123, Integer("123"))
+  Test.test("Integer()", 123, Integer(123.0))
+  Test.test("Double()", 123.0, Double("123.0"))
+  Test.test("Double()", 123.0, Double(123))
+
 main()
   Test.set_verbose(false)
   Gsl()
@@ -172,8 +178,8 @@ main()
   String()
   array_iterators()
   range_iterators()
-  Test.test("Std.atoi", 123, Std.atoi("123"))
-  Test.test("Std.atof", 12.3, Std.atof("12.3"))
+  Std()
+
   Test.test("Math.bit_or", Math.bit_or(15, 5), 15)
   Test.test("Math.bit_and", Math.bit_and(15, 5), 5)
 

@@ -258,8 +258,6 @@ void init2_Complex();
 //////////////////////////////////////////////////////////////////////////////
 // Double.c
 //////////////////////////////////////////////////////////////////////////////
-void init1_Double();
-void init2_Double();
 #define double_to_val(x) pack_double(x)
 #define val_to_double(v)  ({ obj_verify(v, klass_Double); unpack_double(v); })
 double val_to_double_soft(Value v);
