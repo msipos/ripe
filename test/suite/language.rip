@@ -120,10 +120,12 @@ main()
 
   exceptions()
 
+  Test.test("c-expr", $ int64_to_val(1) $, 1)
+
+  # Tally results
   arr = Test.get_results()
   correct = arr[1] - arr[2]
   total = arr[1]
-  Std.println("language test results: ", correct, "/", total)
+  Err.printf("language test results: %%/%%\n", correct, total)
   if correct < total
-    Std.println("there were ", total - correct, " errors")
-  Test.test("c-expr", $ int64_to_val(1) $, 1)
+    Err.printf("there were %% errors\n", total - correct)

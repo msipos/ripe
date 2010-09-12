@@ -57,7 +57,6 @@ void util_index_range(const char* klass_name, Range* range, int64 size,
   }
 }
 
-
 const char* to_string(Value v)
 {
   return val_to_string(

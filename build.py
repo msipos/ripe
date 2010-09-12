@@ -1,11 +1,13 @@
 #!/usr/bin/python
 
-#       USER MODIFIABLE
 # Possible build flags are "force", "quiet", "nodebug", "nogc", "profile"
-modules = ['Test', 'Std', 'Gsl', 'Sdl', 'Math', 'TextFile', 'Map', 'Gd',
-           'Array1', 'String', 'Flags', 'Tuple', 'Range', 'Set', 'Integer', 'Double']
-DEF_MODULES = ['Array1', 'Std', 'String', 'Flags', 'Tuple', 'Range', 'Map',
-               'Set', 'TextFile', 'Integer', 'Double']
+
+
+DATA_TYPES = ['Array1', 'Double', 'Flags', 'Integer', 'Map', 'Range', 'Set',
+              'String', 'Tuple']
+STDLIB = ['Err', 'Math', 'Out', 'Std', 'Test', 'TextFile']
+MODULES = DATA_TYPES + STDLIB + ['Gd', 'Gsl', 'Sdl']
+DEF_MODULES = DATA_TYPES + STDLIB
 
 #       BUILD SCRIPT FROM HERE ON
 import os, sys, tools
@@ -241,7 +243,7 @@ def build_module(module):
     if os.path.exists(path):
         cons_module(path, out, module, extra_CFLAGS)
         return
-for module in modules:
+for module in MODULES:
     build_module(module)
 
 # Cleanup

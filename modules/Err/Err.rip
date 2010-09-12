@@ -1,0 +1,30 @@
+$
+  #include <stdio.h>
+$
+
+module Err
+  print(*args)
+    $
+      Array1* arr = val_to_array1(__args);
+      char buf[common_simple_format(NULL, arr->size, arr->data)];
+      common_simple_format(buf, arr->size, arr->data);
+      fputs(buf, stderr);
+    $
+
+  println(*args)
+    $
+      Array1* arr = val_to_array1(__args);
+      char buf[common_simple_format(NULL, arr->size, arr->data)];
+      common_simple_format(buf, arr->size, arr->data);
+      fputs(buf, stderr);
+      fputc('\n', stderr);
+    $
+
+  printf(format, *args)
+    $
+      Array1* arr = val_to_array1(__args);
+      char* format = val_to_string(__format);
+      char buf[common_format(NULL, format, arr->size, arr->data)];
+      common_format(buf, format, arr->size, arr->data);
+      fputs(buf, stderr);
+    $

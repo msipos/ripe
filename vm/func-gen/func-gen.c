@@ -91,7 +91,7 @@ void gen_c()
     print_mult("Value arg", n, 1, 1);
     printf("){\n");
     printf("  obj_verify(func, klass_func);\n");
-    printf("  stack_push(func);\n");
+    printf("  stack_push_func(func);\n");
     printf("  Func* c_data = obj_c_data(func);\n");
     printf("  if (c_data->var_params){\n");
     if (n > 0){
@@ -124,7 +124,7 @@ void gen_c()
     print_mult("Value arg", n, 1, 1);
     printf("){\n");
     printf("  Value method = method_get(v_obj, dsym);\n");
-    printf("  stack_push(method);\n");
+    printf("  stack_push_func(method);\n");
     printf("  Func* c_data = obj_c_data(method);\n");
 
     printf("  if (c_data->num_params != %d){\n", n+1);

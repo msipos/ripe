@@ -28,11 +28,11 @@ module Test
     c_total = c_total + 1
     if a == b
       if verbose
-        Std.print(name)
-        Std.println(" OK")
+        Err.printf("%% OK\n", name)
     else
       c_false = c_false + 1
-      Std.println(name, " FAIL")
+      Err.printf("%% FAIL\n", name)
+
   error()
     $
       exc_raise("Test.error()");

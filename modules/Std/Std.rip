@@ -5,32 +5,18 @@ $
 
 
 module Std
-  println(*args)
-    Std.print_array(args)
-    $ printf("\n"); $
+  sprintf(format, *args)
+    return Std.sprintf_array(format, args)
 
-  format(*args)
-    return Std.format_array(args)
-
-  format_array(args)
-    if args.size == 0
-      return ""
-    $ char buf[1024];
-      buf[0] = 0; $
-    for i in 1:args.size
-      str = args[i].to_string()
-      $ strcat(buf, val_to_string(__str)); $
-    return $ string_to_val(buf) $
-
-  print(*args)
-    Std.print_array(args)
-
-  print_array(arr)
-    if arr.size == 0
-      return
-    for i in 1:arr.size
-      str = arr[i].to_string()
-      $ printf("%s", val_to_string(__str)); $
+  sprintf_array(format, array)
+    $
+      char* format = val_to_string(__format);
+      Array1* array = val_to_array1(__array);
+      uint64 len = common_format(NULL, format, array->size, array->data);
+      char out[len];
+      common_format(out, format, array->size, array->data);
+      return string_to_val(out);
+    $
 
   get_args()
     $
@@ -39,10 +25,4 @@ module Std
         args[arg-1] = string_to_val(sys_argv[arg]);
       }
       return array1_to_val(sys_argc - 1, args);
-    $
-
-  error(*args)
-    msg = Std.format_array(args)
-    $
-      exc_raise("%s", to_string(__msg));
     $

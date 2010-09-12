@@ -87,6 +87,8 @@ extern Klass* klass_Tuple;
 extern Dsym dsym_to_string;
 
 void common_init_phase15();
+uint64 common_format(char* out, char* format_string, uint64 num_values, Value* values);
+uint64 common_simple_format(char* out, uint64 num_values, Value* values);
 
 //////////////////////////////////////////////////////////////////////////////
 // stack.c
@@ -95,10 +97,11 @@ void common_init_phase15();
 #include <setjmp.h>
 
 void stack_init();
-void stack_push(Value func);
+void stack_push_func(Value func);
 void stack_push_catch_all();
 void stack_push_catch(Klass* exc_type);
 void stack_push_finally();
+void stack_push_annotation(char* annotation);
 void stack_check_unwinding();
 void stack_pop();
 void stack_display();

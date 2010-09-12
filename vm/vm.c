@@ -39,21 +39,41 @@ int main(int argc, char** argv)
   klass_init();
 
   // Phase 1
-  init1_Function();
-  init1_Object();
-  init1_Arrays();
-  init1_Complex();
+  stack_push_annotation("init1_Function");
+    init1_Function();
+  stack_pop();
+  stack_push_annotation("init1_Object");
+    init1_Object();
+  stack_pop();
+  stack_push_annotation("init1_Arrays");
+    init1_Arrays();
+  stack_pop();
+  stack_push_annotation("init1_Complex");
+    init1_Complex();
+  stack_pop();
+
   ripe_module1();
 
   // Phase 1.5
-  common_init_phase15();
-  klass_init_phase15();
+  stack_push_annotation("phase 1.5");
+    common_init_phase15();
+    klass_init_phase15();
+  stack_pop();
 
   // Phase 2
-  init2_Function();
-  init2_Object();
-  init2_Arrays();
-  init2_Complex();
+  stack_push_annotation("init2_Function");
+    init2_Function();
+  stack_pop();
+  stack_push_annotation("init2_Object");
+    init2_Object();
+  stack_pop();
+  stack_push_annotation("init2_Arrays");
+    init2_Arrays();
+  stack_pop();
+  stack_push_annotation("init2_Complex");
+    init2_Complex();
+  stack_pop();
+
   ripe_module2();
 
   // Lookup main symbol

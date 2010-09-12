@@ -111,6 +111,9 @@ void module_build_loader(const char* loader_obj_filename)
             loader_c_filename, strerror(errno));
     exit(1);
   }
+  fprintf(f, "void stack_push_annotation(char* annotation);\n");
+  fprintf(f, "void stack_pop();\n");
+
   for (int i = 0; i < modules.size; i++){
     Module* module = array_get(&modules, Module*, i);
     fprintf(f, "void init1_%s();\n", module->module_name);
@@ -120,14 +123,18 @@ void module_build_loader(const char* loader_obj_filename)
   fprintf(f, "void ripe_module1(){\n");
   for (int i = 0; i < modules.size; i++){
     Module* module = array_get(&modules, Module*, i);
-    fprintf(f, "init1_%s();\n", module->module_name);
+    fprintf(f, "  stack_push_annotation(\"init1_%s\");\n", module->module_name);
+    fprintf(f, "    init1_%s();\n", module->module_name);
+    fprintf(f, "  stack_pop();\n");
   }
   fprintf(f, "}\n");
 
   fprintf(f, "void ripe_module2(){\n");
   for (int i = 0; i < modules.size; i++){
     Module* module = array_get(&modules, Module*, i);
-    fprintf(f, "init2_%s();\n", module->module_name);
+    fprintf(f, "  stack_push_annotation(\"init2_%s\");\n", module->module_name);
+    fprintf(f, "    init2_%s();\n", module->module_name);
+    fprintf(f, "  stack_pop();\n");
   }
   fprintf(f, "}\n");
   fclose(f);

@@ -17,15 +17,17 @@
 #include <setjmp.h>
 #include <stdarg.h>
 
-#define TYPE_STACK     1
-#define TYPE_CATCH     2
-#define TYPE_CATCH_ALL 3
-#define TYPE_FINALLY   4
+#define TYPE_FUNC       1
+#define TYPE_CATCH      2
+#define TYPE_CATCH_ALL  3
+#define TYPE_FINALLY    4
+#define TYPE_ANNOTATION 5
 typedef struct {
   int type;
   Value func;
   Klass* exc_type;
   char jb[sizeof(jmp_buf)];
+  char* annotation;
 } Element;
 
 #define STACK_SIZE 1000
@@ -68,10 +70,17 @@ void stack_push_finally()
   stack_idx++;
 }
 
-void stack_push(Value func)
+void stack_push_func(Value func)
 {
-  stack[stack_idx].type = TYPE_STACK;
+  stack[stack_idx].type = TYPE_FUNC;
   stack[stack_idx].func = func;
+  stack_idx++;
+}
+
+void stack_push_annotation(char* annotation)
+{
+  stack[stack_idx].type = TYPE_ANNOTATION;
+  stack[stack_idx].annotation = annotation;
   stack_idx++;
 }
 
@@ -86,7 +95,7 @@ void stack_display()
   for(int64 i = 0; i < stack_idx; i++){
     const char* name;
     switch(stack[i].type){
-      case TYPE_STACK:
+      case TYPE_FUNC:
         name = ssym_reverse_get(stack[i].func);
         if (name == NULL) name = "?";
         break;
@@ -95,6 +104,9 @@ void stack_display()
         break;
       case TYPE_FINALLY:
         name = "try-finally";
+        break;
+      case TYPE_ANNOTATION:
+        name = stack[i].annotation;
         break;
     }
 
