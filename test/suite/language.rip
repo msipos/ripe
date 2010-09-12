@@ -78,12 +78,29 @@ exceptions()
   catch
     val = true
   Test.test("no throw", val, false)
+  #Std.println(" STACK after no throw:")
+  #Test.display_stack()
 
   try
     Test.error()
   catch
     val = true
   Test.test("throw", val, true)
+  #Std.println(" STACK after throw:")
+  #Test.display_stack()
+
+  n = 0
+  try
+    Test.error()
+  finally
+    # Std.println(" finally")
+    n = n + 1
+  catch
+    # Std.println(" catch all")
+    n = n + 1
+  Test.test("catch+finally", n, 2)
+  #Std.println(" STACK after catch+finally:")
+  #Test.display_stack()
 
 main()
   Test.set_verbose(false)

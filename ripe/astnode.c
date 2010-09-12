@@ -24,8 +24,6 @@ Node* node_new(int type)
   array_init( &(node->children), Node*);
   dict_init( &(node->props_strings), sizeof(char*), sizeof(char*),
              dict_hash_string, dict_equal_string );
-  dict_init( &(node->props_nodes), sizeof(char*), sizeof(Node*),
-             dict_hash_string, dict_equal_string );
   return node;
 }
 
@@ -63,6 +61,7 @@ uint node_num_children(Node* parent)
 
 Node* node_get_child(Node* parent, uint i)
 {
+  assert(i < parent->children.size);
   return array_get( &(parent->children), Node*, i);
 }
 
@@ -89,7 +88,11 @@ static void node_draw_r(Node* ast, int level)
   for (int i = 0; i < level; i++){
     printf("  ");
   }
-  printf("Type: %4d, Text: %s\n", ast->type, ast->text);
+  if (ast->text != NULL){
+    printf("Type: %4d '%s'\n", ast->type, ast->text);
+  } else {
+    printf("Type: %4d\n", ast->type);
+  }
   for (int i = 0; i < node_num_children(ast); i++)
   {
     node_draw_r(node_get_child(ast, i), level+1);
@@ -100,5 +103,3 @@ void node_draw(Node* ast)
 {
   node_draw_r(ast, 0);
 }
-
-

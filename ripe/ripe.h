@@ -115,20 +115,24 @@ int rc_lex();
 #define CONST             1009
 
 // Types of STMTs
-#define STMT_EXPR         1010
-#define STMT_RETURN       1011
-#define STMT_IF           1012
-#define STMT_ELIF         1013
-#define STMT_ELSE         1014
-#define STMT_PASS         1015
-#define STMT_ASSIGN       1016
-#define STMT_TRY          1019
+#define STMT_EXPR         1100
+#define STMT_RETURN       1101
+#define STMT_IF           1102
+#define STMT_ELIF         1103
+#define STMT_ELSE         1104
+#define STMT_PASS         1105
+#define STMT_ASSIGN       1106
 
-#define STMT_WHILE        1020
-#define STMT_BREAK        1021
-#define STMT_CONTINUE     1022
-#define STMT_FOR          1023
-#define STMT_LOOP         1024
+#define STMT_WHILE        1110
+#define STMT_BREAK        1111
+#define STMT_CONTINUE     1112
+#define STMT_FOR          1113
+#define STMT_LOOP         1114
+
+#define STMT_TRY          1120
+#define STMT_CATCH_ALL    1121
+#define STMT_FINALLY      1122
+
 
 // Types of EXPRs
 #define EXPR_ID_CALL      1030

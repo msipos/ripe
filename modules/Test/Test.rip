@@ -32,10 +32,13 @@ module Test
         Std.println(" OK")
     else
       c_false = c_false + 1
-      if verbose
-        Std.print(name)
-        Std.println(" FAIL")
+      Std.println(name, " FAIL")
   error()
     $
       exc_raise("Test.error()");
+    $
+
+  display_stack()
+    $
+      stack_display();
     $

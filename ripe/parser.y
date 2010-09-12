@@ -67,6 +67,7 @@
 %token   K_EOF        "eof"
 %token   K_TRY        "try"
 %token   K_CATCH      "catch"
+%token   K_FINALLY    "finally"
 %token   K_FOR        "for"
 %token   K_IN         "in"
 %token   K_PASS       "pass"
@@ -234,11 +235,20 @@ stmt:             "return"
   $$ = node_new(STMT_RETURN);
   node_add_child($$, node_new(K_NIL));
 };
-stmt:             "try" block SEP "catch" block
+stmt:             "try" block
 {
-  $$ = node_new(STMT_TRY);
-  node_add_child($$, $2);
-  node_add_child($$, $5);
+  $$ = $2;
+  $$->type = STMT_TRY;
+};
+stmt:             "catch" block
+{
+  $$ = $2;
+  $$->type = STMT_CATCH_ALL;
+};
+stmt:             "finally" block
+{
+  $$ = $2;
+  $$->type = STMT_FINALLY;
 };
 stmt:             "while" expr block
 {

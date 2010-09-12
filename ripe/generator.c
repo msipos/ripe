@@ -683,15 +683,6 @@ static void compile_stmt(Node* stmt)
         sbuf_printf(&sb_contents, "  }\n");
       }
       break;
-    case STMT_TRY:
-      {
-        sbuf_printf(&sb_contents, "  if (exc_register_catch_all() == 0){\n");
-        compile_stmtlist(node_get_child(stmt, 0));
-        sbuf_printf(&sb_contents, "  } else {\n");
-        compile_stmtlist(node_get_child(stmt, 1));
-        sbuf_printf(&sb_contents, "  }\n");
-      }
-      break;
     case STMT_WHILE:
       {
         sbuf_printf(&sb_contents, "  while (%s == VALUE_TRUE) {\n",
@@ -793,7 +784,7 @@ static void compile_stmt(Node* stmt)
     case STMT_PASS:
       break;
     default:
-      assert_never();
+      raise_error(mem_asprintf("invalid statement type %d", stmt->type), stmt);
   }
 }
 
@@ -804,11 +795,68 @@ static void compile_stmtlist(Node* stmtlist)
   pop_locals();
 }
 
+static void gen_try(Node* try_block, Node* block_list, int i)
+{
+  Node* block = node_get_child(block_list, i);
+  switch (block->type){
+    case STMT_CATCH_ALL:
+      sbuf_printf(&sb_contents, "  EXC_CA_TRY\n");
+      if (i == 0) {
+        compile_stmtlist(try_block);
+      } else {
+        gen_try(try_block, block_list, i-1);
+      }
+      sbuf_printf(&sb_contents, "  EXC_CA_CATCH\n");
+      compile_stmtlist(block);
+      sbuf_printf(&sb_contents, "  EXC_CA_END\n");
+      break;
+    case STMT_FINALLY:
+      {
+        static int counter = 0;
+        counter++;
+        const char* lbl = mem_asprintf("_lbl_finally%d", counter);
+        sbuf_printf(&sb_contents, "  EXC_FIN_TRY(%s)\n", lbl);
+        if (i == 0) {
+          compile_stmtlist(try_block);
+        } else {
+          gen_try(try_block, block_list, i-1);
+        }
+        sbuf_printf(&sb_contents, "  EXC_FIN_FINALLY(%s)\n", lbl);
+        compile_stmtlist(block);
+        sbuf_printf(&sb_contents, "  EXC_FIN_END(%s)\n", lbl);
+      }
+      break;
+  }
+}
+
 static void compile_stmtlist_no_locals(Node* stmtlist)
 {
   int prev_stmt_type = 0;
-  for (uint i = 0; i < stmtlist->children.size; i++){
+  uint i = 0;
+  while (i < stmtlist->children.size){
     Node* stmt = node_get_child(stmtlist, i);
+
+    // Compile try-catch-finally
+    if (stmt->type == STMT_TRY){
+      Node* sublist = node_new(STMT_LIST);
+      i++;
+      while (i < stmtlist->children.size){
+        Node* tmp = node_get_child(stmtlist, i);
+        if (tmp->type == STMT_CATCH_ALL or
+            tmp->type == STMT_FINALLY){
+          node_add_child(sublist, tmp);
+        } else break;
+        i++;
+      }
+
+      int num_tblocks = node_num_children(sublist);
+      if (num_tblocks == 0){
+        raise_error("try block not followed by any other block", stmt);
+      }
+      gen_try(stmt, sublist, num_tblocks - 1);
+      continue;
+    }
+
     if (stmt->type == STMT_ELSE or stmt->type == STMT_ELIF){
       if (prev_stmt_type != STMT_IF and
           prev_stmt_type != STMT_ELIF){
@@ -816,7 +864,8 @@ static void compile_stmtlist_no_locals(Node* stmtlist)
       }
     }
     prev_stmt_type = stmt->type;
-    compile_stmt(node_get_child(stmtlist, i));
+    compile_stmt(stmt);
+    i++;
   }
 }
 

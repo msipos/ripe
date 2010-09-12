@@ -48,6 +48,7 @@
           <keyword>pass</keyword>
           <keyword>try</keyword>
           <keyword>catch</keyword>
+          <keyword>finally</keyword>
           <keyword>module</keyword>
           <keyword>class</keyword>
           <keyword>constructor</keyword>
