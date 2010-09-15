@@ -32,11 +32,14 @@ void sbuf_printf(StringBuf* sbuf, const char* format, ...)
   va_start(ap, format);
   // Calculate needed buffer
   int sz = vsnprintf(NULL, 0, format, ap) + 1;
+  va_end(ap);
+
   char tmpbuf[sz];
+  va_start(ap, format);
   vsnprintf(tmpbuf, sz, format, ap);
   tmpbuf[sz - 1] = 0;
   va_end(ap);
-  
+
   uint tlen = strlen(tmpbuf);
   if (sbuf->size + tlen > sbuf->alloc_size){
     sbuf->alloc_size = (sbuf->size + tlen) * 2;
