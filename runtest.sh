@@ -3,10 +3,16 @@
 FLAGS="-m Test -m Gsl -m Sdl -m Math -m Gd"
 BIN="product/ripe"
 
-FILE=language.rip
-echo "Running $FILE ..."
-$BIN $FLAGS test/suite/$FILE
+TEST=language
+echo "Running $TEST test..."
+RIPFILE=test/suite/$TEST.rip
+EXEFILE=test/suite/$TEST
+$BIN $FLAGS -b $RIPFILE -o $EXEFILE
+./$EXEFILE
 
-FILE=stdlib.rip
-echo "Running $FILE ..."
-$BIN $FLAGS test/suite/$FILE
+TEST=stdlib
+echo "Running $TEST test..."
+RIPFILE=test/suite/$TEST.rip
+EXEFILE=test/suite/$TEST
+$BIN $FLAGS -b $RIPFILE -o $EXEFILE
+./$EXEFILE
