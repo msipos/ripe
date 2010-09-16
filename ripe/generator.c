@@ -354,13 +354,17 @@ static uint dowhile_semaphore;
 
 static const char* eval_expr(Node* expr);
 
-static const char* eval_comma_expr_list(Node* expr_list)
+static const char* eval_expr_list(Node* expr_list, bool first_comma)
 {
   assert(expr_list->type == EXPR_LIST);
   StringBuf sb_temp;
   sbuf_init(&sb_temp, "");
   for (int i = 0; i < expr_list->children.size; i++){
-    sbuf_printf(&sb_temp, ", %s", eval_expr(node_get_child(expr_list, i)));
+    if (i == 0 and not first_comma){
+      sbuf_printf(&sb_temp, "%s", eval_expr(node_get_child(expr_list, i)));
+    } else {
+      sbuf_printf(&sb_temp, ", %s", eval_expr(node_get_child(expr_list, i)));
+    }
   }
   const char* result = mem_strdup(sb_temp.str);
   sbuf_deinit(&sb_temp);
@@ -380,11 +384,11 @@ static const char* eval_index(Node* self, Node* idx, Node* assign)
 {
   if (assign == NULL) {
     return obj_call(eval_expr(self), "index", idx->children.size,
-                    eval_comma_expr_list(idx));
+                    eval_expr_list(idx, true));
   } else {
     return obj_call(eval_expr(self), "index_set", idx->children.size+1,
                     mem_asprintf("%s, %s",
-                                 eval_comma_expr_list(idx),
+                                 eval_expr_list(idx, true),
                                  eval_expr(assign)));
   }
 }
@@ -487,7 +491,7 @@ static const char* eval_expr(Node* expr)
         Node* expr_list = node_get_child(expr, 0);
         return mem_asprintf("array1_to_val2(%u %s)",
                             expr_list->children.size,
-                            eval_comma_expr_list(expr_list));
+                            eval_expr_list(expr_list, true));
       }
     case EXPR_INDEX:
       return eval_index(node_get_child(expr, 0), node_get_child(expr, 1), NULL);
@@ -506,7 +510,7 @@ static const char* eval_expr(Node* expr)
                    "func_call%u(%s %s)",
                    node_num_children(arg_list),
                    tbl_get_ssym(mem_asprintf("%s.%s", s, field->text)),
-                   eval_comma_expr_list(arg_list)
+                   eval_expr_list(arg_list, true)
                  );
         } else {
           // Dynamic call
@@ -514,7 +518,7 @@ static const char* eval_expr(Node* expr)
                    eval_expr(parent),
                    field->text,
                    node_num_children(arg_list),
-                   eval_comma_expr_list(arg_list)
+                   eval_expr_list(arg_list, true)
                  );
         }
       }
@@ -530,14 +534,19 @@ static const char* eval_expr(Node* expr)
           return mem_asprintf(
                    "tuple_to_val(%u %s)",
                    node_num_children(arg_list),
-                   eval_comma_expr_list(arg_list)
+                   eval_expr_list(arg_list, true)
                  );
+        }
+        if (strcmp(left->text, "call_func") == 0){
+          return mem_asprintf("func_call%u(%s)",
+                               node_num_children(arg_list) - 1,
+                               eval_expr_list(arg_list, false));
         }
         return mem_asprintf(
                  "func_call%u(%s %s)",
                  node_num_children(arg_list),
                  tbl_get_ssym(left->text),
-                 eval_comma_expr_list(arg_list)
+                 eval_expr_list(arg_list, true)
                );
       }
       break;
