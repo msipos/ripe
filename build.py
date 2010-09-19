@@ -5,8 +5,9 @@
 
 DATA_TYPES = ['Array1', 'Double', 'Flags', 'Integer', 'Map', 'Range', 'Set',
               'String', 'Tuple']
-STDLIB = ['Curl', 'Err', 'Math', 'Os', 'Out', 'Std', 'Test', 'TextFile']
-MODULES = DATA_TYPES + STDLIB + ['Gd', 'Gsl', 'Sdl']
+STDLIB = ['Err', 'Math', 'Os', 'Out', 'Std', 'Stream', 'Test', 'TextFile']
+OPTIONAL_MODULES = ['Curl', 'Gd', 'Gsl', 'Sdl']
+MODULES = DATA_TYPES + STDLIB
 DEF_MODULES = DATA_TYPES + STDLIB
 
 #       BUILD SCRIPT FROM HERE ON
@@ -212,17 +213,22 @@ f.close()
 ##############################################################################
 
 module_deps = vm_hs + clib_hs + ['modules/modules.h', 'product/ripe']
+failed_modules = []
 
-def cons_module(src, dest, module, extra_CFLAGS=''):
+def cons_module(src, dest, module, required, extra_CFLAGS=''):
     if tools.depends(dest, module_deps + [src]):
         tools.pprint('MOD', src, dest)
         args = ['product/ripe', '-n', module, '-c', src, '-o', dest,
                         '-f', '"%s"' % extra_CFLAGS]
         if tools.is_verbose():
             args.append('-v')
-        tools.call(args)
+        if required:
+            tools.call(args)
+        else:
+            if not tools.try_call(args):
+                failed_modules.append(module)
 
-def build_module(module):
+def build_module(module, required):
     import os.path
     out = 'product/%s.o' % module
 
@@ -236,15 +242,27 @@ def build_module(module):
         extra_CFLAGS = meta['includes']
     path = 'modules/%s/%s.rip' % (module, module)
     if os.path.exists(path):
-        cons_module(path, out, module, extra_CFLAGS)
+        cons_module(path, out, module, required, extra_CFLAGS)
         return
+    else:
+        path = 'modules/%s/%s.c' % (module, module)
+        if os.path.exists(path):
+            cons_module(path, out, module, required, extra_CFLAGS)
+            return
+        else:
+            failed_modules.append(module)
 
-    path = 'modules/%s/%s.c' % (module, module)
-    if os.path.exists(path):
-        cons_module(path, out, module, extra_CFLAGS)
-        return
 for module in MODULES:
-    build_module(module)
+    build_module(module, True)
+for module in OPTIONAL_MODULES:
+    build_module(module, False)
+
+if len(failed_modules) > 0:
+    print("WARNING: Failed building optional module(s): %s" % ", ".join(failed_modules))
+
+##############################################################################
+# CLEANUP
+##############################################################################
 
 # Cleanup
 for filename in junkyard:

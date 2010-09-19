@@ -1,0 +1,4 @@
+main()
+  Out.println("Content-type: text/html\n\n")
+  Out.println("User agent: ", Os.get_env("HTTP_USER_AGENT"))
+  Out.println("Query string: ", Curl.unescape(Os.get_env("QUERY_STRING")))

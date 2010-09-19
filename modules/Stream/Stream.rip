@@ -1,0 +1,13 @@
+module Stream
+  print(stream, *args)
+    for arg in args
+      stream.write(arg)
+
+  println(stream, *args)
+    for arg in args
+      stream.write(arg)
+    stream.write("\n")
+
+  printf(stream, format, *args)
+    string = Std.sprintf_array(format, args)
+    stream.write(string)

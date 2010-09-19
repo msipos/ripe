@@ -20,8 +20,18 @@ def call(args):
             print(cmd)
         ccall(cmd, shell=True)
     except:
-        print("Errors while compiling!")
+        print("Errors encountered while compiling!")
         sys.exit(1)
+
+def try_call(args):
+    cmd = ' '.join(flatten(args))
+    try:
+        if verbose == True:
+            print(cmd)
+        ccall(cmd, shell=True)
+        return True
+    except:
+        return False
 
 def mkdir_safe(path):
     if not os.path.exists(path):
@@ -99,4 +109,3 @@ def flatten(x):
         else:
             result.append(el)
     return result
-

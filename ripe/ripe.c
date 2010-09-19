@@ -157,7 +157,10 @@ int compile_c(const char* in_filename, const char* out_filename)
   char* cmd_line = mem_asprintf("gcc %s -c %s -o %s",
                                 cflags, in_filename, out_filename);
   if (verbose) printf("%s\n", cmd_line);
-  return system(cmd_line);
+  if (system(cmd_line)){
+    return 1;
+  }
+  return 0;
 }
 
 int compile_to_c(const char* in_filename, const char* module_name,
@@ -167,15 +170,16 @@ int compile_to_c(const char* in_filename, const char* module_name,
     printf("compiling '%s' to '%s'\n", in_filename, out_filename);
   }
   if (not path_exists(in_filename)) {
-    fprintf(stderr, "cannot open '%s' for reading: %s\n", in_filename,
-            strerror(errno));
+    fprintf(stderr, "cannot open '%s' for reading\n", in_filename);
     return 1;
   }
   Node* ast = build_tree(in_filename);
   if (ast == NULL){
+    fprintf(stderr, "error while parsing '%s'\n", in_filename);
     return 1;
   }
   if (generate(ast, module_name, in_filename, out_filename)){
+    fprintf(stderr, "error while generating '%s'\n", in_filename);
     return 1;
   }
   return 0;
@@ -192,8 +196,15 @@ int compile_rip(const char* in_filename, const char* module_name,
             strerror(errno));
     return 1;
   }
-  compile_to_c(in_filename, module_name, c_filename);
-  return compile_c(c_filename, out_filename);
+  if (compile_to_c(in_filename, module_name, c_filename)){
+    remove(c_filename);
+    return 1;
+  }
+  if (compile_c(c_filename, out_filename)){
+    remove(c_filename);
+    return 1;
+  }
+  return 0;
 }
 
 int build(const char* in_filename, const char* out_filename)
