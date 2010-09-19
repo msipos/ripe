@@ -1,0 +1,17 @@
+$
+  #include <curl/curl.h>
+$
+
+module Curl
+  unescape(str)
+    $
+      CURL* handle = curl_easy_init();
+      char* str = val_to_string(__str);
+      char* rv = curl_easy_unescape(handle, str, 0, NULL);
+    $
+    rv = $ string_to_val(rv) $
+    $
+      curl_free(rv);
+      curl_easy_cleanup(handle);
+    $
+    return rv

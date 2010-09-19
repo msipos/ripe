@@ -1,0 +1,2 @@
+includes=`curl-config --cflags`
+links=`curl-config --libs`

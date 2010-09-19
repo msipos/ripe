@@ -1,0 +1,45 @@
+$
+  #include <stdlib.h>
+  #include <unistd.h>
+  #include "clib/stringbuf.h"
+$
+
+module Os
+  get_env(var)
+    $
+      char* var = val_to_string(__var);
+      char* rv = getenv(var);
+      if (rv == NULL) return VALUE_NIL;
+      return string_to_val(rv);
+    $
+
+  get_environment()
+    m = Map.new()
+    $
+      int i = 0;
+      while (environ[i] != NULL){
+        StringBuf sb_key;
+        sbuf_init(&sb_key, "");
+        char* s = environ[i];
+        while (*s != '='){
+          sbuf_catc(&sb_key, *s);
+          s++;
+        }
+        char* key = sb_key.str; char* value = s + 1;
+    $
+    m[$ string_to_val(key) $] = $ string_to_val(value) $
+    $
+        sbuf_deinit(&sb_key);
+        i++;
+      }
+    $
+    return m
+
+  get_args()
+    $
+      Value* args = alloca((sys_argc - 1) * sizeof(Value));
+      for (int arg = 1; arg < sys_argc; arg++){
+        args[arg-1] = string_to_val(sys_argv[arg]);
+      }
+      return array1_to_val(sys_argc - 1, args);
+    $

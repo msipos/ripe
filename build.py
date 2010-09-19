@@ -5,7 +5,7 @@
 
 DATA_TYPES = ['Array1', 'Double', 'Flags', 'Integer', 'Map', 'Range', 'Set',
               'String', 'Tuple']
-STDLIB = ['Err', 'Math', 'Out', 'Std', 'Test', 'TextFile']
+STDLIB = ['Curl', 'Err', 'Math', 'Os', 'Out', 'Std', 'Test', 'TextFile']
 MODULES = DATA_TYPES + STDLIB + ['Gd', 'Gsl', 'Sdl']
 DEF_MODULES = DATA_TYPES + STDLIB
 

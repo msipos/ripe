@@ -16,3 +16,5 @@ RIPFILE=test/suite/$TEST.rip
 EXEFILE=test/suite/$TEST
 $BIN $FLAGS -b $RIPFILE -o $EXEFILE
 ./$EXEFILE
+
+$BIN $FLAGS -b test/test_cgi.rip -o test/test_cgi

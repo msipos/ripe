@@ -17,12 +17,3 @@ module Std
       common_format(out, format, array->size, array->data);
       return string_to_val(out);
     $
-
-  get_args()
-    $
-      Value* args = alloca((sys_argc - 1) * sizeof(Value));
-      for (int arg = 1; arg < sys_argc; arg++){
-        args[arg-1] = string_to_val(sys_argv[arg]);
-      }
-      return array1_to_val(sys_argc - 1, args);
-    $
