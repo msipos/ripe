@@ -121,3 +121,10 @@ class String
       snprintf(buf, bufsize, "%s%s", other, @s.str);
       return string_to_val(buf);
     $
+
+  virtual_get length()
+    $
+      char* s = @s.str;
+			int l = strlen(s);
+			return int64_to_val(l);
+    $
