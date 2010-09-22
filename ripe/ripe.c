@@ -96,7 +96,7 @@ const char* module_gcc()
 void module_build_loader(const char* loader_obj_filename)
 {
   // First create C file
-  const char* tmp = tmpnam(NULL);
+  const char* tmp = tempnam(NULL, "ripe");
   const char* loader_c_filename = mem_asprintf("%s.c", tmp);
 
   if (verbose){
@@ -141,6 +141,7 @@ void module_build_loader(const char* loader_obj_filename)
 
   // Now compile C file to object
   compile_c(loader_c_filename, loader_obj_filename);
+  remove(loader_c_filename);
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -188,14 +189,9 @@ int compile_to_c(const char* in_filename, const char* module_name,
 int compile_rip(const char* in_filename, const char* module_name,
                 const char* out_filename)
 {
-  const char* tmp = tmpnam(NULL);
+  const char* tmp = tempnam(NULL, "ripe");
   const char* c_filename = mem_asprintf("%s.c", tmp);
 
-  if (c_filename == NULL){
-    fprintf(stderr, "cannot create temporary filename: %s\n",
-            strerror(errno));
-    return 1;
-  }
   if (compile_to_c(in_filename, module_name, c_filename)){
     remove(c_filename);
     return 1;
@@ -204,23 +200,24 @@ int compile_rip(const char* in_filename, const char* module_name,
     remove(c_filename);
     return 1;
   }
+  remove(c_filename);
   return 0;
 }
 
 int build(const char* in_filename, const char* out_filename)
 {
-  const char* tmp = tmpnam(NULL);
-  const char* o_filename = mem_asprintf("%s.o", tmp);
-  compile_rip(in_filename, "User", o_filename);
-  module_add("User", o_filename);
-
   if (not path_exists(in_filename)) {
     fprintf(stderr, "cannot open '%s' for reading\n", in_filename);
     return 1;
   }
 
+  const char* tmp = tempnam(NULL, "ripe");
+  const char* o_filename = mem_asprintf("%s.o", tmp);
+  compile_rip(in_filename, "User", o_filename);
+  module_add("User", o_filename);
+
   // Module loader object
-  tmp = tmpnam(NULL);
+  tmp = tempnam(NULL, "ripe");
   const char* loader_filename = mem_asprintf("%s.o", tmp);
   module_build_loader(loader_filename);
 
@@ -229,13 +226,14 @@ int build(const char* in_filename, const char* out_filename)
                                 app_dir, out_filename);
   if (verbose) printf("%s\n", cmd_line);
   int rv = system(cmd_line);
+  remove(o_filename);
   remove(loader_filename);
   return rv;
 }
 
 int dump_c(const char* in_filename, const char* module_name)
 {
-  const char* tmp = tmpnam(NULL);
+  const char* tmp = tempnam(NULL, "ripe");
   const char* tmp_filename = mem_asprintf("%s.c", tmp);
   if (compile_to_c(in_filename, module_name, tmp_filename))
     return 1;
@@ -251,11 +249,15 @@ int dump_c(const char* in_filename, const char* module_name)
 
 int run(const char* in_filename)
 {
-  const char* p_filename = tmpnam(NULL);
+  const char* tmp = tempnam(NULL, "ripe");
+  const char* p_filename = tmp;
   if (build(in_filename, p_filename)){
+    remove(p_filename);
     return 1;
   }
-  return system(p_filename);
+  int rv = system(p_filename);
+  remove(p_filename);
+  return rv;
 }
 
 int main(int argc, char* const* argv)
