@@ -59,6 +59,8 @@
           <keyword>virtual_get</keyword>
           <keyword>virtual_set</keyword>
           <keyword>self</keyword>
+          <keyword>call_func</keyword>
+          <keyword>tuple</keyword>
         </context>
 
         <context ref="def:decimal"/>

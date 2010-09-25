@@ -1,9 +1,0 @@
-main()
-  Sdl.init()
-  
-  ev = Sdl.Event.new()
-  screen = Sdl.Surface.new_screen(400, 400, 8, Sdl.SWSURFACE)
-  for i in 1:5
-    Sdl.wait_event(ev)
-    Std.println(ev.type)
-  Sdl.quit()

@@ -6,7 +6,7 @@
 DATA_TYPES = ['Array1', 'Double', 'Flags', 'Integer', 'Map', 'Range', 'Set',
               'String', 'Tuple']
 STDLIB = ['Err', 'Math', 'Os', 'Out', 'Std', 'Stream', 'Test', 'TextFile']
-OPTIONAL_MODULES = ['Curl', 'Gd', 'Gsl', 'Sdl']
+OPTIONAL_MODULES = ['Curl', 'Gd', 'Gsl', 'Sdl', 'MainLoop']
 MODULES = DATA_TYPES + STDLIB
 DEF_MODULES = DATA_TYPES + STDLIB
 

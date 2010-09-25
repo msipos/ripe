@@ -1,0 +1,35 @@
+class MainLoop
+  private event_handlers
+  private loopers
+  private looper_counter
+
+  constructor new()
+    @event_handlers = Map.new()
+    @loopers = []
+    @looper_counter = 1
+
+  set_handler(event, handler)
+    @event_handlers[event] = handler
+
+  set_loop(loop_func)
+    @loopers.push(loop_func)
+
+  increment_counter()
+    @looper_counter = @looper_counter + 1
+    if @looper_counter > @loopers.size
+      @looper_counter = 1
+
+  do_callback()
+    if @loopers.size < 1
+      return false
+    counter_backup = @looper_counter
+
+    loop
+      loop_func = @loopers[@looper_counter]
+      if call_func(loop_func, @event_handlers)
+        # If loop_func returns true that means that it handled the event.
+        self.increment_counter()
+        return true
+      self.increment_counter()
+      if @looper_counter == counter_backup
+        return false

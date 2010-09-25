@@ -13,40 +13,44 @@ module Sdl
       SDL_Quit();
     $
 
+  get_ticks()
+    return $ int64_to_val(SDL_GetTicks()) $
+
   const SWSURFACE = $ int64_to_val(SDL_SWSURFACE) $
   const ANYFORMAT = $ int64_to_val(SDL_ANYFORMAT) $
-  
+
   class Surface
     $
       SDL_Surface *surf;
     $
-  
+
     constructor new_screen(w, h, bd, flags)
       $ @surf = SDL_SetVideoMode(val_to_int64(__w),
                                  val_to_int64(__h),
                                  val_to_int64(__bd),
                                  val_to_int64(__flags));
       $
-      
-  const MOUSEMOTION = $ int64_to_val(SDL_MOUSEMOTION) $
-  const MOUSEBUTTONDOWN = $ int64_to_val(SDL_MOUSEBUTTONDOWN) $
-  const MOUSEBUTTONUP = $ int64_to_val(SDL_MOUSEBUTTONUP) $
-  
-  class Event
-    $
-      SDL_Event event;
-    $
-    
-    constructor new()
-      pass
 
-    virtual_get type()
-      return $ int64_to_val(@event.type) $
+  loop_func(event_handlers)
+    $
+      SDL_Event ev;
+      if (not SDL_PollEvent(&ev)){
+        return VALUE_FALSE;
+      }
 
-  wait_event(ev)
+      switch(ev.type){
+        case SDL_MOUSEMOTION:
     $
-      SDL_Event* ev = (SDL_Event*) obj_c_data(__ev);
-      return int64_to_val(SDL_WaitEvent(ev));
+    if event_handlers.has_key?("sdl-mouse-motion")
+      call_func(event_handlers["sdl-mouse-motion"], $ int64_to_val(ev.motion.x) $, $ int64_to_val(ev.motion.y) $)
     $
-  
-  
+          return VALUE_TRUE;
+        case SDL_QUIT:
+    $
+    if event_handlers.has_key?("sdl-quit")
+      call_func(event_handlers["sdl-quit"])
+    $
+          return VALUE_TRUE;
+      }
+    $
+    return true

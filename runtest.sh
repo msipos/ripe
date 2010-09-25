@@ -18,3 +18,4 @@ $BIN $FLAGS -b $RIPFILE -o $EXEFILE
 ./$EXEFILE
 
 $BIN $FLAGS -b -m Curl test/test_cgi.rip -o test/test_cgi.exe
+$BIN $FLAGS -b -m Sdl -m MainLoop test/test_sdl.rip -o test/test_sdl.exe
