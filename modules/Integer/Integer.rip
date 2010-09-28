@@ -28,3 +28,9 @@ class Integer
       sprintf(buf, "%"PRId64, unpack_int64(__self));
       return string_to_val(buf);
     $
+
+  odd?()
+    return $ pack_bool((unpack_int64(__self) % 2) == 1) $
+
+  even?()
+    return $ pack_bool((unpack_int64(__self) % 2) == 0) $

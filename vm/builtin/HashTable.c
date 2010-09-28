@@ -164,10 +164,9 @@ void ht_init(HashTable* ht)
 
 void ht_clear(HashTable* ht)
 {
-  ht->size = 0;
-  const uint64 alloc_size = ht->alloc_size;
-  memset(ht->buckets, 0, alloc_size * sizeof(BucketType));
-  memset(ht->keys, 0, alloc_size * sizeof(Value));
+  mem_free(ht->buckets);
+  mem_free(ht->keys);
+  ht_init(ht);
 }
 
 void ht_init2(HashTable* ht)
