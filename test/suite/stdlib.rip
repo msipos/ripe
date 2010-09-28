@@ -71,6 +71,12 @@ Set()
       n = n + 1
   Test.test("Set.get_bucket", n, 4)
 
+  set.clear()
+  Test.test("Set.clear", set.size, 0)
+  n = 0
+  for v in set
+    n = n + 1
+  Test.test("Set.clear", n, 0)
 
 arrays()
   name = "arrays"

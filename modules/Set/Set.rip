@@ -25,6 +25,11 @@ class Set
       ht_set(&(@ht), __key);
     $
 
+  clear()
+    $
+      ht_clear(&(@ht));
+    $
+
   remove(key)
     $
       return pack_bool(ht_remove(&(@ht), __key));

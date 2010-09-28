@@ -326,6 +326,7 @@ bool ht_query2(HashTable* ht, Value key, Value* value);
 void ht_set(HashTable* ht, Value key);
 void ht_set2(HashTable* ht, Value key, Value value);
 bool ht_remove(HashTable* ht, Value key);
+void ht_clear(HashTable* ht);
 void ht_init(HashTable* ht);
 void ht_init2(HashTable* ht);
 
