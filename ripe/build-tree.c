@@ -66,7 +66,7 @@ static Node* lex_read()
   int tok = yylex();
   current_line = yylineno;
   if (tok == UNKNOWN){
-    parser_error("%s:%d invalid characters '%s'", current_filename, 
+    parser_error("%s:%d invalid characters '%s'", current_filename,
                  current_line, yytext);
   }
   return node_new_token(tok, mem_strdup(yytext), current_filename, yylineno);
@@ -76,13 +76,35 @@ static Node* lex_read()
 static int lex_read_line()
 {
   array_clear(&raw_line);
+
+  int counter_p = 0;
+  int counter_s = 0;
+
   for(;;){
-    Node* n = lex_read();
-    if (n->type == 0 and raw_line.size == 0){
-      return 1;
-    }
-    if (n->type == 0 or n->type == '\n'){
-      return 0;
+    Node* n;
+  loop:
+    n = lex_read();
+    switch(n->type){
+      case '(':
+        counter_p++;
+        break;
+      case ')':
+        counter_p--;
+        break;
+      case '[':
+        counter_s++;
+        break;
+      case ']':
+        counter_s--;
+        break;
+      case 0:
+        if (raw_line.size == 0) return 1;
+        return 0;
+      case '\n':
+        if (counter_p > 0 or counter_s > 0){
+          goto loop;
+        }
+        return 0;
     }
     array_append(&raw_line, n);
   }
@@ -92,13 +114,12 @@ static int lex_read_line()
 // Bison calls this.
 int rc_lex()
 {
-
   if (next_token == line.size){
     // We must read another line and populate the line array.
     array_clear(&line);
     next_token = 0;
     for(;;){
-    
+
       // Check if end of input.
       if (lex_read_line()){
         if (indents.size > 0){
@@ -108,14 +129,14 @@ int rc_lex()
         }
         return 0;
       }
-      
+
       // Check raw line for any information.
       // Skip empty line.
       if (raw_line.size == 0) continue;
       // Skip line that has only whitespace.
       Node* first = array_get(&raw_line, Node*, 0);
       if (raw_line.size == 1 and first->type == WHITESPACE) continue;
-      
+
       // Otherwise line is good.
 
       // Calculate indentation level.
@@ -125,7 +146,7 @@ int rc_lex()
       } else {
         indentation = 0;
       }
-      
+
       // Compare indentation level to previous.
       if (indentation == prev_indentation){
         array_append(&line, node_new(SEP));
@@ -153,7 +174,7 @@ int rc_lex()
         }
       }
       prev_indentation = indentation;
-      
+
       // Dump everything else in raw_line that's not whitespace into line.
       for (int i = 0; i < raw_line.size; i++){
         Node* n = array_get(&raw_line, Node*, i);
@@ -162,7 +183,7 @@ int rc_lex()
         }
       }
       break;
-    } 
+    }
   }
 
   rc_lval = array_get(&line, Node*, next_token);
@@ -185,7 +206,7 @@ Node* build_tree(const char* filename)
     fprintf(stderr, "cannot open '%s' for reading: %s\n", filename, strerror(errno));
     return NULL;
   }
-  
+
   if (!setjmp(jb)){
     lex_init();
     yyin = f;
