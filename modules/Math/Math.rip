@@ -7,6 +7,26 @@ module Math
   bit_and(a, b)
     return $ int64_to_val(val_to_int64(__a) & val_to_int64(__b)) $
 
+  hypot(x, y)
+    return $ double_to_val(
+               hypot(
+                 val_to_double(__x),
+                 val_to_double(__y)
+               )
+             ) $
+
+  rand(a, b)
+    $
+      int64 a = val_to_int64(__a);
+      int64 b = val_to_int64(__b);
+      return int64_to_val(a + rand() % (b - a + 1));
+    $
+
+  sin(x)
+    return $ double_to_val(sin(val_to_double(__x))) $
+
+  cos(x)
+    return $ double_to_val(cos(val_to_double(__x))) $
 
   sqrt(x)
     return $ double_to_val(sqrt(val_to_double(__x))) $

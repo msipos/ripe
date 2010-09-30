@@ -1,27 +1,108 @@
 running = true
+screen = nil
+black = nil
+red = nil
+green = nil
+blue = nil
+circles = nil
 
 on_quit()
   running = false
 
-on_mouse_motion(x, y)
-  Out.printf("x = %%, y = %%\n", x, y)
+on_mouse_down(x, y, button)
+  circles.push([x, y, Sdl.get_ticks()])
 
 main()
   Sdl.init()
 
+  # Initialize colors
+  black = Sdl.color(0, 0, 0, 255)
+  Out.println(black)
+  red = Sdl.color(255, 0, 0, 255)
+  green = Sdl.color(0, 255, 0, 255)
+  blue = Sdl.color(0, 0, 255, 255)
+  Out.println(blue)
+
+  # Initialize game stuff
+  circles = []
+  missiles = []
+  last_ticks = 0
+  fps = 0
+
+  # Initialize main loop
   ml = MainLoop.new()
   ml.set_loop(Sdl.loop_func)
   ml.set_handler("sdl-quit", on_quit)
-  ml.set_handler("sdl-mouse-motion", on_mouse_motion)
+  ml.set_handler("sdl-mouse-down", on_mouse_down)
 
-  screen = Sdl.Surface.new_screen(640, 480, 24, Sdl.SWSURFACE)
+  screen = Sdl.Surface.new_screen(640, 600, Sdl.HWSURFACE)
+  nrounds = 0
 
-  last_ticks = 0
   while running
     ml.do_callback()
     ticks = Sdl.get_ticks()
     if ticks - last_ticks >= 1000
+      # Print out FPS
       last_ticks = ticks
-      Out.printf("ticks = %%\n", ticks)
+      Out.printf("fps = %%\n", fps)
+      fps = 0
+      nrounds = nrounds + 1
+
+      # Create a missile
+      for i in 1:(1 + nrounds / 10)
+        missiles.push([5,
+                       Math.rand(10, 590),
+                       Double(Math.rand(-30, 30)) / 180.0 * 3.14,
+                       ticks])
+
+
+    # Now draw stuff
+    screen.fill(black)
+
+    nmissiles = []
+    for missile in missiles
+      r = (ticks - missile[4]) / 30
+      theta = missile[3]
+      color = green
+      curx = missile[1] + r * Math.cos(theta)
+      cury = missile[2] + r * Math.sin(theta)
+
+      if cury < 1
+        continue
+      if cury > 599
+        continue
+      if curx > 639
+        running = false
+
+      alive = true
+
+      for circle in circles
+        rc = (ticks - circle[3]) / 40
+        d = Math.hypot(Double(circle[1] - curx),
+                       Double(circle[2] - cury))
+        if d < rc
+          alive = false
+          color = blue
+
+      if alive
+        nmissiles.push(missile)
+
+      screen.line(missile[1],
+                  missile[2],
+                  Integer(curx),
+                  Integer(cury),
+                  color)
+    missiles = nmissiles
+
+    ncircles = []
+    for circle in circles
+      r = (ticks - circle[3]) / 40
+      if r < 30
+        ncircles.push(circle)
+      screen.filled_circle(circle[1], circle[2], r, red)
+    circles = ncircles
+
+    screen.flip()
+    fps = fps + 1
 
   Sdl.quit()

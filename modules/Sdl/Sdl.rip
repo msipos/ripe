@@ -1,4 +1,11 @@
-$ #include <SDL.h> $
+$
+  #include <SDL.h>
+  #include <SDL_gfxPrimitives.h>
+
+  #define RED(x)   ((x & 0xFF000000) >> 24)
+  #define GREEN(x) ((x & 0x00FF0000) >> 16)
+  #define BLUE(x)  ((x & 0x0000FF00) >> 8)
+$
 
 module Sdl
   init()
@@ -17,19 +24,92 @@ module Sdl
     return $ int64_to_val(SDL_GetTicks()) $
 
   const SWSURFACE = $ int64_to_val(SDL_SWSURFACE) $
-  const ANYFORMAT = $ int64_to_val(SDL_ANYFORMAT) $
+  const HWSURFACE = $ int64_to_val(SDL_HWSURFACE) $
+  const DOUBLEBUF = $ int64_to_val(SDL_DOUBLEBUF) $
+
+  color(r, g, b, a)
+    $
+      uint32 color = ((val_to_int64(__r) & 0xFF) << 24)
+                   | ((val_to_int64(__g) & 0xFF) << 16)
+                   | ((val_to_int64(__b) & 0xFF) << 8)
+                   | (val_to_int64(__a) & 0xFF);
+      return int64_to_val(color);
+    $
 
   class Surface
     $
       SDL_Surface *surf;
     $
 
-    constructor new_screen(w, h, bd, flags)
-      $ @surf = SDL_SetVideoMode(val_to_int64(__w),
+    constructor new_screen(w, h, flags)
+      $
+        @surf = SDL_SetVideoMode(val_to_int64(__w),
                                  val_to_int64(__h),
-                                 val_to_int64(__bd),
+                                 32,
                                  val_to_int64(__flags));
       $
+
+    constructor new(w, h, flags)
+      $
+        @surf = SDL_CreateRGBSurface(val_to_int64(__flags),
+                                     val_to_int64(__w),
+                                     val_to_int64(__h),
+                                     32,
+                                     0xFF000000,
+                                     0x00FF0000,
+                                     0x0000FF00,
+                                     0x000000FF);
+      $
+
+    put_pixel(x, y, color)
+      $
+        uint32* p = @surf->pixels;
+        p[val_to_int64(__x) + val_to_int64(__y) * @surf->w] =
+                                                      val_to_int64(__color);
+      $
+
+    filled_circle(x, y, r, color)
+      $
+        filledCircleColor(@surf, val_to_int64(__x),
+                                 val_to_int64(__y),
+                                 val_to_int64(__r),
+                                 val_to_int64(__color));
+      $
+
+    line(x1, y1, x2, y2, color)
+      $
+        lineColor(@surf, val_to_int64(__x1),
+                         val_to_int64(__y1),
+                         val_to_int64(__x2),
+                         val_to_int64(__y2),
+                         val_to_int64(__color));
+      $
+
+    fill(color)
+      $
+        Uint32 color = val_to_int64(__color);
+        Uint32 surf_color = SDL_MapRGB(@surf->format,
+                                       RED(color),
+                                       GREEN(color),
+                                       BLUE(color));
+        SDL_FillRect(@surf, NULL, surf_color);
+      $
+
+    lock()
+      $
+        SDL_LockSurface(@surf);
+      $
+
+    unlock()
+      $
+        SDL_UnlockSurface(@surf);
+      $
+
+    flip()
+      $
+        SDL_Flip(@surf);
+      $
+
 
   loop_func(event_handlers)
     $
@@ -42,13 +122,33 @@ module Sdl
         case SDL_MOUSEMOTION:
     $
     if event_handlers.has_key?("sdl-mouse-motion")
-      call_func(event_handlers["sdl-mouse-motion"], $ int64_to_val(ev.motion.x) $, $ int64_to_val(ev.motion.y) $)
+      call_func(event_handlers["sdl-mouse-motion"],
+                $ int64_to_val(ev.motion.x) $,
+                $ int64_to_val(ev.motion.y) $)
     $
           return VALUE_TRUE;
         case SDL_QUIT:
     $
     if event_handlers.has_key?("sdl-quit")
       call_func(event_handlers["sdl-quit"])
+    $
+          return VALUE_TRUE;
+        case SDL_MOUSEBUTTONDOWN:
+    $
+    if event_handlers.has_key?("sdl-mouse-down")
+      call_func(event_handlers["sdl-mouse-down"],
+                $ int64_to_val(ev.button.x) $,
+                $ int64_to_val(ev.button.y) $,
+                $ int64_to_val(ev.button.button)$)
+    $
+          return VALUE_TRUE;
+        case SDL_MOUSEBUTTONUP:
+    $
+    if event_handlers.has_key?("sdl-mouse-up")
+      call_func(event_handlers["sdl-mouse-up"],
+                $ int64_to_val(ev.button.x) $,
+                $ int64_to_val(ev.button.y) $,
+                $ int64_to_val(ev.button.button)$)
     $
           return VALUE_TRUE;
       }
