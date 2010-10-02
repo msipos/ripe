@@ -1,2 +1,2 @@
 includes=`pkg-config --cflags sdl`
-links=`pkg-config --libs sdl` -lSDL_gfx
+links=`pkg-config --libs sdl` -lSDL_gfx -lSDL_ttf

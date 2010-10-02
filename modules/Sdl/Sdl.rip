@@ -1,6 +1,7 @@
 $
   #include <SDL.h>
   #include <SDL_gfxPrimitives.h>
+  #include <SDL_ttf.h>
 
   #define RED(x)   ((x & 0xFF000000) >> 24)
   #define GREEN(x) ((x & 0x00FF0000) >> 16)
@@ -8,6 +9,38 @@ $
 $
 
 module Sdl
+  module Ttf
+    init()
+      $
+        TTF_Init();
+      $
+
+    class Font
+      $
+        TTF_Font *f;
+      $
+
+      constructor new(file, ptsize)
+        $
+          @f = TTF_OpenFont(val_to_string(__file), val_to_int64(__ptsize));
+          if (!@f){
+            exc_raise("failed to load font '%s'", val_to_string(__file));
+          }
+        $
+
+      render_blended(text, color)
+        surf = Sdl.Surface.new_uninitialized()
+        $
+          int64 color = val_to_int64(__color);
+          SDL_Surface** psurf = obj_c_data(__surf);
+          SDL_Color sdl_color = {RED(color), GREEN(color), BLUE(color)};
+          *psurf = TTF_RenderText_Blended(@f, val_to_string(__text), sdl_color);
+          if (!(*psurf)){
+            exc_raise("failed to render string '%s'", val_to_string(__text));
+          }
+        $
+        return surf
+
   init()
     $
       if (SDL_Init(SDL_INIT_VIDEO) < 0){
@@ -61,6 +94,9 @@ module Sdl
                                      0x000000FF);
       $
 
+    constructor new_uninitialized()
+      pass
+
     put_pixel(x, y, color)
       $
         uint32* p = @surf->pixels;
@@ -93,6 +129,13 @@ module Sdl
                                        GREEN(color),
                                        BLUE(color));
         SDL_FillRect(@surf, NULL, surf_color);
+      $
+
+    blit(surf2, x, y)
+      $
+        SDL_Surface** dsurf = obj_c_data(__surf2);
+        SDL_Rect drect = {val_to_int64(__x), val_to_int64(__y), 0, 0};
+        SDL_BlitSurface(@surf, NULL, *dsurf, &drect);
       $
 
     lock()
