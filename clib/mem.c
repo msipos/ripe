@@ -53,12 +53,19 @@ char* mem_strdup(const char* s)
 char* mem_asprintf(char* format, ...)
 {
   #ifdef CLIB_GC
-  char tmpbuf[1024];
+
   va_list ap;
   va_start(ap, format);
-  vsnprintf(tmpbuf, 1023, format, ap);
-  tmpbuf[1023] = 0;
+  // Calculate needed buffer
+  int sz = vsnprintf(NULL, 0, format, ap) + 1;
   va_end(ap);
+
+  char tmpbuf[sz];
+  va_start(ap, format);
+  vsnprintf(tmpbuf, sz, format, ap);
+  tmpbuf[sz - 1] = 0;
+  va_end(ap);
+
   char* str = (char*) mem_malloc(strlen(tmpbuf) + 1);
   strcpy(str, tmpbuf);
   return str;
@@ -71,4 +78,3 @@ char* mem_asprintf(char* format, ...)
   return s;
   #endif
 }
-
