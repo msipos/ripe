@@ -1,0 +1,42 @@
+$
+  #include <libspeechd.h>
+$
+
+class Speech
+  $
+    SPDConnection* c;
+  $
+
+  constructor new(client_name, connection_name)
+    $
+      @c = spd_open(val_to_string(__client_name),
+                    val_to_string(__connection_name),
+                    NULL,
+                    SPD_MODE_SINGLE);
+      if (@c == NULL) {
+        exc_raise("could not create speech dispatcher connection '%s'",
+                  val_to_string(__connection_name));
+      }
+    $
+
+  say(text)
+    $
+      return int64_to_val(spd_say(@c, SPD_TEXT, val_to_string(__text)));
+    $
+
+  # Volume should be between -100 and 100
+  set_volume(volume)
+    $
+      int64 volume = val_to_int64(__volume);
+      if (volume > 100) volume = 100;
+      if (volume < -100) volume = -100;
+      spd_set_volume(@c, volume);
+    $
+
+  close()
+    $
+      if (@c != NULL){
+        spd_close(@c);
+        @c = NULL;
+      }
+    $

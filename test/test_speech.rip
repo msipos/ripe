@@ -1,0 +1,5 @@
+main()
+  c = Speech.new("test_speech", "main")
+  c.set_volume(100)
+  c.say("Hello world!")
+  c.close()
