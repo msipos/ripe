@@ -31,8 +31,8 @@ typedef struct {
 } Element;
 
 #define STACK_SIZE 1000
-Element stack[STACK_SIZE];
-int64 stack_idx = 0;
+__thread Element stack[STACK_SIZE];
+__thread int64 stack_idx = 0;
 
 void stack_init()
 {

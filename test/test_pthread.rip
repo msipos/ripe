@@ -1,0 +1,12 @@
+thread(name)
+  for i in 1:100
+    Out.println(name, " ", i)
+    Os.nanosleep(1, 0)
+
+main()
+  Out.println("Started main()")
+  t1 = Pthread.Thread.new(thread, "thread 1")
+  Os.nanosleep(0, 500000000)
+  t2 = Pthread.Thread.new(thread, "thread 2")
+  t1.join()
+  t2.join()

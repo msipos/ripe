@@ -22,6 +22,7 @@
   #ifndef NDEBUG
     #define GC_DEBUG
   #endif
+  #define GC_THREADS
   #include <gc/gc.h>
 
   #define mem_malloc(sz) GC_MALLOC(sz)

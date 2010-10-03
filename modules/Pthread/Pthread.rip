@@ -1,0 +1,63 @@
+$
+  #include <pthread.h>
+
+  typedef struct {
+    Value func;
+    Value extra;
+  } ThreadHelper;
+
+  static void* thread_helper(void* extra)
+  {
+    ThreadHelper* th = (ThreadHelper*) extra;
+    func_call1(th->func, th->extra);
+    mem_free(th);
+    return NULL;
+  }
+$
+
+module Pthread
+  class Mutex
+    $
+      pthread_mutex_t mutex;
+    $
+
+    constructor new()
+      $
+        if (pthread_mutex_init(&(@mutex), NULL)){
+          exc_raise("could not initialize pthread mutex");
+        }
+      $
+
+    lock()
+      $
+        if (pthread_mutex_lock(&(@mutex))){
+          exc_raise("could not lock pthread mutex");
+        }
+      $
+
+    unlock()
+      $
+        if (pthread_mutex_unlock(&(@mutex))){
+          exc_raise("could not unlock pthread mutex");
+        }
+      $
+
+  class Thread
+    $
+      pthread_t thread;
+    $
+
+    constructor new(func, extra)
+      $
+        ThreadHelper* th = mem_new(ThreadHelper);
+        th->func = __func;
+        th->extra = __extra;
+        if (pthread_create(&(@thread), NULL, thread_helper, th)){
+          exc_raise("could not start pthread thread");
+        }
+      $
+
+    join()
+      $
+        pthread_join(@thread, NULL);
+      $

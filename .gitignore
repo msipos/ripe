@@ -12,4 +12,4 @@ vm/func-generated.c
 vm/func-generated.h
 pic.png
 product/
-test/test_sdl.exe
+*.exe

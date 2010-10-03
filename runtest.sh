@@ -1,6 +1,6 @@
 #!/bin/bash
 
-FLAGS="-m Test -m Gsl -m Sdl -m Math -m Gd"
+FLAGS="-m Test -m Gsl"
 BIN="product/ripe"
 
 TEST=language
@@ -16,6 +16,3 @@ RIPFILE=test/suite/$TEST.rip
 EXEFILE=test/suite/$TEST
 $BIN $FLAGS -b $RIPFILE -o $EXEFILE
 ./$EXEFILE
-
-$BIN $FLAGS -b -m Curl test/test_cgi.rip -o test/test_cgi.exe
-$BIN $FLAGS -b -m Sdl -m MainLoop test/test_sdl.rip -o test/test_sdl.exe

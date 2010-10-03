@@ -50,3 +50,10 @@ module Os
       time_t t = time(NULL);
       return int64_to_val( (int64) t );
     $
+
+  nanosleep(seconds, nanoseconds)
+    $
+      struct timespec req = { val_to_int64(__seconds),
+                              val_to_int64(__nanoseconds) };
+      nanosleep(&req, NULL);
+    $
