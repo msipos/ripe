@@ -32,6 +32,7 @@ void array_deinit(Array* arr);
 Array* array_new2(uint sz);
 void array_delete(Array* arr);
 
+#define array_data(arr, T)          ((T*) (arr)->data)
 #define array_get(arr, T, i)        (((T *) (arr)->data)[i])
 #define array_append(arr, value)  { array_expand(arr, sizeof(value)); \
                                     ((typeof(value) *) (arr)->data)[(arr)->size] = value; \

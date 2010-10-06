@@ -14,6 +14,10 @@ on_mouse_down(x, y, button)
 
 main()
   Sdl.init()
+  Sdl.Ttf.init()
+
+  # Initialize font
+  font = Sdl.Ttf.Font.new("orbitron-medium.ttf", 16)
 
   # Initialize colors
   black = Sdl.color(0, 0, 0, 255)
@@ -21,6 +25,7 @@ main()
   red = Sdl.color(255, 0, 0, 255)
   green = Sdl.color(0, 255, 0, 255)
   blue = Sdl.color(0, 0, 255, 255)
+  white = Sdl.color(255, 255, 255, 255)
   Out.println(blue)
 
   # Initialize game stuff
@@ -38,13 +43,18 @@ main()
   screen = Sdl.Surface.new_screen(640, 600, Sdl.HWSURFACE)
   nrounds = 0
 
+  text = font.render_blended("FPS = 0", white)
   while running
     ml.do_callback()
     ticks = Sdl.get_ticks()
+
+    # Now draw stuff
+    screen.fill(black)
+
     if ticks - last_ticks >= 1000
       # Print out FPS
       last_ticks = ticks
-      Out.printf("fps = %%\n", fps)
+      text = font.render_blended(Std.sprintf("FPS = %%", fps), white)
       fps = 0
       nrounds = nrounds + 1
 
@@ -54,10 +64,6 @@ main()
                        Math.rand(10, 590),
                        Double(Math.rand(-30, 30)) / 180.0 * 3.14,
                        ticks])
-
-
-    # Now draw stuff
-    screen.fill(black)
 
     nmissiles = []
     for missile in missiles
@@ -101,6 +107,7 @@ main()
         ncircles.push(circle)
       screen.filled_circle(circle[1], circle[2], r, red)
     circles = ncircles
+    text.blit(screen, 10, 10)
 
     screen.flip()
     fps = fps + 1

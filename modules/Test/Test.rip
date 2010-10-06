@@ -28,10 +28,10 @@ module Test
     c_total = c_total + 1
     if a == b
       if verbose
-        Err.printf("%% OK\n", name)
+        Err.printf("%a OK\n", name)
     else
       c_false = c_false + 1
-      Err.printf("%% FAIL\n", name)
+      Err.printf("%a FAIL\n", name)
 
   error()
     $

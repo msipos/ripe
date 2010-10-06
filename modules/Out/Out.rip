@@ -6,16 +6,16 @@ module Out
   print(*args)
     $
       Array1* arr = val_to_array1(__args);
-      char buf[common_simple_format(NULL, arr->size, arr->data)];
-      common_simple_format(buf, arr->size, arr->data);
+      char buf[format_simple(NULL, arr->size, arr->data)];
+      format_simple(buf, arr->size, arr->data);
       fputs(buf, stdout);
     $
 
   println(*args)
     $
       Array1* arr = val_to_array1(__args);
-      char buf[common_simple_format(NULL, arr->size, arr->data)];
-      common_simple_format(buf, arr->size, arr->data);
+      char buf[format_simple(NULL, arr->size, arr->data)];
+      format_simple(buf, arr->size, arr->data);
       fputs(buf, stdout);
       putchar('\n');
     $
@@ -23,8 +23,8 @@ module Out
   printf(format, *args)
     $
       Array1* arr = val_to_array1(__args);
-      char* format = val_to_string(__format);
-      char buf[common_format(NULL, format, arr->size, arr->data)];
-      common_format(buf, format, arr->size, arr->data);
+      char* f = val_to_string(__format);
+      char buf[format(NULL, f, arr->size, arr->data)];
+      format(buf, f, arr->size, arr->data);
       fputs(buf, stdout);
     $

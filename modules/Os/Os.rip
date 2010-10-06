@@ -1,7 +1,6 @@
 $
   #include <stdlib.h>
   #include <unistd.h>
-  #include <time.h>
   #include "clib/stringbuf.h"
 $
 
@@ -43,17 +42,4 @@ module Os
         args[arg-1] = string_to_val(sys_argv[arg]);
       }
       return array1_to_val(sys_argc - 1, args);
-    $
-
-  get_time()
-    $
-      time_t t = time(NULL);
-      return int64_to_val( (int64) t );
-    $
-
-  nanosleep(seconds, nanoseconds)
-    $
-      struct timespec req = { val_to_int64(__seconds),
-                              val_to_int64(__nanoseconds) };
-      nanosleep(&req, NULL);
     $

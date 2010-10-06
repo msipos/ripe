@@ -1,5 +1,16 @@
+mutex = nil
+
+on_end()
+  mutex.unlock()
+
 main()
+  mutex = Pthread.Mutex.new()
+
   c = Speech.new("test_speech", "main")
   c.set_volume(100)
-  c.say("Hello world!")
+  mutex.lock()
+  c.on_end = on_end
+  c.say("Hello world! This is a long message. I will wait until it ends.")
+  mutex.lock()
+  mutex.unlock()
   c.close()

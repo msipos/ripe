@@ -22,7 +22,7 @@ void klass_init()
 {
   array_init(&klasses, Klass*);
   // Initialize dsym_to_klass
-  dict_init(&dsym_to_klass, sizeof(Dsym), sizeof(Klass*), dict_hash_uint32,
+  dict_init(&dsym_to_klass, sizeof(Value), sizeof(Klass*), dict_hash_uint32,
             dict_equal_uint32);
 }
 
@@ -35,7 +35,7 @@ void klass_dump()
 }
 
 // Create Klass structure and add it to the dictionary.
-Klass* klass_new(Dsym name, Dsym parent, KlassType type, int cdata_size)
+Klass* klass_new(Value name, Value parent, KlassType type, int cdata_size)
 {
   if (dict_query(&dsym_to_klass, &name, NULL)){
     fprintf(stderr, "error: class '%s' initialized twice\n",
@@ -50,13 +50,13 @@ Klass* klass_new(Dsym name, Dsym parent, KlassType type, int cdata_size)
   // This preliminary calculation of obj_size is necessary because of Function
   // klass.
   klass->obj_size = sizeof(Klass*) + cdata_size;
-  dict_init(&(klass->methods), sizeof(Dsym), sizeof(Value), dict_hash_uint32,
+  dict_init(&(klass->methods), sizeof(Value), sizeof(Value), dict_hash_uint32,
             dict_equal_uint32);
-  dict_init(&(klass->readable_fields), sizeof(Dsym), sizeof(uint64),
+  dict_init(&(klass->readable_fields), sizeof(Value), sizeof(uint64),
             dict_hash_uint32, dict_equal_uint32);
-  dict_init(&(klass->writable_fields), sizeof(Dsym), sizeof(uint64),
+  dict_init(&(klass->writable_fields), sizeof(Value), sizeof(uint64),
             dict_hash_uint32, dict_equal_uint32);
-  dict_init(&(klass->fields), sizeof(Dsym), sizeof(uint64),
+  dict_init(&(klass->fields), sizeof(Value), sizeof(uint64),
             dict_hash_uint32, dict_equal_uint32);
   klass->num_fields = 0;
 
@@ -66,7 +66,7 @@ Klass* klass_new(Dsym name, Dsym parent, KlassType type, int cdata_size)
   return klass;
 }
 
-int klass_new_field(Klass* klass, Dsym name, int type)
+int klass_new_field(Klass* klass, Value name, int type)
 {
   int64 field_num = klass->num_fields;
   klass->num_fields++;
@@ -80,7 +80,7 @@ int klass_new_field(Klass* klass, Dsym name, int type)
   return field_num;
 }
 
-int klass_get_field_int(Klass* klass, Dsym name)
+int klass_get_field_int(Klass* klass, Value name)
 {
   int64 field_num;
   if (dict_query(&(klass->fields), &name, &field_num)){
@@ -93,17 +93,17 @@ int klass_get_field_int(Klass* klass, Dsym name)
   }
 }
 
-void klass_new_virtual_reader(Klass* klass, Dsym name, Value func)
+void klass_new_virtual_reader(Klass* klass, Value name, Value func)
 {
   dict_set(&(klass->readable_fields), &name, &func);
 }
 
-void klass_new_virtual_writer(Klass* klass, Dsym name, Value func)
+void klass_new_virtual_writer(Klass* klass, Value name, Value func)
 {
   dict_set(&(klass->writable_fields), &name, &func);
 }
 
-void klass_new_method(Klass* klass, Dsym name, Value method)
+void klass_new_method(Klass* klass, Value name, Value method)
 {
   dict_set(&(klass->methods), &name, &method);
 }
@@ -124,7 +124,7 @@ void klass_init_phase15()
   }
 }
 
-Klass* klass_get(Dsym name)
+Klass* klass_get(Value name)
 {
   Klass* klass;
   if (dict_query(&dsym_to_klass, &name, &klass)){
@@ -141,7 +141,7 @@ Value obj_new(Klass* klass, void** data)
   return pack_ptr(obj);
 }
 
-Value field_get(Value v_obj, Dsym field)
+Value field_get(Value v_obj, Value field)
 {
   Klass* klass = obj_klass(v_obj);
   uint64 field_num;
@@ -159,7 +159,7 @@ Value field_get(Value v_obj, Dsym field)
   }
 }
 
-void field_set(Value v_obj, Dsym field, Value val)
+void field_set(Value v_obj, Value field, Value val)
 {
   Klass* klass = obj_klass(v_obj);
   uint64 field_num;
@@ -177,7 +177,7 @@ void field_set(Value v_obj, Dsym field, Value val)
   }
 }
 
-void method_error(Klass* klass, Dsym dsym)
+void method_error(Klass* klass, Value dsym)
 {
   exc_raise("class '%s' does not have method '%s'",
             dsym_reverse_get(klass->name), dsym_reverse_get(dsym));

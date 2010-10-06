@@ -42,6 +42,11 @@ module Pthread
         }
       $
 
+    trylock()
+      $
+        return pack_bool(pthread_mutex_trylock(&(@mutex)) == 0);
+      $
+
   class Thread
     $
       pthread_t thread;

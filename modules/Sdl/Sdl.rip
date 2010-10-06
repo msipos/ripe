@@ -59,6 +59,7 @@ module Sdl
   const SWSURFACE = $ int64_to_val(SDL_SWSURFACE) $
   const HWSURFACE = $ int64_to_val(SDL_HWSURFACE) $
   const DOUBLEBUF = $ int64_to_val(SDL_DOUBLEBUF) $
+  const FULLSCREEN = $ int64_to_val(SDL_FULLSCREEN) $
 
   color(r, g, b, a)
     $
@@ -73,6 +74,16 @@ module Sdl
     $
       SDL_Surface *surf;
     $
+
+    virtual_get width()
+      $
+        return int64_to_val(@surf->w);
+      $
+
+    virtual_get height()
+      $
+        return int64_to_val(@surf->h);
+      $
 
     constructor new_screen(w, h, flags)
       $
@@ -194,6 +205,20 @@ module Sdl
                 $ int64_to_val(ev.button.button)$)
     $
           return VALUE_TRUE;
+        case SDL_KEYDOWN:
+    $
+    if event_handlers.has_key?("sdl-key-down")
+      call_func(event_handlers["sdl-key-down"],
+                $ int64_to_val(ev.key.keysym.sym)$)
+    $
+          return VALUE_TRUE;
+        case SDL_KEYUP:
+    $
+    if event_handlers.has_key?("sdl-key-up")
+      call_func(event_handlers["sdl-key-up"],
+                $ int64_to_val(ev.key.keysym.sym)$)
+    $
+          return VALUE_TRUE;
       }
     $
-    return true
+    return false

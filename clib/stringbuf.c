@@ -60,6 +60,28 @@ void sbuf_catc(StringBuf* sbuf, const char c)
   sbuf->size++;
 }
 
+void sbuf_cat(StringBuf* sbuf, const char* s)
+{
+  int64 l = strlen(s);
+  if (sbuf->size + l > sbuf->alloc_size){
+    sbuf->alloc_size += l;
+    sbuf->str = mem_realloc(sbuf->str, sbuf->alloc_size);
+  }
+  strcat(sbuf->str, s);
+  sbuf->size += l;
+}
+
+void sbuf_ncpy(StringBuf* sbuf, const char* s, int64 n)
+{
+  if (sbuf->alloc_size < n + 1){
+    sbuf->alloc_size = n + 1;
+    sbuf->str = mem_realloc(sbuf->str, n + 1);
+  }
+  strncpy(sbuf->str, s, n);
+  sbuf->str[n] = 0;
+  sbuf->size = n+1;
+}
+
 void sbuf_clear(StringBuf* sbuf)
 {
   sbuf->str[0] = 0;
@@ -70,4 +92,3 @@ void sbuf_deinit(StringBuf* sbuf)
 {
   mem_free(sbuf->str);
 }
-

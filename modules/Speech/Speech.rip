@@ -1,18 +1,29 @@
 $
   #include <libspeechd.h>
+
+  Value v_end;
+  static void func_end(size_t msg_id, size_t client_id, SPDNotificationType state)
+  {
+    func_call0(v_end);
+  }
 $
+
+module Speech
+  const MALE1 = $ int64_to_val(SPD_MALE1) $
+  const FEMALE1 = $ int64_to_val(SPD_FEMALE1) $
+  const FEMALE2 = $ int64_to_val(SPD_FEMALE2) $
+  const FEMALE3 = $ int64_to_val(SPD_FEMALE3) $
 
 class Speech
   $
     SPDConnection* c;
   $
-
   constructor new(client_name, connection_name)
     $
       @c = spd_open(val_to_string(__client_name),
                     val_to_string(__connection_name),
                     NULL,
-                    SPD_MODE_SINGLE);
+                    SPD_MODE_THREADED);
       if (@c == NULL) {
         exc_raise("could not create speech dispatcher connection '%s'",
                   val_to_string(__connection_name));
@@ -33,10 +44,22 @@ class Speech
       spd_set_volume(@c, volume);
     $
 
+  set_voice_type(type)
+    $
+      spd_set_voice_type(@c, val_to_int64(__type));
+    $
+
   close()
     $
       if (@c != NULL){
         spd_close(@c);
         @c = NULL;
       }
+    $
+
+  virtual_set on_end(func)
+    $
+      v_end = __func;
+      @c->callback_end = func_end;
+      spd_set_notification_on(@c, SPD_END);
     $

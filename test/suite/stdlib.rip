@@ -126,6 +126,15 @@ Tuple()
   Test.test(name, m.size, 2)
   Test.test(name, m[t], 147)
 
+Template()
+  map = Map.new()
+  map[&first_name] = "John"
+  map[&last_name] = "Doe"
+  Test.test("Template.apply()",
+            Template.apply(
+              "hello %{ first_name } %{ last_name }", map),
+            "hello John Doe")
+
 array_iterators()
   arr = [1, 2, 3, 4, 5]
   arr2 = []
@@ -175,6 +184,8 @@ Std()
   Test.test("Integer()", 123, Integer(123.0))
   Test.test("Double()", 123.0, Double("123.0"))
   Test.test("Double()", 123.0, Double(123))
+  Test.test("Std.printf()", Std.sprintf("format %a %a %%", 1, 2),
+                            "format 1 2 %")
 
 Os()
   env = Os.get_environment()
@@ -183,10 +194,15 @@ Os()
   Test.test("Os.get_env()", nil, Os.get_env("THIS_ENV_VAR_DEFINITELY_DOES_NOT_EXIST"))
   Test.test("Os.get_env()", true, Os.get_env("HOME") != nil)
   Test.test("Os.get_env()", Os.get_env("HOME"), Os.get_env("HOME").to_string())
-  t1 = Os.get_time()
-  t2 = Os.get_time()
-  Test.test("Os.get_time()", t1 - t2, 0)
-  Test.test("Os.get_time()", t1 > 0, true)
+
+Time()
+  t1 = Time.get_current()
+  t2 = Time.get_current()
+  Test.test("Time.get_current()", t1 - t2, 0)
+  Test.test("Time.get_current()", t1 > 0, true)
+  Time.sleep(1)
+  t3 = Time.get_current()
+  Test.test("Time.sleep()", t3 - t1 >= 1, true)
 
 main()
   Test.set_verbose(false)
@@ -202,6 +218,8 @@ main()
   range_iterators()
   Std()
   Os()
+  Time()
+  Template()
 
   Test.test("Math.bit_or", Math.bit_or(15, 5), 15)
   Test.test("Math.bit_and", Math.bit_and(15, 5), 5)
@@ -214,7 +232,7 @@ main()
   arr = Test.get_results()
   correct = arr[1] - arr[2]
   total = arr[1]
-  Err.printf("stdlib test results: %%/%%\n", correct, total)
+  Err.printf("stdlib test results: %a/%a\n", correct, total)
   if correct < total
-    Err.printf("there were %% errors\n", total - correct)
+    Err.printf("there were %a errors\n", total - correct)
   Test.test("c-expr", $ int64_to_val(1) $, 1)
