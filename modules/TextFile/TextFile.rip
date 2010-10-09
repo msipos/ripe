@@ -1,12 +1,13 @@
 $
   #include <stdio.h>
+  #include <errno.h>
   #define TEXTFILE_READ 1
   #define TEXTFILE_WRITE 2
 $
 
 module TextFile
-  const Read = 1
-  const Write = 2
+  const Read = $ int64_to_val(TEXTFILE_READ) $
+  const Write = $ int64_to_val(TEXTFILE_WRITE) $
 
 class TextFile
   $ FILE* f; $
@@ -19,10 +20,10 @@ class TextFile
         smode = "r";
       }
       if (mode == TEXTFILE_READ + TEXTFILE_WRITE){
-        smode = "w";
+        smode = "rw";
       }
       if (mode == TEXTFILE_WRITE){
-        smode = "rw";
+        smode = "w";
       }
       const char* filename = val_to_string(__filename);
       @f = fopen(filename, smode);
@@ -43,6 +44,15 @@ class TextFile
         exc_raise("error while reading from a file");
       }
       return string_to_val(buf);
+    $
+
+  write(text)
+    $
+      const char* text = val_to_string(__text);
+      assert(@f != NULL);
+      if (fwrite(text, strlen(text), 1, @f) != 1){
+        exc_raise("failed to write '%s' to text file: %s", text, strerror(errno));
+      }
     $
 
   get_iter()

@@ -102,12 +102,16 @@ subarrays()
   Test.test(name, test_arr.to_string(), "[one, two, three, four, five, six]")
 
 TextFile()
+    tf = TextFile.new("test/suite/textfile", TextFile.Write)
+    tf.write("line 1\n")
+    tf.write("line 2\n")
+    tf.write("line 3\n")
+    tf.close()
     tf = TextFile.new("test/suite/textfile", TextFile.Read)
     name = "TextFile"
     Test.test(name, tf.read_line(), "line 1\n")
     Test.test(name, tf.read_line(), "line 2\n")
     Test.test(name, tf.read_line(), "line 3\n")
-    Test.test(name, tf.read_line(), "\n")
     Test.test(name, tf.read_line(), eof)
     tf.close()
 
