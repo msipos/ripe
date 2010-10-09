@@ -46,7 +46,7 @@ class TextFile
       return string_to_val(buf);
     $
 
-  write(text)
+  print(text)
     $
       const char* text = val_to_string(__text);
       assert(@f != NULL);
@@ -54,6 +54,10 @@ class TextFile
         exc_raise("failed to write '%s' to text file: %s", text, strerror(errno));
       }
     $
+
+  println(text)
+    self.print(text)
+    self.print("\n")
 
   get_iter()
     return self
