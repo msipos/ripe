@@ -10,10 +10,10 @@ module Std
 
   sprintf_array(format, array)
     $
-      char* format = val_to_string(__format);
+      char* f = val_to_string(__format);
       Array1* array = val_to_array1(__array);
-      uint64 len = common_format(NULL, format, array->size, array->data);
+      uint64 len = format(NULL, f, array->size, array->data);
       char out[len];
-      common_format(out, format, array->size, array->data);
+      format(out, f, array->size, array->data);
       return string_to_val(out);
     $

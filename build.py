@@ -5,7 +5,8 @@
 
 DATA_TYPES = ['Array1', 'Double', 'Flags', 'Integer', 'Map', 'Range', 'Set',
               'String', 'Tuple']
-STDLIB = ['Err', 'Math', 'Os', 'Out', 'Std', 'Stream', 'Test', 'TextFile']
+STDLIB = ['Err', 'Math', 'Os', 'Out', 'Std', 'Stream', 'Test', 'Template',
+          'TextFile', 'Time']
 OPTIONAL_MODULES = ['Curl', 'Gd', 'Gsl',  'MainLoop', 'Pthread', 'Sdl',
                     'Speech']
 MODULES = DATA_TYPES + STDLIB
@@ -183,6 +184,7 @@ vm_srcs = [
             'vm/util.c',
             'vm/klass.c',
             'vm/stack.c',
+            'vm/format.c',
             'vm/builtin/Object.c',
             'vm/builtin/Function.c',
             'vm/func-generated.c',

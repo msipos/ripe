@@ -36,6 +36,7 @@
 %token   DOUBLE
 %token   STRING
 %token   CHARACTER
+%token   SYMBOL
 // These are actually never encountered in the grammar, but are used by the
 // lexer:
 %token   COMMENT
@@ -440,6 +441,10 @@ dexpr:             "false"
   $$ = $1;
 };
 dexpr:             "eof"
+{
+  $$ = $1;
+};
+dexpr:             SYMBOL
 {
   $$ = $1;
 };

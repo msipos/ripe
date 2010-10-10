@@ -213,7 +213,7 @@ static const char* tbl_get_ssym(const char* symbol)
   return ssym_c_var;
 }
 
-// Returns the name of the global static C variable of type Dsym that
+// Returns the name of the global static C variable of type Value that
 // corresponds to that symbol.
 static const char* tbl_get_dsym(const char* symbol)
 {
@@ -227,7 +227,7 @@ static const char* tbl_get_dsym(const char* symbol)
   dsym_c_var = mem_asprintf("_dsym%"PRIu64"_%s",
                             counter,
                             util_escape(symbol));
-  sbuf_printf(&sb_header, "static Dsym %s;\n", dsym_c_var);
+  sbuf_printf(&sb_header, "static Value %s;\n", dsym_c_var);
   sbuf_printf(&sb_init2, "  %s = dsym_get(\"%s\");\n",
                          dsym_c_var, symbol);
   dict_set(&tbl_dsym, &symbol, &dsym_c_var);
@@ -470,6 +470,8 @@ static const char* eval_expr(Node* expr)
         if (local == NULL) return tbl_get_ssym(expr->text);
         return mem_strdup(local);
       }
+    case SYMBOL:
+      return tbl_get_dsym(expr->text + 1);
     case INT:
       return mem_asprintf("int64_to_val(%s)", expr->text);
     case DOUBLE:

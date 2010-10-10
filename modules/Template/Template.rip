@@ -1,0 +1,42 @@
+module Template
+  apply(string, map)
+    $
+      Format f;
+      StringBuf sb;
+      sbuf_init(&sb, "");
+      format_init(&f, val_to_string(__string));
+      FormatElement* data = (FormatElement*) f.array.data;
+      for (int64 i = 0; i < f.array.size; i++){
+        FormatElement e = data[i];
+        switch (e.type){
+          case FORMAT_STRING:
+            format_get_text(&f, i);
+            sbuf_cat(&sb, f.sb.str);
+            break;
+          case FORMAT_FLAG:
+            format_get_text(&f, i);
+            char c = f.sb.str[0];
+            switch (c){
+              case '%':
+                sbuf_catc(&sb, c);
+                break;
+              default:
+                exc_raise("invalid format flag '%%%c'", c);
+            }
+            break;
+          case FORMAT_PARAM:
+            format_get_text(&f, i);
+            Value symb = dsym_get(f.sb.str);
+    $
+    s = map[ $symb $]
+    $
+            sbuf_cat(&sb, val_to_string(__s));
+            break;
+        }
+      }
+
+      Value rv = string_to_val(sb.str);
+      format_deinit(&f);
+      sbuf_deinit(&sb);
+      return rv;
+    $

@@ -105,6 +105,12 @@ exceptions()
   #Std.println(" STACK after catch+finally:")
   #Test.display_stack()
 
+symbols()
+  symbol1 = &some_symbol
+  symbol2 = &some_symbol
+  Test.test("symbols", symbol1, symbol2)
+  Test.test("symbols", symbol1, Integer(symbol2))
+
 main()
   Test.set_verbose(false)
   operators()
@@ -122,6 +128,7 @@ main()
   Test.test("set/get", 10, obj.i)
 
   exceptions()
+  symbols()
 
   Test.test("c-expr", $ int64_to_val(1) $, 1)
 
@@ -129,6 +136,6 @@ main()
   arr = Test.get_results()
   correct = arr[1] - arr[2]
   total = arr[1]
-  Err.printf("language test results: %%/%%\n", correct, total)
+  Err.printf("language test results: %a/%a\n", correct, total)
   if correct < total
-    Err.printf("there were %% errors\n", total - correct)
+    Err.printf("there were %a errors\n", total - correct)

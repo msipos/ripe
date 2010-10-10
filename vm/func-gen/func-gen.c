@@ -120,7 +120,7 @@ void gen_c()
   }
 
   for (int n = 0; n < MAX_PARAMS; n++){
-    printf("Value method_call%d(Value v_obj, Dsym dsym", n);
+    printf("Value method_call%d(Value v_obj, Value dsym", n);
     print_mult("Value arg", n, 1, 1);
     printf("){\n");
     printf("  Value method = method_get(v_obj, dsym);\n");
@@ -178,7 +178,7 @@ void gen_h()
     printf(");\n");
   }
   for (int i = 0; i < MAX_PARAMS; i++){
-    printf("Value method_call%d(Value v_obj, Dsym dsym", i);
+    printf("Value method_call%d(Value v_obj, Value dsym", i);
     print_mult("Value arg", i, 1, 1);
     printf(");\n");
   }

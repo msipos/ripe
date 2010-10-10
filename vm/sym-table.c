@@ -20,12 +20,12 @@ Dict static_sym_table;
 Dict static_sym_rev_table;
 Dict dynamic_sym_table;
 Dict dynamic_sym_rev_table;
-Dsym dsym_plus, dsym_minus, dsym_star, dsym_slash;
-Dsym dsym_plus2, dsym_minus2, dsym_star2, dsym_slash2;
-Dsym dsym_gt, dsym_gt2;
-Dsym dsym_lt, dsym_lt2;
-Dsym dsym_gte, dsym_gte2;
-Dsym dsym_lte, dsym_lte2;
+Value dsym_plus, dsym_minus, dsym_star, dsym_slash;
+Value dsym_plus2, dsym_minus2, dsym_star2, dsym_slash2;
+Value dsym_gt, dsym_gt2;
+Value dsym_lt, dsym_lt2;
+Value dsym_gte, dsym_gte2;
+Value dsym_lte, dsym_lte2;
 
 void sym_init()
 {
@@ -33,10 +33,10 @@ void sym_init()
             dict_hash_string, dict_equal_string);
   dict_init(&static_sym_rev_table, sizeof(Value), sizeof(char*),
             dict_hash_uint64, dict_equal_uint64);
-  dict_init(&dynamic_sym_table, sizeof(char*), sizeof(Dsym),
+  dict_init(&dynamic_sym_table, sizeof(char*), sizeof(Value),
             dict_hash_string, dict_equal_string);
-  dict_init(&dynamic_sym_rev_table, sizeof(Dsym), sizeof(char*),
-            dict_hash_uint32, dict_equal_uint32);
+  dict_init(&dynamic_sym_rev_table, sizeof(Value), sizeof(char*),
+            dict_hash_uint64, dict_equal_uint64);
   dsym_plus = dsym_get("__plus"); dsym_plus2 = dsym_get("__plus2");
   dsym_minus = dsym_get("__minus"); dsym_minus2 = dsym_get("__minus2");
   dsym_star = dsym_get("__star"); dsym_star2 = dsym_get("__star2");
@@ -66,20 +66,21 @@ Value ssym_set(const char* name, Value val)
   return val;
 }
 
-Dsym dsym_get(const char* name)
+Value dsym_get(const char* name)
 {
-  static uint32 counter = 100;
-  Dsym tmp;
+  static int64 counter = 100;
+  Value tmp;
   if (dict_query(&dynamic_sym_table, &name, &tmp)){
     return tmp;
   }
   counter++;
-  dict_set(&dynamic_sym_table, &name, &counter);
-  dict_set(&dynamic_sym_rev_table, &counter, &name);
-  return counter;
+  tmp = pack_int64(counter);
+  dict_set(&dynamic_sym_table, &name, &tmp);
+  dict_set(&dynamic_sym_rev_table, &tmp, &name);
+  return tmp;
 }
 
-const char* dsym_reverse_get(Dsym dsym)
+const char* dsym_reverse_get(Value dsym)
 {
   char* name;
   if (dict_query(&dynamic_sym_rev_table, &dsym, &name)){

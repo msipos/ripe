@@ -17,6 +17,7 @@
 #define VM_H
 
 #include "clib/clib.h"
+#include "clib/stringbuf.h"
 
 //////////////////////////////////////////////////////////////////////////////
 // Value
@@ -27,20 +28,19 @@ typedef uint64 Value;
 //////////////////////////////////////////////////////////////////////////////
 // sym-table.c
 //////////////////////////////////////////////////////////////////////////////
-typedef uint32 Dsym;
 void sym_init();
 Value ssym_get(const char* name);
 Value ssym_set(const char* name, Value val);
-Dsym dsym_get(const char* name);
-const char* dsym_reverse_get(Dsym dsym);
+Value dsym_get(const char* name);
+const char* dsym_reverse_get(Value dsym);
 const char* ssym_reverse_get(Value value);
 
-extern Dsym dsym_plus,  dsym_minus,  dsym_star,  dsym_slash;
-extern Dsym dsym_plus2, dsym_minus2, dsym_star2, dsym_slash2;
-extern Dsym dsym_gt, dsym_gt2;
-extern Dsym dsym_lt, dsym_lt2;
-extern Dsym dsym_gte, dsym_gte2;
-extern Dsym dsym_lte, dsym_lte2;
+extern Value dsym_plus,  dsym_minus,  dsym_star,  dsym_slash;
+extern Value dsym_plus2, dsym_minus2, dsym_star2, dsym_slash2;
+extern Value dsym_gt, dsym_gt2;
+extern Value dsym_lt, dsym_lt2;
+extern Value dsym_gte, dsym_gte2;
+extern Value dsym_lte, dsym_lte2;
 
 //////////////////////////////////////////////////////////////////////////////
 // klass.c
@@ -56,7 +56,7 @@ typedef enum {
 } KlassType;
 
 typedef struct {
-  Dsym name;
+  Value name;
   KlassType type;
   Dict methods;
   int num_fields;
@@ -84,11 +84,9 @@ extern Klass* klass_Range;
 extern Klass* klass_String;
 extern Klass* klass_Tuple;
 
-extern Dsym dsym_to_string;
+extern Value dsym_to_string;
 
 void common_init_phase15();
-uint64 common_format(char* out, char* format_string, uint64 num_values, Value* values);
-uint64 common_simple_format(char* out, uint64 num_values, Value* values);
 
 //////////////////////////////////////////////////////////////////////////////
 // stack.c
@@ -144,16 +142,16 @@ typedef struct {
   Value values[0];
 } Object;
 
-Klass* klass_new(Dsym name, Dsym parent, KlassType type, int cdata_size);
-void klass_new_method(Klass* klass, Dsym name, Value method);
+Klass* klass_new(Value name, Value parent, KlassType type, int cdata_size);
+void klass_new_method(Klass* klass, Value name, Value method);
 
 #define FIELD_READABLE 1
 #define FIELD_WRITABLE 2
-int klass_new_field(Klass* klass, Dsym name, int type);
-int klass_get_field_int(Klass* klass, Dsym name);
-void klass_new_virtual_reader(Klass* klass, Dsym name, Value func);
-void klass_new_virtual_writer(Klass* klass, Dsym name, Value func);
-Klass* klass_get(Dsym name);
+int klass_new_field(Klass* klass, Value name, int type);
+int klass_get_field_int(Klass* klass, Value name);
+void klass_new_virtual_reader(Klass* klass, Value name, Value func);
+void klass_new_virtual_writer(Klass* klass, Value name, Value func);
+Klass* klass_get(Value name);
 static inline const char* klass_name(Klass* klass){
   return dsym_reverse_get(klass->name);
 }
@@ -211,11 +209,11 @@ static inline void* obj_c_data(Value v_obj)
   return &(((Object*) unpack_ptr(v_obj))->values[0]);
 }
 
-Value field_get(Value v_obj, Dsym field);
-void field_set(Value v_obj, Dsym field, Value val);
+Value field_get(Value v_obj, Value field);
+void field_set(Value v_obj, Value field, Value val);
 
-void method_error(Klass* klass, Dsym dsym);
-static inline Value method_get(Value v_obj, Dsym dsym)
+void method_error(Klass* klass, Value dsym);
+static inline Value method_get(Value v_obj, Value dsym)
 {
   Klass* klass = obj_klass(v_obj);
   Value method;
@@ -239,6 +237,30 @@ Value op_unary_minus(Value v);
 Value op_and(Value a, Value b);
 Value op_or(Value a, Value b);
 #include "vm/ops-generated.h"
+
+//////////////////////////////////////////////////////////////////////////////
+// format.c
+//////////////////////////////////////////////////////////////////////////////
+typedef struct {
+  char* string;
+  Array array;
+  StringBuf sb;
+} Format;
+
+typedef struct {
+  int64 a;
+  int64 b;
+  int type;
+} FormatElement;
+
+#define FORMAT_STRING  1
+#define FORMAT_FLAG    2
+#define FORMAT_PARAM   3
+void format_init(Format* f, char* string);
+void format_get_text(Format* f, int64 i);
+uint64 format(char* out, char* format_string, uint64 num_values, Value* values);
+uint64 format_simple(char* out, uint64 num_values, Value* values);
+void format_deinit(Format* f);
 
 //////////////////////////////////////////////////////////////////////////////
 // Arrays.c

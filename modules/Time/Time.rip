@@ -1,0 +1,59 @@
+$
+  #include <time.h>
+  #include <unistd.h>
+$
+
+module Time
+  get_current()
+    $
+      time_t t = time(NULL);
+      return int64_to_val( (int64) t );
+    $
+
+  sleep(seconds)
+    $
+      sleep(val_to_int64(__seconds));
+    $
+
+  nanosleep(seconds, nanoseconds)
+    $
+      struct timespec req = { val_to_int64(__seconds),
+                              val_to_int64(__nanoseconds) };
+      nanosleep(&req, NULL);
+    $
+
+  class Local
+    $
+      struct tm t;
+    $
+
+    constructor new(time)
+      $
+        time_t t = val_to_int64(__time);
+        localtime_r(&t, &(@t));
+      $
+
+    virtual_get hour()
+      $
+        return int64_to_val( (int64) @t.tm_hour );
+      $
+
+    virtual_get minute()
+      $
+        return int64_to_val( (int64) @t.tm_min );
+      $
+
+    virtual_get weekday()
+      $
+        return int64_to_val( (int64) @t.tm_wday + 1 );
+      $
+
+    virtual_get month()
+      $
+        return int64_to_val( (int64) @t.tm_mon + 1 );
+      $
+
+    virtual_get day()
+      $
+        return int64_to_val( (int64) @t.tm_mday );
+      $
