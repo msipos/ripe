@@ -37,3 +37,11 @@ class Array3
       int64 i = array3_index(&(@a), x, y, z);
       @a.data[i] = __v;
     $
+
+  set_const(v)
+    $
+      const int64 total_size = @a.size_x * @a.size_y * @a.size_z;
+      for (int64 i = 0; i < total_size; i++){
+        @a.data[i] = __v;
+      }
+    $

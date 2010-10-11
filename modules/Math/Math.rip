@@ -10,8 +10,8 @@ module Math
   hypot(x, y)
     return $ double_to_val(
                hypot(
-                 val_to_double(__x),
-                 val_to_double(__y)
+                 val_to_double_soft(__x),
+                 val_to_double_soft(__y)
                )
              ) $
 
