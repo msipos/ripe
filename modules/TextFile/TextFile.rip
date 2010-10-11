@@ -59,6 +59,18 @@ class TextFile
     self.print(text)
     self.print("\n")
 
+  printf(format, *array)
+    $
+      char* f = val_to_string(__format);
+      Array1* array = val_to_array1(__array);
+      uint64 len = format(NULL, f, array->size, array->data);
+      char out[len];
+      format(out, f, array->size, array->data);
+      if (fwrite(out, len-1, 1, @f) != 1){
+        exc_raise("failed to write '%s' to tesxt file: %s", out, strerror(errno));
+      }
+    $
+
   get_iter()
     return self
 

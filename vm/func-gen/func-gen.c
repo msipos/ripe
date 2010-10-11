@@ -127,6 +127,14 @@ void gen_c()
     printf("  stack_push_func(method);\n");
     printf("  Func* c_data = obj_c_data(method);\n");
 
+    printf("  if (c_data->var_params){\n");
+    printf("    Value args[%d] = {v_obj", n+1);
+    print_mult("arg", n, 1, 1);
+    printf("};\n");
+    printf("    Value rv = func_call_opt_helper(c_data, %d, args);\n", n+1);
+    printf("    stack_pop();\n");
+    printf("    return rv;\n");
+    printf("  }\n");
     printf("  if (c_data->num_params != %d){\n", n+1);
     printf("    exc_raise(\"method that takes %%d arguments called with %%d\"\n");
     printf("              \" arguments\", c_data->num_params-1, %d);\n", n);

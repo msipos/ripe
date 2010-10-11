@@ -80,6 +80,7 @@ extern Klass* klass_Eof;
 extern Klass* klass_Integer;
 extern Klass* klass_Double;
 extern Klass* klass_Array1;
+extern Klass* klass_Array3;
 extern Klass* klass_Range;
 extern Klass* klass_String;
 extern Klass* klass_Tuple;
@@ -284,13 +285,14 @@ typedef struct {
   uint64 size_y;
   Value* data;
 } Array2;
-extern Klass* klass_Array3;
 typedef struct {
   uint64 size_x;
   uint64 size_y;
   uint64 size_z;
   Value* data;
 } Array3;
+uint64 array3_index(Array3* array3, uint64 x, uint64 y, uint64 z);
+
 Value array2_index(Value v_array, int64 x, int64 y);
 void array2_index_set(Value v_array, int64 x, int64 y, Value v_val);
 void init1_Arrays();

@@ -2,11 +2,15 @@
 
 %{
   #include "ripe/parser.h"
-
   // Some docs:
   // For the rules:
   //   - Rule that matches more text wins.
   //   - If 2 rules match same amount of text, the one that's before wins.
+
+  // Buffer for start conditions in the lexer
+  // These are implemented in build-tree.c but they are needed here.
+  void buf_reset();
+  void buf_cat(const char* text);
 %}
 
 %option outfile="ripe/scanner.c" header-file="ripe/scanner.h"
@@ -14,6 +18,7 @@
 %option yylineno
 %option nounput
 %option noinput
+%x COND_STRING
 
 %%
 
@@ -23,7 +28,12 @@
 [ \t]+                          { return WHITESPACE; }
 \n                              { return '\n'; }
 \'.\'                           { return CHARACTER; }
-\"[^\"]*\"                      { return STRING; }
+\"                              { BEGIN(COND_STRING);
+                                  buf_reset(); }
+<COND_STRING>[^\\\n\"]+         { buf_cat(yytext); }
+<COND_STRING>\\.                { buf_cat(yytext); }
+<COND_STRING>\"                 { BEGIN(0);
+                                  return STRING; }
 \$[^\$]*\$                      { return C_CODE; }
 "+"                             { return '+'; }
 "-"                             { return '-'; }

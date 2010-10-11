@@ -3,12 +3,12 @@
 # Possible build flags are "force", "quiet", "nodebug", "nogc", "profile"
 
 
-DATA_TYPES = ['Array1', 'Double', 'Flags', 'Integer', 'Map', 'Range', 'Set',
-              'String', 'Tuple']
+DATA_TYPES = ['Array1', 'Array3', 'Double', 'Flags', 'Integer', 'Map', 'Range',
+              'Set', 'String', 'Tuple']
 STDLIB = ['Err', 'Math', 'Os', 'Out', 'Std', 'Stream', 'Test', 'Template',
           'TextFile', 'Time']
-OPTIONAL_MODULES = ['Curl', 'Gd', 'Gsl',  'MainLoop', 'Pthread', 'Sdl',
-                    'Speech']
+OPTIONAL_MODULES = ['Curl', 'Gd', 'Gsl',  'MainLoop', 'Povray', 'Pthread',
+                    'Sdl', 'Speech']
 MODULES = DATA_TYPES + STDLIB
 DEF_MODULES = DATA_TYPES + STDLIB
 

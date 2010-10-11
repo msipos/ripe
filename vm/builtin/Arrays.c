@@ -167,93 +167,20 @@ static Value ripe_array2_set_const(Value v_self, Value v_val)
 ///////////////////////////////////////////////////////////////////////////////
 // Array3
 ///////////////////////////////////////////////////////////////////////////////
-Klass* klass_Array3;
-
-static Value ripe_array3_new_const(Value v_x, Value v_y, Value v_z, Value v_val)
+uint64 array3_index(Array3* array, uint64 x, uint64 y, uint64 z)
 {
-  Array3* self;
-  Value v_self = obj_new(klass_Array3, (void**) &self);
-
-  int64 size_x = val_to_int64(v_x);
-  int64 size_y = val_to_int64(v_y);
-  int64 size_z = val_to_int64(v_z);
-
-  self->size_x = size_x;
-  self->size_y = size_y;
-  self->size_z = size_z;
-  if (size_x < 1 or size_y < 1 or size_z < 1)
-    exc_raise("invalid Array3 size (%"PRId64"x%"PRId64"x%" PRId64")", size_x, size_y, size_z);
-  int64 total_size = size_x * size_y * size_z;
-  Value* data = mem_malloc(total_size * sizeof(Value));
-  for (int64 t = 0; t < total_size; t++){
-    data[t] = v_val;
-  }
-  self->data = data;
-  return v_self;
-}
-
-static inline int64 array3_map_index(Array3* array, int64 x, int64 y, int64 z)
-{
-  int64 size_x = array->size_x;
-  int64 size_y = array->size_y;
-  int64 size_z = array->size_z;
+  uint64 size_x = array->size_x;
+  uint64 size_y = array->size_y;
+  uint64 size_z = array->size_z;
 
   if (x > 0 and x <= size_x and y > 0 and y <= size_y
                             and z > 0 and z <= size_z){
     // C order
     return (x-1) + (y-1)*size_x + (z-1)*size_x*size_y;
   } else {
-    exc_raise("invalid Array3 index (%"PRId64", %"PRId64", %"PRId64")",
+    exc_raise("invalid Array3 index (%"PRIu64", %"PRIu64", %"PRIu64")",
               x, y, z);
   }
-}
-
-static Value ripe_array3_index(Value v_self, Value v_x, Value v_y, Value v_z)
-{
-  Array3* array3 = obj_c_data(v_self);
-  return array3->data[array3_map_index(array3,
-                                       val_to_int64(v_x),
-                                       val_to_int64(v_y),
-                                       val_to_int64(v_z))];
-}
-
-static Value ripe_array3_index_set(Value v_self, Value v_x, Value v_y,
-                                   Value v_z, Value v_val)
-{
-  Array3* array3 = obj_c_data(v_self);
-  array3->data[array3_map_index(array3,
-                                val_to_int64(v_x),
-                                val_to_int64(v_y),
-                                val_to_int64(v_z))] = v_val;
-  return VALUE_NIL;
-}
-
-static Value ripe_array3_get_size_x(Value v_self)
-{
-  Array3* array3 = obj_c_data(v_self);
-  return int64_to_val(array3->size_x);
-}
-
-static Value ripe_array3_get_size_y(Value v_self)
-{
-  Array3* array3 = obj_c_data(v_self);
-  return int64_to_val(array3->size_y);
-}
-
-static Value ripe_array3_get_size_z(Value v_self)
-{
-  Array3* array3 = obj_c_data(v_self);
-  return int64_to_val(array3->size_z);
-}
-
-static Value ripe_array3_set_const(Value v_self, Value v_val)
-{
-  Array3* array = obj_c_data(v_self);
-  int64 total_size = array->size_x * array->size_y * array->size_z;
-  for (int64 i = 0; i < total_size; i++){
-    array->data[i] = v_val;
-  }
-  return VALUE_NIL;
 }
 
 
@@ -267,10 +194,6 @@ void init1_Arrays()
                            dsym_get("Object"),
                            KLASS_CDATA_OBJECT,
                            sizeof(Array2));
-  klass_Array3 = klass_new(dsym_get("Array3"),
-                           dsym_get("Object"),
-                           KLASS_CDATA_OBJECT,
-                           sizeof(Array3));
 
   // Array2
   ssym_set("Array2.new_const", func3_to_val(ripe_array2_new_const));
@@ -289,27 +212,6 @@ void init1_Arrays()
   klass_new_method(klass_Array2,
                    dsym_get("set_const"),
                    func2_to_val(ripe_array2_set_const));
-
-  // Array3
-  ssym_set("Array3.new_const", func4_to_val(ripe_array3_new_const));
-  klass_new_method(klass_Array3,
-                   dsym_get("index"),
-                   func4_to_val(ripe_array3_index));
-  klass_new_method(klass_Array3,
-                   dsym_get("index_set"),
-                   func5_to_val(ripe_array3_index_set));
-  klass_new_method(klass_Array3,
-                   dsym_get("get_size_x"),
-                   func1_to_val(ripe_array3_get_size_x));
-  klass_new_method(klass_Array3,
-                   dsym_get("get_size_y"),
-                   func1_to_val(ripe_array3_get_size_y));
-  klass_new_method(klass_Array3,
-                   dsym_get("get_size_z"),
-                   func1_to_val(ripe_array3_get_size_z));
-  klass_new_method(klass_Array3,
-                   dsym_get("set_const"),
-                   func2_to_val(ripe_array3_set_const));
 }
 
 void init2_Arrays()

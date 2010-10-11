@@ -85,6 +85,15 @@ arrays()
   my_arr = []
   Test.test(name, my_arr.to_string(), "[]")
 
+  name = "Array3"
+  arr = Array3.new_const(100, 200, 300, 0)
+  for x in 1:100
+    for y in 1:200
+      for z in 1:300
+        arr[x, y, z] = x*y*z
+
+  Test.test(name, arr[5, 10, 15], 5*10*15)
+
 subarrays()
   name = "subarrays"
   my_arr = ["one", "two", "three", "four", "five", "six"]
@@ -103,7 +112,7 @@ subarrays()
 
 TextFile()
   tf = TextFile.new("test/suite/textfile", TextFile.Write)
-  tf.println("line 1")
+  tf.printf("line %a\n", 1)
   tf.println("line 2")
   tf.println("line 3")
   tf.close()

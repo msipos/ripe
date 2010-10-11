@@ -479,7 +479,7 @@ static const char* eval_expr(Node* expr)
     case STRING:
       {
         const char* str = expr->text;
-        return mem_asprintf("string_to_val(%s)", str);
+        return mem_asprintf("string_to_val(\"%s\")", str);
       }
       break;
     case CHARACTER:

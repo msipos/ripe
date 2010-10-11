@@ -1,0 +1,16 @@
+module Povray
+  header(f)
+    f.println("#include \"colors.inc\"")
+    f.println("background { color Cyan }")
+    f.println("global_settings { radiosity {brightness 0.5}}")
+
+  light(f, x, y, z)
+    f.printf("light_source { <%a, %a, %a> color White }\n", x, y, z)
+
+  camera(f, x1, y1, z1, x2, y2, z2)
+    f.printf("camera { location <%a, %a, %a>\n look_at <%a, %a, %a> }\n",
+             x1, y1, z1, x2, y2, z2)
+
+  box(f, x1, y1, z1, x2, y2, z2)
+    f.printf("box { <%a, %a, %a>, <%a, %a, %a>\n", x1, y1, z1, x2, y2, z2)
+    f.println("texture { pigment { color Green } } finish { diffuse .6 } }")

@@ -25,6 +25,7 @@ Klass* klass_Eof;
 Klass* klass_Integer;
 Klass* klass_Double;
 Klass* klass_Array1;
+Klass* klass_Array3;
 Klass* klass_Range;
 Klass* klass_String;
 Klass* klass_Tuple;
@@ -40,6 +41,7 @@ void common_init_phase15()
   klass_Integer = klass_get(dsym_get("Integer"));
   klass_Double = klass_get(dsym_get("Double"));
   klass_Array1 = klass_get(dsym_get("Array1"));
+  klass_Array3 = klass_get(dsym_get("Array3"));
   klass_Range = klass_get(dsym_get("Range"));
   klass_String = klass_get(dsym_get("String"));
   klass_Tuple = klass_get(dsym_get("Tuple"));

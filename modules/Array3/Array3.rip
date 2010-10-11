@@ -1,0 +1,39 @@
+class Array3
+  $
+    Array3 a;
+  $
+
+  constructor new_const(x, y, z, v)
+    $
+      int64 x = val_to_int64(__x);
+      int64 y = val_to_int64(__y);
+      int64 z = val_to_int64(__z);
+      if (x < 1 or y < 1 or z < 1)
+        exc_raise("every Array3 dimension must be greater than 0");
+      @a.size_x = x;
+      @a.size_y = y;
+      @a.size_z = z;
+      int64 total_size = x*y*z;
+      @a.data = mem_malloc(total_size * sizeof(Value));
+      for (int64 i = 0; i < total_size; i++){
+        @a.data[i] = __v;
+      }
+    $
+
+  index(x, y, z)
+    $
+      int64 x = val_to_int64(__x);
+      int64 y = val_to_int64(__y);
+      int64 z = val_to_int64(__z);
+      int64 i = array3_index(&(@a), x, y, z);
+      return @a.data[i];
+    $
+
+  index_set(x, y, z, v)
+    $
+      int64 x = val_to_int64(__x);
+      int64 y = val_to_int64(__y);
+      int64 z = val_to_int64(__z);
+      int64 i = array3_index(&(@a), x, y, z);
+      @a.data[i] = __v;
+    $

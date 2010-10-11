@@ -14,6 +14,19 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "ripe/ripe.h"
+#include "clib/stringbuf.h"
+
+// Helper buffer for start conditions.
+StringBuf buf_sb;
+void buf_reset()
+{
+  sbuf_clear(&buf_sb);
+}
+
+void buf_cat(const char* text)
+{
+  sbuf_cat(&buf_sb, text);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Error reporting.
@@ -54,6 +67,7 @@ int prev_indentation;
 
 static void lex_init()
 {
+  sbuf_init(&buf_sb, "");
   array_init(&line, Node*);
   array_init(&raw_line, Node*);
   array_init(&indents, int);
@@ -69,7 +83,9 @@ static Node* lex_read()
     parser_error("%s:%d invalid characters '%s'", current_filename,
                  current_line, yytext);
   }
-  return node_new_token(tok, mem_strdup(yytext), current_filename, yylineno);
+  const char* token_text = yytext;
+  if (tok == STRING) token_text = buf_sb.str;
+  return node_new_token(tok, mem_strdup(token_text), current_filename, yylineno);
 }
 
 // Returns non-zero if EOF reached.
