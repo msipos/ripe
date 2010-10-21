@@ -73,7 +73,10 @@ void module_add(const char* module_name, const char* obj_filename)
 
 void module_add_by_name(const char* module_name)
 {
-  const char* obj_path = mem_asprintf("%s/%s.o", app_dir, module_name);
+  const char* obj_path = mem_asprintf("%s/modules/%s/%s.o",
+                                      app_dir,
+                                      module_name,
+                                      module_name);
   module_add(mem_strdup(module_name),
              obj_path);
 }

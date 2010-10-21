@@ -42,7 +42,8 @@ else:
 
 # Construct required directories
 required_dirs = ['bin', 'product', 'product/include', 'product/include/clib',
-                 'product/include/vm', 'product/include/modules']
+                 'product/include/vm', 'product/include/modules',
+                 'product/modules']
 for d in required_dirs:
     tools.mkdir_safe(d)
 
@@ -233,12 +234,13 @@ def cons_module(src, dest, module, required, extra_CFLAGS=''):
 
 def build_module(module, required):
     import os.path
-    out = 'product/%s.o' % module
+    tools.mkdir_safe('product/modules/%s' % module)
+    out = 'product/modules/%s/%s.o' % (module, module)
 
     # Deal with metafile
     metafile = 'modules/%s/%s.meta' % (module, module)
     if os.path.exists(metafile):
-        copy_file('product/%s.meta' % module, metafile)
+        copy_file('product/modules/%s/%s.meta' % (module, module), metafile)
     meta = tools.load_meta(metafile)
     extra_CFLAGS = ''
     if meta.has_key('includes'):
