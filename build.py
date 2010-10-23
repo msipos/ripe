@@ -17,8 +17,7 @@ import os, sys, tools
 
 CC = ["gcc"]
 LD = ["ld"]
-CFLAGS = ["-Wall", "-Wstrict-aliasing=0",
-          "-Wfatal-errors", "-std=gnu99", "-I."]
+CFLAGS = ["-Wall", "-Wstrict-aliasing=0", "-Wfatal-errors", "-std=gnu99", "-I."]
 LFLAGS = ["-lgc"]
 
 if "nogc" not in sys.argv:
