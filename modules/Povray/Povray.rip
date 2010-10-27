@@ -4,8 +4,9 @@ module Povray
     f.println("background { color Cyan }")
     f.println("global_settings { radiosity {brightness 0.5}}")
 
-  light(f, x, y, z)
-    f.printf("light_source { <%a, %a, %a> color White }\n", x, y, z)
+  light(f, x, y, z, i)
+    f.printf("light_source { <%a, %a, %a>, rgb <%a, %a, %a> }\n",
+             x, y, z, i, i, i)
 
   camera(f, x1, y1, z1, x2, y2, z2)
     f.printf("camera { location <%a, %a, %a>\n look_at <%a, %a, %a> }\n",

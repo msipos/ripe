@@ -8,7 +8,7 @@ DATA_TYPES = ['Array1', 'Array3', 'Double', 'Flags', 'Integer', 'Map', 'Range',
 STDLIB = ['Err', 'Math', 'Os', 'Out', 'Std', 'Stream', 'Test', 'Template',
           'TextFile', 'Time']
 OPTIONAL_MODULES = ['Curl', 'Gd', 'Gsl',  'MainLoop', 'Povray', 'Pthread',
-                    'Sdl', 'Speech']
+                    'Sci', 'Sdl', 'Speech']
 MODULES = DATA_TYPES + STDLIB
 DEF_MODULES = DATA_TYPES + STDLIB
 
