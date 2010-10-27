@@ -15,8 +15,26 @@ module Sci
     xbar = xbar / n
     ybar = ybar / n
     ssxx = sxx - n * xbar * xbar
-    ssyy = syy - n * ybar * ybar
+    #ssyy = syy - n * ybar * ybar
     ssxy = sxy - n * xbar * ybar
     slope = ssxy / ssxx
     intercept = ybar - slope*xbar
     return [intercept, slope]
+
+  mean(X)
+    n = 0
+    avg = 0.0
+    for el in X
+      n = n + 1
+      avg = avg + el
+    return avg / n
+
+  stddev(X)
+    mean = Sci.mean(X)
+    y = 0.0
+    n = 0
+    for el in X
+      t = el - mean
+      y = y + t*t
+      n = n + 1
+    return Math.sqrt(y/n)
