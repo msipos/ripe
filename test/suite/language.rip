@@ -111,10 +111,16 @@ symbols()
   Test.test("symbols", symbol1, symbol2)
   Test.test("symbols", symbol1, Integer(symbol2))
 
+parallel()
+  a, b = [1, 2, 3]
+  Test.test("parallel assign", a, 1)
+  Test.test("parallel assign", b, 2)
+
 main()
   Test.set_verbose(false)
   operators()
   vararg()
+  parallel()
 
   obj = Class.new("testfile")
   obj.test_filename("testfile")

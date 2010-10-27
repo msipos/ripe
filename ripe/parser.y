@@ -215,7 +215,7 @@ stmt:             "elif" expr block
   node_add_child($$, $2);
   node_add_child($$, $3);
 };
-stmt:             expr '=' expr
+stmt:             expr_plus '=' expr
 {
   $$ = node_new(STMT_ASSIGN);
   node_add_child($$, $1);

@@ -380,7 +380,7 @@ static const char* obj_call(const char* obj, const char* method, int num_args,
 
 // Returns code for accessing index (if assign = NULL), or setting index
 // when assign is of type expr.
-static const char* eval_index(Node* self, Node* idx, Node* assign)
+static const char* eval_index(Node* self, Node* idx, const char* assign)
 {
   if (assign == NULL) {
     return obj_call(eval_expr(self), "index", idx->children.size,
@@ -389,7 +389,7 @@ static const char* eval_index(Node* self, Node* idx, Node* assign)
     return obj_call(eval_expr(self), "index_set", idx->children.size+1,
                     mem_asprintf("%s, %s",
                                  eval_expr_list(idx, true),
-                                 eval_expr(assign)));
+                                 assign));
   }
 }
 
@@ -648,6 +648,67 @@ static void compile_stmt_expr(Node* stmt)
 static void compile_stmtlist(Node* stmtlist);
 static void compile_stmtlist_no_locals(Node* stmtlist);
 
+static void gen_stmt_assign2(Node* left, const char* right)
+{
+  switch(left->type){
+    case ID:
+      {
+        const char* c_name = query_local(left->text);
+        if (c_name == NULL){
+          // Register the variable
+          sbuf_printf(&sb_contents, "  Value %s = %s;\n",
+                      register_local(left->text), right);
+        } else {
+          sbuf_printf(&sb_contents, "  %s = %s;\n", c_name, right);
+        }
+      }
+      break;
+    case EXPR_INDEX:
+      sbuf_printf(&sb_contents, "  %s;\n",
+                  eval_index(node_get_child(left, 0),
+                             node_get_child(left, 1),
+                             right));
+      break;
+    case EXPR_FIELD:
+      sbuf_printf(&sb_contents, "  field_set(%s, %s, %s);\n",
+                  eval_expr(node_get_child(left, 0)),
+                  tbl_get_dsym(node_get_child(left, 1)->text),
+                  right);
+      break;
+    case EXPR_AT_VAR:
+      sbuf_printf(&sb_contents, "  %s = %s;\n",
+                  eval_expr(left),
+                  right);
+      break;
+    default:
+      raise_error("invalid lvalue of assignment statement", left);
+  }
+}
+
+static void gen_stmt_assign(Node* left, Node* right)
+{
+  if (node_num_children(left) == 1){
+    left = node_get_child(left, 0);
+    gen_stmt_assign2(left, eval_expr(right));
+  } else {
+    static int counter = 0;
+    counter++;
+    char* tmp_variable = mem_asprintf("_tmp_assign_%d", counter);
+    sbuf_printf(&sb_contents, "  const Value %s = %s;\n",
+                tmp_variable, eval_expr(right));
+    for (int i = 0; i < node_num_children(left); i++){
+      Node* l = node_get_child(left, i);
+      gen_stmt_assign2(l, obj_call(
+                                   tmp_variable,
+                                   "index",
+                                   1,
+                                   mem_asprintf(", int64_to_val(%d)", i + 1)
+                                  )
+                      );
+    }
+  }
+}
+
 static void compile_stmt(Node* stmt)
 {
   switch(stmt->type){
@@ -717,43 +778,7 @@ static void compile_stmt(Node* stmt)
       sbuf_printf(&sb_contents, "  continue;\n");
       break;
     case STMT_ASSIGN:
-      {
-        Node* left = node_get_child(stmt, 0);
-        Node* right = node_get_child(stmt, 1);
-        switch (left->type){
-          case ID:
-            {
-              const char* c_name = query_local(left->text);
-              if (c_name == NULL){
-                // Register the variable
-                sbuf_printf(&sb_contents, "  Value %s = %s;\n",
-                            register_local(left->text), eval_expr(right));
-              } else {
-                sbuf_printf(&sb_contents, "  %s = %s;\n", c_name, eval_expr(right));
-              }
-            }
-            break;
-          case EXPR_INDEX:
-            sbuf_printf(&sb_contents, "  %s;\n",
-                        eval_index(node_get_child(left, 0),
-                                   node_get_child(left, 1),
-                                   right));
-            break;
-          case EXPR_FIELD:
-            sbuf_printf(&sb_contents, "  field_set(%s, %s, %s);\n",
-                        eval_expr(node_get_child(left, 0)),
-                        tbl_get_dsym(node_get_child(left, 1)->text),
-                        eval_expr(right));
-            break;
-          case EXPR_AT_VAR:
-            sbuf_printf(&sb_contents, "  %s = %s;\n",
-                        eval_expr(left),
-                        eval_expr(right));
-            break;
-          default:
-            raise_error("invalid lvalue of assignment statement", stmt);
-        }
-      }
+      gen_stmt_assign(node_get_child(stmt, 0), node_get_child(stmt, 1));
       break;
     case STMT_FOR:
       {
