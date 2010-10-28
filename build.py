@@ -25,6 +25,7 @@ conf["LEX"] = "flex"
 conf["VERBOSITY"] = 1
 if "nogc" not in sys.argv:
     conf["CFLAGS"].append("-DCLIB_GC")
+conf["FORCING"] = False
 if "force" in sys.argv:
     conf["FORCING"] = True
 if "quiet" in sys.argv:

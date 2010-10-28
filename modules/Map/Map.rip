@@ -11,6 +11,9 @@ class Map
       ht_init2(&(@ht));
     $
 
+  get_iter()
+    return MapIterator.new(self)
+
   index(key)
     $
       Value result;
@@ -54,3 +57,31 @@ class Map
 
   virtual_get size()
     return $ int64_to_val(@ht.size) $
+
+
+class MapIterator
+  $
+    HashTable* ht;
+    int64 cur;
+  $
+  constructor new(map)
+    $
+      @ht = obj_c_data(__map);
+      @cur = 0;
+    $
+
+  iter()
+    $
+      while (@cur < @ht->alloc_size){
+        if (@ht->buckets[@cur] == BUCKET_FULL){
+          @cur++;
+    $
+    key = $ @ht->keys[@cur - 1] $
+    value = $ @ht->values[@cur - 1] $
+    return tuple(key, value)
+    $
+        }
+        @cur++;
+      }
+      return VALUE_EOF;
+    $

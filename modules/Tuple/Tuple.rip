@@ -15,3 +15,6 @@ class Tuple
       strcat(buf, ")");
       return string_to_val(buf);
     $
+
+  index(i)
+    return $ tuple_index(&(@t), val_to_int64(__i)) $

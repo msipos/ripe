@@ -25,6 +25,8 @@ Map()
   map["Serbia"] = "Belgrade"
   map["France"] = "Belgrade"
   map["France"] = "Paris"
+  for k, v in map
+    Test.test(name, map[k], v)
   Test.test(name, map["France"], "Paris")
   Test.test(name, map.size, 6)
   Test.test(name, true, map.has_key?("Serbia"))

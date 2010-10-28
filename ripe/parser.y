@@ -243,7 +243,7 @@ stmt:             "loop" block
   $$ = node_new(STMT_LOOP);
   node_add_child($$, $2);
 };
-stmt:             "for" ID "in" expr block
+stmt:             "for" id_plus "in" expr block
 {
   $$ = node_new(STMT_FOR);
   node_add_child($$, $2);
@@ -510,4 +510,15 @@ arg_star:         arg
 arg_star:         /* empty */
 {
   $$ = node_new(ARG_LIST);
+};
+
+id_plus:          id_plus ',' ID
+{
+  $$ = $1;
+  node_add_child($$, $3);
+};
+id_plus:          ID
+{
+  $$ = node_new(ID_LIST);
+  node_add_child($$, $1);
 };

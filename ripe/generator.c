@@ -785,31 +785,56 @@ static void compile_stmt(Node* stmt)
         static int iterator_counter = 0;
         iterator_counter++;
 
-        const char* c_iterator = mem_asprintf("__iterator%d", iterator_counter);
+        const char* c_iterator = mem_asprintf("_iterator%d", iterator_counter);
         const char* c_object = eval_expr(node_get_child(stmt, 1));
 
         // First get the iterator.
         sbuf_printf(&sb_contents, "  Value %s = %s;\n",
                     c_iterator, obj_call(c_object, "get_iter", 0, ""));
 
-        // Now make a local variable
-        const char* r_variable = node_get_child(stmt, 0)->text;
-        if (query_local(r_variable)){
-          raise_error(mem_asprintf("variable '%s' already defined", r_variable),
-                      stmt);
+        const char* c_iterator_call = obj_call(c_iterator, "iter", 0, "");
+        Node* id_list = node_get_child(stmt, 0);
+        push_locals();
+        if (node_num_children(id_list) == 1){
+          const char* r_variable = node_get_child(id_list, 0)->text;
+          if (query_local(r_variable)){
+            raise_error(mem_asprintf("variable '%s' already defined", r_variable),
+                        stmt);
+          }
+          const char* c_variable = register_local(r_variable);
+          sbuf_printf(&sb_contents, "  for(Value %s = %s;"
+                                      "%s != VALUE_EOF;"
+                                      "%s = %s)"
+                                      "{\n",
+                      c_variable, c_iterator_call,
+                      c_variable,
+                      c_variable, c_iterator_call
+                      );
+        } else {
+          const char* c_variable = mem_asprintf("_iterator_temp%d",
+                                                iterator_counter);
+          sbuf_printf(&sb_contents, "  for(Value %s = %s;"
+                                      "%s != VALUE_EOF;"
+                                      "%s = %s)"
+                                      "{\n",
+                      c_variable, c_iterator_call,
+                      c_variable,
+                      c_variable, c_iterator_call
+                      );
+          for (int i = 0; i < node_num_children(id_list); i++){
+            const char* r_variable = node_get_child(id_list, i)->text;
+            if (query_local(r_variable)){
+              raise_error(mem_asprintf("variable '%s' already defined", r_variable),
+                          stmt);
+            }
+            const char* c_variable2 = register_local(r_variable);
+            sbuf_printf(&sb_contents, "  Value %s = %s;\n", c_variable2,
+                        obj_call(c_variable, "index", 1,
+                                 mem_asprintf(", int64_to_val(%d)", i + 1))
+                       );
+          }
         }
 
-        push_locals();
-        const char* c_variable = register_local(r_variable);
-        const char* c_iterator_call = obj_call(c_iterator, "iter", 0, "");
-        sbuf_printf(&sb_contents, "  for(Value %s = %s;"
-                                    "%s != VALUE_EOF;"
-                                    "%s = %s)"
-                                    "{\n",
-                    c_variable, c_iterator_call,
-                    c_variable,
-                    c_variable, c_iterator_call
-                    );
         dowhile_semaphore++;
         compile_stmtlist_no_locals(node_get_child(stmt, 2));
         dowhile_semaphore--;
