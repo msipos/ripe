@@ -7,8 +7,8 @@ DATA_TYPES = ['Array1', 'Array3', 'Double', 'Flags', 'Integer', 'Map', 'Range',
               'Set', 'String', 'Tuple']
 STDLIB = ['Err', 'Math', 'Os', 'Out', 'Std', 'Stream', 'Test', 'Template',
           'TextFile', 'Time']
-OPTIONAL_MODULES = ['Curl', 'Gd', 'Gsl',  'MainLoop', 'Povray', 'Pthread',
-                    'Sci', 'Sdl', 'Speech']
+OPTIONAL_MODULES = ['Curl', 'Gd', 'Gsl', 'Json', 'MainLoop', 'Povray',
+                    'Pthread', 'Sci', 'Sdl', 'Speech']
 MODULES = DATA_TYPES + STDLIB
 DEF_MODULES = DATA_TYPES + STDLIB
 
@@ -85,6 +85,7 @@ ripe_hs = [
           ]
 ripe_srcs = [
                'ripe/ripe.c',
+               'ripe/dump.c',
                'ripe/cli.c',
                'ripe/build-tree.c',
                'ripe/parser.c',
@@ -95,6 +96,7 @@ ripe_srcs = [
              ]
 ripe_objs = tools.cons_objs(ripe_srcs, ripe_hs + clib_hs)
 tools.cons_bin('product/ripe', ripe_objs + clib_objs, [])
+conf['RIPE'] = 'product/ripe'
 
 ###############################################################################
 # VM
@@ -188,17 +190,21 @@ def build_module(module, required):
     if meta.has_key('includes'):
         extra_CFLAGS = meta['includes']
 
-    path = 'modules/%s/%s.rip' % (module, module)
-    if os.path.exists(path):
-        cons_module(path, out, module, required, extra_CFLAGS)
-        return
+    if meta.has_key('builder'):
+        builder = meta['builder']
+        tools.call([builder], conf)
     else:
-        path = 'modules/%s/%s.c' % (module, module)
+        path = 'modules/%s/%s.rip' % (module, module)
         if os.path.exists(path):
             cons_module(path, out, module, required, extra_CFLAGS)
             return
         else:
-            failed_modules.append(module)
+            path = 'modules/%s/%s.c' % (module, module)
+            if os.path.exists(path):
+                cons_module(path, out, module, required, extra_CFLAGS)
+                return
+            else:
+                failed_modules.append(module)
 
 for module in MODULES:
     build_module(module, True)

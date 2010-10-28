@@ -197,10 +197,23 @@ int compile_to_c(const char* in_filename, const char* module_name,
     fprintf(stderr, "error while parsing '%s'\n", in_filename);
     return 1;
   }
-  if (generate(ast, module_name, in_filename, out_filename)){
+
+  dump_init();
+  if (generate(ast, module_name, in_filename)){
     fprintf(stderr, "error while generating '%s'\n", in_filename);
     return 1;
   }
+
+  // Output handling.
+  FILE* f = fopen(out_filename, "w");
+  if (f == NULL){
+    fprintf(stderr, "cannot open '%s' for writing: %s\n",
+            out_filename, strerror(errno));
+    return 1;
+  }
+  dump_output(f, module_name);
+  fclose(f);
+
   return 0;
 }
 

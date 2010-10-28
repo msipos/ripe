@@ -64,22 +64,35 @@ def load_meta(filename):
             hsh[key] = value
     return hsh
 
-def call(args):
+def to_env(env):
+    m = {}
+    for k, v in env.items():
+        if isinstance(v, list):
+            m[k] = " ".join(v)
+        else:
+            m[k] = str(v)
+    return m
+
+def call(args, env = None):
     cmd = ' '.join(flatten(args))
+    if env != None:
+        env = to_env(env)
     try:
         if conf["VERBOSITY"] > 1:
             print(cmd)
-        ccall(cmd, shell=True)
+        ccall(cmd, shell=True, env = env)
     except:
         print("Errors encountered while compiling!")
         sys.exit(1)
 
-def try_call(args):
+def try_call(args, env = None):
     cmd = ' '.join(flatten(args))
+    if env != None:
+        env = to_env(env)
     try:
         if conf["VERBOSITY"] > 1:
             print(cmd)
-        ccall(cmd, shell=True)
+        ccall(cmd, shell=True, env = env)
         return True
     except:
         return False
