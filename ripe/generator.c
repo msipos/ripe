@@ -995,19 +995,6 @@ static void compile_function(Node* function)
   sbuf_printf(&sb_contents, "}\n");
 }
 
-static void compile_global_var(Node* n)
-{
-  static int counter = 0;
-  counter++;
-
-  Node* id = node_get_child(n, 0);
-  Node* value = node_get_child(n, 1);
-  set_local(mem_asprintf("%s%s", module_prefix, id->text),
-            mem_asprintf("global_%d", counter));
-  sbuf_printf(&sb_header, "static Value global_%d;\n", counter);
-  sbuf_printf(&sb_init2, "  global_%d = %s;\n", counter, eval_expr(value));
-}
-
 static void gen_constructor(Node* constructor)
 {
   context2 = CONTEXT_CONSTRUCTOR;
@@ -1149,7 +1136,6 @@ static void gen_class(Node* klass)
       for (int i = 0; i < ast->children.size; i++){
         Node* n = node_get_child(ast, i);
         if (n->type == TL_VAR){
-          const char* var_name = node_get_string(n, "name");
           const char* annotation = node_get_string(n, "annotation");
           const char* var_type = "";
           if (strcmp(annotation, "readable") == 0){
@@ -1159,11 +1145,18 @@ static void gen_class(Node* klass)
           } else if (strcmp(annotation, "private") == 0){
             var_type = "0";
           } else {
-            raise_error(mem_asprintf("invalid annotation '%s'", annotation), n);
+            raise_error(mem_asprintf("invalid annotation '%s' inside a class",
+                                     annotation), n);
           }
-          sbuf_printf(&sb_init1, "  klass_new_field(%s, dsym_get(\"%s\"), "
-                                   "%s);\n", context_class_c_name, var_name,
-                                   var_type);
+
+          Node* optassign_list = node_get_child(n, 0);
+          for (int i = 0; i < node_num_children(optassign_list); i++){
+            Node* optassign = node_get_child(optassign_list, i);
+            const char* var_name = node_get_string(optassign, "name");
+            sbuf_printf(&sb_init1, "  klass_new_field(%s, dsym_get(\"%s\"), "
+                                     "%s);\n", context_class_c_name, var_name,
+                                     var_type);
+          }
         }
       }
       break;
@@ -1233,8 +1226,31 @@ static void gen_globals(Node* ast)
 {
   for (int i = 0; i < ast->children.size; i++){
     Node* n = node_get_child(ast, i);
-    if (n->type == GLOBAL_VAR){
-      compile_global_var(n);
+    if (n->type == TL_VAR){
+      const char* annotation = node_get_string(n, "annotation");
+
+      if (strcmp(annotation, "global") == 0){
+        Node* optassign_list = node_get_child(n, 0);
+        for (int i = 0; i < node_num_children(optassign_list); i++){
+          Node* optassign = node_get_child(optassign_list, i);
+          const char* var_name = node_get_string(optassign, "name");
+
+          static int counter = 0;
+          counter++;
+          const char* ripe_name = mem_asprintf("%s%s", module_prefix, var_name);
+          const char* c_name = mem_asprintf("_glb%d_%s", counter,
+                                            util_escape(ripe_name));
+
+          set_local(ripe_name, c_name);
+          sbuf_printf(&sb_header, "static Value %s;\n", c_name);
+
+          Node* right = node_get_child(optassign, 0);
+          sbuf_printf(&sb_init2, "  %s = %s;\n", c_name, eval_expr(right));
+        }
+      } else {
+        raise_error(mem_asprintf("invalid annotation '%s' at top level",
+                                 annotation), n);
+      }
     }
     if (n->type == MODULE){
       const char* name = node_get_string(n, "name");
@@ -1276,7 +1292,7 @@ static void gen_toplevels(Node* ast)
                                    node_get_child(n, 0)->text),
                       eval_expr(node_get_child(n, 1)));
         }
-      case GLOBAL_VAR:
+      case TL_VAR:
         // Ignore.
         break;
       case CLASS:

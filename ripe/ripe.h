@@ -108,7 +108,6 @@ int rc_lex();
 #define FUNCTION          1002
 #define STMT_LIST         1003
 #define CLASS             1004
-#define GLOBAL_VAR        1005
 #define ARRAY_ARG         1006
 #define ANNOT_FUNCTION    1007
 #define TL_VAR            1008  // Top-level variable (with annotation maybe)
@@ -133,7 +132,6 @@ int rc_lex();
 #define STMT_CATCH_ALL    1121
 #define STMT_FINALLY      1122
 
-
 // Types of EXPRs
 #define EXPR_ID_CALL      1030
 #define EXPR_FIELD_CALL   1031
@@ -150,6 +148,8 @@ int rc_lex();
 #define ID_LIST           1050
 #define EXPR_LIST         1051
 #define ARG_LIST          1052
+#define OPTASSIGN_LIST    1053
+#define OPTASSIGN         1054
 
 #include "ripe/parser.h"
 #include "ripe/scanner.h"

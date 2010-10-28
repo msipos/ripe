@@ -125,12 +125,6 @@ toplevel:         function
 {
   $$ = $1;
 };
-toplevel:         ID '=' dexpr
-{
-  $$ = node_new(GLOBAL_VAR);
-  node_add_child($$, $1);
-  node_add_child($$, $3);
-};
 toplevel:         C_CODE
 {
   $$ = $1;
@@ -141,11 +135,11 @@ toplevel:         "class" ID START toplevel_list END
   node_set_string($$, "name", $2->text);
   node_add_child($$, $4);
 };
-toplevel:         ID ID
+toplevel:         ID optassign_plus
 {
   $$ = node_new(TL_VAR);
   node_set_string($$, "annotation", $1->text);
-  node_set_string($$, "name", $2->text);
+  node_add_child($$, $2);
 };
 toplevel:         ID ID '(' arg_star ')' block
 {
@@ -477,6 +471,28 @@ expr_plus:        expr
   node_add_child($$, $1);
 };
 
+optassign_plus:   optassign_plus ',' optassign
+{
+  $$ = $1;
+  node_add_child($$, $3);
+};
+optassign_plus:   optassign
+{
+  $$ = node_new(OPTASSIGN_LIST);
+  node_add_child($$, $1);
+};
+optassign:        ID
+{
+  $$ = node_new_inherit(OPTASSIGN, $1);
+  node_set_string($$, "name", $1->text);
+  node_add_child($$, node_new(K_NIL));
+};
+optassign:        ID '=' dexpr
+{
+  $$ = node_new_inherit(OPTASSIGN, $1);
+  node_set_string($$, "name", $1->text);
+  node_add_child($$, $3);
+};
 
 arg:              '*' ID
 {
