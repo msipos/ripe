@@ -15,29 +15,32 @@ DEF_MODULES = DATA_TYPES + STDLIB
 #       BUILD SCRIPT FROM HERE ON
 import os, sys, tools
 
-CC = ["gcc"]
-LD = ["ld"]
-CFLAGS = ["-Wall", "-Wstrict-aliasing=0", "-Wfatal-errors", "-std=gnu99", "-I."]
-LFLAGS = ["-lgc"]
-
+conf = tools.conf
+conf["CC"] = "gcc"
+conf["LD"] = "ld"
+conf["CFLAGS"] = ["-Wall", "-Wstrict-aliasing=0", "-Wfatal-errors", "-std=gnu99", "-I."]
+conf["LFLAGS"] = ["-lgc"]
+conf["YACC"] = "bison"
+conf["LEX"] = "flex"
+conf["VERBOSITY"] = 1
 if "nogc" not in sys.argv:
-    CFLAGS.append("-DCLIB_GC")
+    conf["CFLAGS"].append("-DCLIB_GC")
 if "force" in sys.argv:
-    tools.set_forcing(True)
+    conf["FORCING"] = True
 if "quiet" in sys.argv:
-    tools.set_quiet(True)
+    conf["VERBOSITY"] = 0
 if "verbose" in sys.argv:
-    tools.set_verbose(True)
+    conf["VERBOSITY"] = 2
 if "profile" in sys.argv:
-    CFLAGS.append("-pg")
-    CFLAGS.append("-fno-omit-frame-pointer")
-    CFLAGS.append("-O3")
-    CFLAGS.append("-DNDEBUG")
+    conf["CFLAGS"].append("-pg")
+    conf["CFLAGS"].append("-fno-omit-frame-pointer")
+    conf["CFLAGS"].append("-O3")
+    conf["CFLAGS"].append("-DNDEBUG")
 if "nodebug" in sys.argv:
-    CFLAGS.append("-O3")
-    CFLAGS.append("-DNDEBUG")
+    conf["CFLAGS"].append("-O3")
+    conf["CFLAGS"].append("-DNDEBUG")
 else:
-    CFLAGS.append("-g")
+    conf["CFLAGS"].append("-g")
 
 # Construct required directories
 required_dirs = ['bin', 'product', 'product/include', 'product/include/clib',
@@ -45,67 +48,6 @@ required_dirs = ['bin', 'product', 'product/include', 'product/include/clib',
                  'product/modules']
 for d in required_dirs:
     tools.mkdir_safe(d)
-
-def link_objs(objs, output):
-    # Link objects into the output program
-    if tools.depends(output, objs):
-        arr = tools.flatten([LD, '-r', objs, '-o', output])
-        tools.pprint('LD', output)
-        tools.call(arr)
-
-def cons_obj(target, src, depends):
-    tdepends = [src] + depends
-
-    # Check timestamps
-    if tools.depends(target, tdepends):
-        # Build object
-        tools.pprint('CC', src, target)
-        tools.call([CC, CFLAGS, '-c', src, '-o', target])
-
-def cons_yacc(target, src, depends):
-    tdepends = [src] + depends
-
-    # Check timestamps
-    if tools.depends(target, tdepends):
-        tools.pprint("YAC", src, target)
-        tools.call(['bison', src])
-
-def cons_flex(target, src, depends):
-    tdepends = [src] + depends
-
-    # Check timestamps
-    if tools.depends(target, tdepends):
-        tools.pprint("LEX", src, target)
-        tools.call(['flex', src])
-
-def cons_bin(target, objs, depends):
-    tdepends = objs + depends
-    if tools.depends(target, tdepends):
-        tools.pprint('BIN', target)
-        tools.call([CC, CFLAGS, LFLAGS, objs, '-o', target])
-
-def cons_gen(gen_program, target, t):
-    if tools.depends(target, [gen_program]):
-        tools.pprint('GEN', gen_program, target)
-        tools.call([gen_program, t, '>', target])
-
-def cons_objs(srcs, depends):
-    results = []
-    for src in srcs:
-        root, ext = os.path.splitext(src)
-        dest = root + '.o'
-        cons_obj(dest, src, depends)
-        results.append(dest)
-    return results
-
-def copy_file(dest, src):
-    import shutil
-    if tools.depends(dest, [src]):
-        tools.pprint('CP', src, dest)
-        shutil.copy(src, dest)
-
-# Temporary files
-junkyard = []
 
 # Clib
 clib_hs =   [
@@ -125,15 +67,15 @@ clib_srcs = [
               'clib/utf8.c',
               'clib/stringbuf.c'
             ]
-clib_objs = cons_objs(clib_srcs, clib_hs)
+clib_objs = tools.cons_objs(clib_srcs, clib_hs)
 
 ###############################################################################
 # RIPE TOOLS
 ###############################################################################
 
-cons_yacc('ripe/parser.c', 'ripe/parser.y',
+tools.cons_yacc('ripe/parser.c', 'ripe/parser.y',
           ['ripe/ripe.h'] + clib_hs)
-cons_flex('ripe/scanner.c', 'ripe/scanner.l',
+tools.cons_flex('ripe/scanner.c', 'ripe/scanner.l',
           ['ripe/parser.h'] + clib_hs)
 ripe_hs = [
             'ripe/ripe.h',
@@ -150,22 +92,22 @@ ripe_srcs = [
                'ripe/operator.c',
                'ripe/generator.c'
              ]
-ripe_objs = cons_objs(ripe_srcs, ripe_hs + clib_hs)
-cons_bin('product/ripe', ripe_objs + clib_objs, [])
+ripe_objs = tools.cons_objs(ripe_srcs, ripe_hs + clib_hs)
+tools.cons_bin('product/ripe', ripe_objs + clib_objs, [])
 
 ###############################################################################
 # VM
 ###############################################################################
 
-func_gen_objs = cons_objs(['vm/func-gen/func-gen.c'], [])
-cons_bin('bin/func-gen', func_gen_objs, [])
-cons_gen('bin/func-gen', 'vm/func-generated.c', 'c')
-cons_gen('bin/func-gen', 'vm/func-generated.h', 'h')
+func_gen_objs = tools.cons_objs(['vm/func-gen/func-gen.c'], [])
+tools.cons_bin('bin/func-gen', func_gen_objs, [])
+tools.cons_gen('bin/func-gen', 'vm/func-generated.c', 'c')
+tools.cons_gen('bin/func-gen', 'vm/func-generated.h', 'h')
 
-ops_gen_objs = cons_objs(['vm/ops-gen/ops-gen.c'], [])
-cons_bin('bin/ops-gen', ops_gen_objs, [])
-cons_gen('bin/ops-gen', 'vm/ops-generated.c', 'c')
-cons_gen('bin/ops-gen', 'vm/ops-generated.h', 'h')
+ops_gen_objs = tools.cons_objs(['vm/ops-gen/ops-gen.c'], [])
+tools.cons_bin('bin/ops-gen', ops_gen_objs, [])
+tools.cons_gen('bin/ops-gen', 'vm/ops-generated.c', 'c')
+tools.cons_gen('bin/ops-gen', 'vm/ops-generated.h', 'h')
 
 vm_hs = [
           'vm/vm.h',
@@ -197,17 +139,17 @@ vm_srcs = [
             'vm/builtin/Complex.c',
             'vm/builtin/Tuple.c'
           ]
-vm_objs = cons_objs(vm_srcs, vm_hs + clib_hs)
+vm_objs = tools.cons_objs(vm_srcs, vm_hs + clib_hs)
 
 # Construct VM object
-link_objs(vm_objs + clib_objs, "product/vm.o")
+tools.link_objs(vm_objs + clib_objs, "product/vm.o")
 
 include_headers = clib_hs + vm_hs + ['modules/modules.h']
 for header in include_headers:
-    copy_file('product/include/' + header, header)
+    tools.copy_file('product/include/' + header, header)
 f = open('product/ripe.conf', 'w')
-f.write('cflags=%s\n' % " ".join(CFLAGS))
-f.write('lflags=%s\n' % " ".join(LFLAGS))
+f.write('cflags=%s\n' % " ".join(conf["CFLAGS"]))
+f.write('lflags=%s\n' % " ".join(conf["LFLAGS"]))
 f.write('modules=%s\n' % (" ".join(DEF_MODULES)))
 f.close()
 
@@ -223,7 +165,7 @@ def cons_module(src, dest, module, required, extra_CFLAGS=''):
         tools.pprint('MOD', src, dest)
         args = ['product/ripe', '-n', module, '-c', src, '-o', dest,
                         '-f', '"%s"' % extra_CFLAGS]
-        if tools.is_verbose():
+        if conf["VERBOSITY"] > 1:
             args.append('-v')
         if required:
             tools.call(args)
@@ -239,11 +181,12 @@ def build_module(module, required):
     # Deal with metafile
     metafile = 'modules/%s/%s.meta' % (module, module)
     if os.path.exists(metafile):
-        copy_file('product/modules/%s/%s.meta' % (module, module), metafile)
+        tools.copy_file('product/modules/%s/%s.meta' % (module, module), metafile)
     meta = tools.load_meta(metafile)
     extra_CFLAGS = ''
     if meta.has_key('includes'):
         extra_CFLAGS = meta['includes']
+
     path = 'modules/%s/%s.rip' % (module, module)
     if os.path.exists(path):
         cons_module(path, out, module, required, extra_CFLAGS)
@@ -263,11 +206,3 @@ for module in OPTIONAL_MODULES:
 
 if len(failed_modules) > 0:
     print("WARNING: Failed building optional module(s): %s" % ", ".join(failed_modules))
-
-##############################################################################
-# CLEANUP
-##############################################################################
-
-# Cleanup
-for filename in junkyard:
-    tools.delete_safe(filename)

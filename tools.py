@@ -1,6 +1,57 @@
 from subprocess import check_call as ccall
 import os, sys
 
+conf = {}
+
+def link_objs(objs, output):
+    if depends(output, objs):
+        arr = flatten([conf["LD"], '-r', objs, '-o', output])
+        pprint('LD', output)
+        call(arr)
+
+def cons_obj(target, src, deps):
+    if depends(target, deps + [src]):
+        pprint('CC', src, target)
+        call([conf["CC"],
+                    conf["CFLAGS"], '-c', src, '-o', target])
+
+def cons_yacc(target, src, deps):
+    if depends(target, deps + [src]):
+        pprint("YAC", src, target)
+        call([conf["YACC"], src])
+
+def cons_flex(target, src, deps):
+    if depends(target, deps + [src]):
+        pprint("LEX", src, target)
+        call([conf["LEX"], src])
+
+def cons_bin(target, objs, deps):
+    if depends(target, deps + objs):
+        pprint('BIN', target)
+        call([conf["CC"],
+                    conf["CFLAGS"],
+                    conf["LFLAGS"], objs, '-o', target])
+
+def cons_gen(gen_program, target, t):
+    if depends(target, [gen_program]):
+        pprint('GEN', gen_program, target)
+        call([gen_program, t, '>', target])
+
+def cons_objs(srcs, depends):
+    results = []
+    for src in srcs:
+        root, ext = os.path.splitext(src)
+        dest = root + '.o'
+        cons_obj(dest, src, depends)
+        results.append(dest)
+    return results
+
+def copy_file(dest, src):
+    import shutil
+    if depends(dest, [src]):
+        pprint('CP', src, dest)
+        shutil.copy(src, dest)
+
 def load_meta(filename):
     if not os.path.exists(filename):
         return {}
@@ -16,7 +67,7 @@ def load_meta(filename):
 def call(args):
     cmd = ' '.join(flatten(args))
     try:
-        if verbose == True:
+        if conf["VERBOSITY"] > 1:
             print(cmd)
         ccall(cmd, shell=True)
     except:
@@ -26,7 +77,7 @@ def call(args):
 def try_call(args):
     cmd = ' '.join(flatten(args))
     try:
-        if verbose == True:
+        if conf["VERBOSITY"] > 1:
             print(cmd)
         ccall(cmd, shell=True)
         return True
@@ -45,7 +96,7 @@ def delete_safe(path):
 
 # Return True if target should be rebuilt
 def depends(target, dependencies):
-    if forcing == True:
+    if conf["FORCING"]:
        return True
 
     ttime = get_stamp(target)
@@ -69,7 +120,7 @@ def pad(s, ln):
     return s
 
 def pprint(flag, src, target = None):
-    if quiet:
+    if conf["VERBOSITY"] < 1:
         return
     flag_len = 3
     src_len = 25
@@ -80,25 +131,6 @@ def pprint(flag, src, target = None):
               + pad(target, target_len))
     else:
         print(" " + pad(flag, flag_len + 3) + src)
-
-forcing = False
-def set_forcing(force):
-    global forcing
-    forcing = force
-
-quiet = False
-def set_quiet(q):
-    global quiet
-    quiet = q
-def is_quiet():
-    return quiet
-
-verbose = False
-def set_verbose(v):
-    global verbose
-    verbose = v
-def is_verbose():
-    return verbose
 
 def flatten(x):
     # From:  http://kogs-www.informatik.uni-hamburg.de/~meine/python_tricks
