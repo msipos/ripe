@@ -73,7 +73,6 @@
 %token   K_IN         "in"
 %token   K_PASS       "pass"
 %token   K_CLASS      "class"
-%token   K_CONST      "const"
 %token   OP_EQUAL     "=="
 %token   OP_NOT_EQUAL "!="
 %token   OP_ASSIGN    ":="
@@ -125,12 +124,6 @@ toplevel:         function
 {
   $$ = $1;
 };
-toplevel:         ID '=' dexpr
-{
-  $$ = node_new(GLOBAL_VAR);
-  node_add_child($$, $1);
-  node_add_child($$, $3);
-};
 toplevel:         C_CODE
 {
   $$ = $1;
@@ -141,11 +134,11 @@ toplevel:         "class" ID START toplevel_list END
   node_set_string($$, "name", $2->text);
   node_add_child($$, $4);
 };
-toplevel:         ID ID
+toplevel:         ID optassign_plus
 {
   $$ = node_new(TL_VAR);
   node_set_string($$, "annotation", $1->text);
-  node_set_string($$, "name", $2->text);
+  node_add_child($$, $2);
 };
 toplevel:         ID ID '(' arg_star ')' block
 {
@@ -154,18 +147,6 @@ toplevel:         ID ID '(' arg_star ')' block
   node_set_string($$, "name", $2->text);
   node_add_child($$, $4);
   node_add_child($$, $6);
-};
-toplevel:         "const" ID '=' dexpr
-{
-  $$ = node_new(CONST);
-  node_add_child($$, $2);
-  node_add_child($$, $4);
-};
-toplevel:         "const" ID '=' C_CODE
-{
-  $$ = node_new(CONST);
-  node_add_child($$, $2);
-  node_add_child($$, $4);
 };
 
 function:         ID '(' arg_star ')' block
@@ -215,7 +196,7 @@ stmt:             "elif" expr block
   node_add_child($$, $2);
   node_add_child($$, $3);
 };
-stmt:             expr '=' expr
+stmt:             expr_plus '=' expr
 {
   $$ = node_new(STMT_ASSIGN);
   node_add_child($$, $1);
@@ -477,6 +458,34 @@ expr_plus:        expr
   node_add_child($$, $1);
 };
 
+optassign_plus:   optassign_plus ',' optassign
+{
+  $$ = $1;
+  node_add_child($$, $3);
+};
+optassign_plus:   optassign
+{
+  $$ = node_new(OPTASSIGN_LIST);
+  node_add_child($$, $1);
+};
+optassign:        ID
+{
+  $$ = node_new_inherit(OPTASSIGN, $1);
+  node_set_string($$, "name", $1->text);
+  node_add_child($$, node_new(K_NIL));
+};
+optassign:        ID '=' dexpr
+{
+  $$ = node_new_inherit(OPTASSIGN, $1);
+  node_set_string($$, "name", $1->text);
+  node_add_child($$, $3);
+};
+optassign:        ID '=' C_CODE
+{
+  $$ = node_new_inherit(OPTASSIGN, $1);
+  node_set_string($$, "name", $1->text);
+  node_add_child($$, $3);
+};
 
 arg:              '*' ID
 {

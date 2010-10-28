@@ -380,7 +380,7 @@ static const char* obj_call(const char* obj, const char* method, int num_args,
 
 // Returns code for accessing index (if assign = NULL), or setting index
 // when assign is of type expr.
-static const char* eval_index(Node* self, Node* idx, Node* assign)
+static const char* eval_index(Node* self, Node* idx, const char* assign)
 {
   if (assign == NULL) {
     return obj_call(eval_expr(self), "index", idx->children.size,
@@ -389,7 +389,7 @@ static const char* eval_index(Node* self, Node* idx, Node* assign)
     return obj_call(eval_expr(self), "index_set", idx->children.size+1,
                     mem_asprintf("%s, %s",
                                  eval_expr_list(idx, true),
-                                 eval_expr(assign)));
+                                 assign));
   }
 }
 
@@ -648,6 +648,67 @@ static void compile_stmt_expr(Node* stmt)
 static void compile_stmtlist(Node* stmtlist);
 static void compile_stmtlist_no_locals(Node* stmtlist);
 
+static void gen_stmt_assign2(Node* left, const char* right)
+{
+  switch(left->type){
+    case ID:
+      {
+        const char* c_name = query_local(left->text);
+        if (c_name == NULL){
+          // Register the variable
+          sbuf_printf(&sb_contents, "  Value %s = %s;\n",
+                      register_local(left->text), right);
+        } else {
+          sbuf_printf(&sb_contents, "  %s = %s;\n", c_name, right);
+        }
+      }
+      break;
+    case EXPR_INDEX:
+      sbuf_printf(&sb_contents, "  %s;\n",
+                  eval_index(node_get_child(left, 0),
+                             node_get_child(left, 1),
+                             right));
+      break;
+    case EXPR_FIELD:
+      sbuf_printf(&sb_contents, "  field_set(%s, %s, %s);\n",
+                  eval_expr(node_get_child(left, 0)),
+                  tbl_get_dsym(node_get_child(left, 1)->text),
+                  right);
+      break;
+    case EXPR_AT_VAR:
+      sbuf_printf(&sb_contents, "  %s = %s;\n",
+                  eval_expr(left),
+                  right);
+      break;
+    default:
+      raise_error("invalid lvalue of assignment statement", left);
+  }
+}
+
+static void gen_stmt_assign(Node* left, Node* right)
+{
+  if (node_num_children(left) == 1){
+    left = node_get_child(left, 0);
+    gen_stmt_assign2(left, eval_expr(right));
+  } else {
+    static int counter = 0;
+    counter++;
+    char* tmp_variable = mem_asprintf("_tmp_assign_%d", counter);
+    sbuf_printf(&sb_contents, "  const Value %s = %s;\n",
+                tmp_variable, eval_expr(right));
+    for (int i = 0; i < node_num_children(left); i++){
+      Node* l = node_get_child(left, i);
+      gen_stmt_assign2(l, obj_call(
+                                   tmp_variable,
+                                   "index",
+                                   1,
+                                   mem_asprintf(", int64_to_val(%d)", i + 1)
+                                  )
+                      );
+    }
+  }
+}
+
 static void compile_stmt(Node* stmt)
 {
   switch(stmt->type){
@@ -717,43 +778,7 @@ static void compile_stmt(Node* stmt)
       sbuf_printf(&sb_contents, "  continue;\n");
       break;
     case STMT_ASSIGN:
-      {
-        Node* left = node_get_child(stmt, 0);
-        Node* right = node_get_child(stmt, 1);
-        switch (left->type){
-          case ID:
-            {
-              const char* c_name = query_local(left->text);
-              if (c_name == NULL){
-                // Register the variable
-                sbuf_printf(&sb_contents, "  Value %s = %s;\n",
-                            register_local(left->text), eval_expr(right));
-              } else {
-                sbuf_printf(&sb_contents, "  %s = %s;\n", c_name, eval_expr(right));
-              }
-            }
-            break;
-          case EXPR_INDEX:
-            sbuf_printf(&sb_contents, "  %s;\n",
-                        eval_index(node_get_child(left, 0),
-                                   node_get_child(left, 1),
-                                   right));
-            break;
-          case EXPR_FIELD:
-            sbuf_printf(&sb_contents, "  field_set(%s, %s, %s);\n",
-                        eval_expr(node_get_child(left, 0)),
-                        tbl_get_dsym(node_get_child(left, 1)->text),
-                        eval_expr(right));
-            break;
-          case EXPR_AT_VAR:
-            sbuf_printf(&sb_contents, "  %s = %s;\n",
-                        eval_expr(left),
-                        eval_expr(right));
-            break;
-          default:
-            raise_error("invalid lvalue of assignment statement", stmt);
-        }
-      }
+      gen_stmt_assign(node_get_child(stmt, 0), node_get_child(stmt, 1));
       break;
     case STMT_FOR:
       {
@@ -970,19 +995,6 @@ static void compile_function(Node* function)
   sbuf_printf(&sb_contents, "}\n");
 }
 
-static void compile_global_var(Node* n)
-{
-  static int counter = 0;
-  counter++;
-
-  Node* id = node_get_child(n, 0);
-  Node* value = node_get_child(n, 1);
-  set_local(mem_asprintf("%s%s", module_prefix, id->text),
-            mem_asprintf("global_%d", counter));
-  sbuf_printf(&sb_header, "static Value global_%d;\n", counter);
-  sbuf_printf(&sb_init2, "  global_%d = %s;\n", counter, eval_expr(value));
-}
-
 static void gen_constructor(Node* constructor)
 {
   context2 = CONTEXT_CONSTRUCTOR;
@@ -1124,7 +1136,6 @@ static void gen_class(Node* klass)
       for (int i = 0; i < ast->children.size; i++){
         Node* n = node_get_child(ast, i);
         if (n->type == TL_VAR){
-          const char* var_name = node_get_string(n, "name");
           const char* annotation = node_get_string(n, "annotation");
           const char* var_type = "";
           if (strcmp(annotation, "readable") == 0){
@@ -1134,11 +1145,18 @@ static void gen_class(Node* klass)
           } else if (strcmp(annotation, "private") == 0){
             var_type = "0";
           } else {
-            raise_error(mem_asprintf("invalid annotation '%s'", annotation), n);
+            raise_error(mem_asprintf("invalid annotation '%s' inside a class",
+                                     annotation), n);
           }
-          sbuf_printf(&sb_init1, "  klass_new_field(%s, dsym_get(\"%s\"), "
-                                   "%s);\n", context_class_c_name, var_name,
-                                   var_type);
+
+          Node* optassign_list = node_get_child(n, 0);
+          for (int i = 0; i < node_num_children(optassign_list); i++){
+            Node* optassign = node_get_child(optassign_list, i);
+            const char* var_name = node_get_string(optassign, "name");
+            sbuf_printf(&sb_init1, "  klass_new_field(%s, dsym_get(\"%s\"), "
+                                     "%s);\n", context_class_c_name, var_name,
+                                     var_type);
+          }
         }
       }
       break;
@@ -1208,8 +1226,46 @@ static void gen_globals(Node* ast)
 {
   for (int i = 0; i < ast->children.size; i++){
     Node* n = node_get_child(ast, i);
-    if (n->type == GLOBAL_VAR){
-      compile_global_var(n);
+    if (n->type == TL_VAR){
+      const char* annotation = node_get_string(n, "annotation");
+
+      if (strcmp(annotation, "global") == 0){
+        Node* optassign_list = node_get_child(n, 0);
+        for (int i = 0; i < node_num_children(optassign_list); i++){
+          Node* optassign = node_get_child(optassign_list, i);
+          const char* var_name = node_get_string(optassign, "name");
+
+          static int counter = 0;
+          counter++;
+          const char* ripe_name = mem_asprintf("%s%s", module_prefix, var_name);
+          const char* c_name = mem_asprintf("_glb%d_%s", counter,
+                                            util_escape(ripe_name));
+
+          set_local(ripe_name, c_name);
+          sbuf_printf(&sb_header, "static Value %s;\n", c_name);
+
+          Node* right = node_get_child(optassign, 0);
+          sbuf_printf(&sb_init2, "  %s = %s;\n", c_name, eval_expr(right));
+        }
+      } else if (strcmp(annotation, "const") == 0){
+        Node* optassign_list = node_get_child(n, 0);
+        for (int i = 0; i < node_num_children(optassign_list); i++){
+          Node* optassign = node_get_child(optassign_list, i);
+          const char* var_name = node_get_string(optassign, "name");
+
+          static int counter = 0;
+          counter++;
+          const char* ripe_name = mem_asprintf("%s%s", module_prefix, var_name);
+          Node* right = node_get_child(optassign, 0);
+
+          sbuf_printf(&sb_init1, "  ssym_set(\"%s\", %s);\n",
+                      ripe_name,
+                      eval_expr(right));
+        }
+      } else {
+        raise_error(mem_asprintf("invalid annotation '%s' at top level",
+                                 annotation), n);
+      }
     }
     if (n->type == MODULE){
       const char* name = node_get_string(n, "name");
@@ -1243,15 +1299,7 @@ static void gen_toplevels(Node* ast)
           sbuf_printf(&sb_header, "%s\n", util_trim_ends(n->text));
         }
         break;
-      case CONST:
-        {
-          sbuf_printf(&sb_init1, "  ssym_set(\"%s\", %s);\n",
-                      mem_asprintf("%s%s",
-                                   module_prefix,
-                                   node_get_child(n, 0)->text),
-                      eval_expr(node_get_child(n, 1)));
-        }
-      case GLOBAL_VAR:
+      case TL_VAR:
         // Ignore.
         break;
       case CLASS:

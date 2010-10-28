@@ -52,6 +52,7 @@
           <keyword>module</keyword>
           <keyword>class</keyword>
           <keyword>constructor</keyword>
+          <keyword>global</keyword>
           <keyword>const</keyword>
           <keyword>private</keyword>
           <keyword>readable</keyword>
