@@ -111,7 +111,6 @@ int rc_lex();
 #define ARRAY_ARG         1006
 #define ANNOT_FUNCTION    1007
 #define TL_VAR            1008  // Top-level variable (with annotation maybe)
-#define CONST             1009
 
 // Types of STMTs
 #define STMT_EXPR         1100

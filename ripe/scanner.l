@@ -77,7 +77,6 @@ for                             { return K_FOR; }
 in                              { return K_IN; }
 pass                            { return K_PASS; }
 class                           { return K_CLASS; }
-const                           { return K_CONST; }
 [A-Za-z_][A-Za-z0-9_?]*         { return ID; }
 \&[A-Za-z_][A-Za-z0-9_?]*       { return SYMBOL; }
 .                               { return UNKNOWN; }

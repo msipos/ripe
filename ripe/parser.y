@@ -73,7 +73,6 @@
 %token   K_IN         "in"
 %token   K_PASS       "pass"
 %token   K_CLASS      "class"
-%token   K_CONST      "const"
 %token   OP_EQUAL     "=="
 %token   OP_NOT_EQUAL "!="
 %token   OP_ASSIGN    ":="
@@ -148,18 +147,6 @@ toplevel:         ID ID '(' arg_star ')' block
   node_set_string($$, "name", $2->text);
   node_add_child($$, $4);
   node_add_child($$, $6);
-};
-toplevel:         "const" ID '=' dexpr
-{
-  $$ = node_new(CONST);
-  node_add_child($$, $2);
-  node_add_child($$, $4);
-};
-toplevel:         "const" ID '=' C_CODE
-{
-  $$ = node_new(CONST);
-  node_add_child($$, $2);
-  node_add_child($$, $4);
 };
 
 function:         ID '(' arg_star ')' block
@@ -488,6 +475,12 @@ optassign:        ID
   node_add_child($$, node_new(K_NIL));
 };
 optassign:        ID '=' dexpr
+{
+  $$ = node_new_inherit(OPTASSIGN, $1);
+  node_set_string($$, "name", $1->text);
+  node_add_child($$, $3);
+};
+optassign:        ID '=' C_CODE
 {
   $$ = node_new_inherit(OPTASSIGN, $1);
   node_set_string($$, "name", $1->text);

@@ -1247,6 +1247,21 @@ static void gen_globals(Node* ast)
           Node* right = node_get_child(optassign, 0);
           sbuf_printf(&sb_init2, "  %s = %s;\n", c_name, eval_expr(right));
         }
+      } else if (strcmp(annotation, "const") == 0){
+        Node* optassign_list = node_get_child(n, 0);
+        for (int i = 0; i < node_num_children(optassign_list); i++){
+          Node* optassign = node_get_child(optassign_list, i);
+          const char* var_name = node_get_string(optassign, "name");
+
+          static int counter = 0;
+          counter++;
+          const char* ripe_name = mem_asprintf("%s%s", module_prefix, var_name);
+          Node* right = node_get_child(optassign, 0);
+
+          sbuf_printf(&sb_init1, "  ssym_set(\"%s\", %s);\n",
+                      ripe_name,
+                      eval_expr(right));
+        }
       } else {
         raise_error(mem_asprintf("invalid annotation '%s' at top level",
                                  annotation), n);
@@ -1284,14 +1299,6 @@ static void gen_toplevels(Node* ast)
           sbuf_printf(&sb_header, "%s\n", util_trim_ends(n->text));
         }
         break;
-      case CONST:
-        {
-          sbuf_printf(&sb_init1, "  ssym_set(\"%s\", %s);\n",
-                      mem_asprintf("%s%s",
-                                   module_prefix,
-                                   node_get_child(n, 0)->text),
-                      eval_expr(node_get_child(n, 1)));
-        }
       case TL_VAR:
         // Ignore.
         break;
