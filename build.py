@@ -210,6 +210,5 @@ for module in MODULES:
     build_module(module, True)
 for module in OPTIONAL_MODULES:
     build_module(module, False)
-
 if len(failed_modules) > 0:
     print("WARNING: Failed building optional module(s): %s" % ", ".join(failed_modules))

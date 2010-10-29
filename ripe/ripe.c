@@ -182,26 +182,32 @@ int compile_c(const char* in_filename, const char* out_filename)
   return 0;
 }
 
-int compile_to_c(const char* in_filename, const char* module_name,
-                 const char* out_filename)
+int compile_to_c(int num_files, const char** in_filenames,
+                 const char* module_name, const char* out_filename)
 {
-  if (verbose) {
-    printf("compiling '%s' to '%s'\n", in_filename, out_filename);
-  }
-  if (not path_exists(in_filename)) {
-    fprintf(stderr, "cannot open '%s' for reading\n", in_filename);
-    return 1;
-  }
-  Node* ast = build_tree(in_filename);
-  if (ast == NULL){
-    fprintf(stderr, "error while parsing '%s'\n", in_filename);
-    return 1;
-  }
-
   dump_init();
-  if (generate(ast, module_name, in_filename)){
-    fprintf(stderr, "error while generating '%s'\n", in_filename);
-    return 1;
+
+  // Now for each input file
+  for (int i = 0; i < num_files; i++){
+    const char* in_filename = in_filenames[i];
+
+    if (verbose) {
+      printf("compiling '%s' to '%s'\n", in_filename, out_filename);
+    }
+    if (not path_exists(in_filename)) {
+      fprintf(stderr, "cannot open '%s' for reading\n", in_filename);
+      exit(1);
+    }
+    Node* ast = build_tree(in_filename);
+    if (ast == NULL){
+      fprintf(stderr, "error while parsing '%s'\n", in_filename);
+      exit(1);
+    }
+
+    if (generate(ast, module_name, in_filename)){
+      fprintf(stderr, "error while generating '%s'\n", in_filename);
+      exit(1);
+    }
   }
 
   // Output handling.
@@ -217,19 +223,19 @@ int compile_to_c(const char* in_filename, const char* module_name,
   return 0;
 }
 
-int compile_rip(const char* in_filename, const char* module_name,
+int compile_rip(int num_files, const char** in_filenames, const char* module_name,
                 const char* out_filename)
 {
   const char* tmp = tempnam(NULL, "ripe");
   const char* c_filename = mem_asprintf("%s.c", tmp);
 
-  if (compile_to_c(in_filename, module_name, c_filename)){
+  if (compile_to_c(num_files, in_filenames, module_name, c_filename)){
     remove(c_filename);
-    return 1;
+    exit(1);
   }
   if (compile_c(c_filename, out_filename)){
     remove(c_filename);
-    return 1;
+    exit(1);
   }
   remove(c_filename);
   return 0;
@@ -249,7 +255,7 @@ void add_ripe_source(const char* in_filename)
   counter++;
   const char* module_name = mem_asprintf("_User%d", counter);
 
-  compile_rip(in_filename, module_name, o_filename);
+  compile_rip(1, &in_filename, module_name, o_filename);
   module_add(module_name, o_filename, FLAG_CLEANUP);
 }
 
@@ -274,7 +280,7 @@ int dump_c(const char* in_filename, const char* module_name)
 {
   const char* tmp = tempnam(NULL, "ripe");
   const char* tmp_filename = mem_asprintf("%s.c", tmp);
-  if (compile_to_c(in_filename, module_name, tmp_filename))
+  if (compile_to_c(1, &in_filename, module_name, tmp_filename))
     return 1;
   FILE* f = fopen(tmp_filename, "r");
   char line[1024];
@@ -402,26 +408,30 @@ int main(int argc, char* const* argv)
       if (out_filename == NULL){
         out_filename = "out.o";
       }
-      if (argc - optind != 1){
-        fprintf(stderr, "error: must provide one source file");
+      if (argc - optind < 1){
+        fprintf(stderr, "error: must provide at least one source file\n");
         return 1;
       }
       if (module_name == NULL){
         module_name = "Module";
       }
 
-      in_filename = argv[optind];
-      const char* input_extension = path_get_extension(in_filename);
-      if (strcmp(input_extension, ".rip") == 0){
-        return compile_rip(in_filename, module_name, out_filename);
-      } else if (strcmp(input_extension, ".c") == 0){
-        return compile_c(in_filename, out_filename);
-      } else {
-        fprintf(stderr, "error: unknown extension: %s\n",
-                input_extension);
-        return 1;
+      Array rip_files;
+      array_init(&rip_files, const char*);
+      for (int arg = optind; arg < argc; arg++){
+        in_filename = argv[arg];
+        const char* input_extension = path_get_extension(in_filename);
+        if (strcmp(input_extension, ".rip") == 0){
+          array_append(&rip_files, in_filename);
+        } else {
+          fprintf(stderr, "error: unknown extension: %s\n",
+                  input_extension);
+          return 1;
+        }
       }
-      break;
+      compile_rip(rip_files.size, (const char**) (rip_files.data), module_name,
+                  out_filename);
+      return 0;
     case MODE_BUILD:
       if (out_filename == NULL){
         out_filename = "ripe.out";

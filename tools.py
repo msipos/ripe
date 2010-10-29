@@ -92,7 +92,7 @@ def try_call(args, env = None):
     try:
         if conf["VERBOSITY"] > 1:
             print(cmd)
-        ccall(cmd, shell=True, env = env)
+        ccall(cmd, shell=True, env=env)
         return True
     except:
         return False
