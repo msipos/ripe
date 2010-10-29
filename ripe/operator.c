@@ -52,9 +52,12 @@ const char* binary_op_map(int type){
     if (type == binary_ot[i].type) return binary_ot[i].func;
   }
   assert_never();
+
+  // Crash:
+  return NULL;
 }
 
-static OperatorTable unary_ot[] = 
+static OperatorTable unary_ot[] =
 {
   {'-',          "op_unary_minus"},
   {K_NOT,        "op_unary_not"},
@@ -76,5 +79,7 @@ const char* unary_op_map(int type){
     if (type == unary_ot[i].type) return unary_ot[i].func;
   }
   assert_never();
-}
 
+  // Crash:
+  return NULL;
+}

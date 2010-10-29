@@ -87,6 +87,9 @@ const char* dsym_reverse_get(Value dsym)
     return name;
   }
   assert_never();
+
+  // Crash:
+  return NULL;
 }
 
 const char* ssym_reverse_get(Value value)

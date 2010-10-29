@@ -73,8 +73,12 @@ void node_set_string(Node* n, const char* key, const char* value)
 char* node_get_string(Node* n, const char* key)
 {
   char* out;
-  bool rv = dict_query(&(n->props_strings), &key, &out);
-  assert(rv == true);
+  #ifdef NDEBUG
+    dict_query(&(n->props_strings), &key, &out);
+  #else
+    bool rv = dict_query(&(n->props_strings), &key, &out);
+    assert(rv == true);
+  #endif
   return out;
 }
 

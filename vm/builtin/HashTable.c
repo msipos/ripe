@@ -19,7 +19,8 @@ static uint64 query(BucketType* buckets, Value* keys, uint64 size, Value key)
 {
   const uint64 h = op_hash(key);
   bool first_empty = false;
-  uint64 first_empty_place;
+  uint64 first_empty_place = 100000000; // This should not get returned.
+                                        // If it does, it will hopefully crash :)
 
   for (uint64 idx = 0; idx < size; idx++){
     // Quadratic probing
@@ -42,6 +43,7 @@ static uint64 query(BucketType* buckets, Value* keys, uint64 size, Value key)
   }
   if (first_empty) return first_empty_place;
   assert_never();
+  return 1000000000;
 }
 
 static void rehash(HashTable* ht, bool do_values)
@@ -49,7 +51,7 @@ static void rehash(HashTable* ht, bool do_values)
   uint64 new_alloc_size = map_prime(ht->alloc_size);
   BucketType* new_buckets = mem_malloc(sizeof(BucketType) * new_alloc_size);
   Value* new_keys = mem_malloc(sizeof(Value) * new_alloc_size);
-  Value* new_values;
+  Value* new_values = NULL;
   if (do_values) new_values = mem_malloc(sizeof(Value) * new_alloc_size);
 
   const uint64 alloc_size = ht->alloc_size;

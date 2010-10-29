@@ -196,6 +196,8 @@ static inline Klass* obj_klass(Value v_obj)
       assert_never();
   }
   assert_never();
+  // Crash in release build:
+  return NULL;
 }
 static inline void obj_verify(Value v_obj, Klass* klass){
   Klass* klass_obj = obj_klass(v_obj);

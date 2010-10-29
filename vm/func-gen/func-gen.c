@@ -71,6 +71,7 @@ void gen_c()
   }
   printf("  }\n"
          "  assert_never();\n"
+         "  return VALUE_NIL;\n"
          "}\n");
 
   printf("\n// constructors\n\n");

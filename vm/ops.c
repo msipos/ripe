@@ -43,6 +43,9 @@ int64 op_hash(Value v)
       return unpack_int64(v);
   }
   assert_never();
+
+  // Ignore warning:
+  return 0;
 }
 
 Value op_and(Value a, Value b)

@@ -93,7 +93,7 @@ void stack_pop()
 void stack_display()
 {
   for(int64 i = 0; i < stack_idx; i++){
-    const char* name;
+    const char* name = "invalid";
     switch(stack[i].type){
       case TYPE_FUNC:
         name = ssym_reverse_get(stack[i].func);
