@@ -1,0 +1,3 @@
+main()
+  data = Json.parse("[true, [false, {true: \"hello\", 1: 2.34}], true]")
+  Out.println(data)

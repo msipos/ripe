@@ -29,3 +29,13 @@ Value string_to_val(char* str)
   obj->str = mem_strdup(str);
   return v;
 }
+
+Value stringn_to_val(char* str, int n)
+{
+  String* obj;
+  Value v = obj_new(klass_String, (void**)&obj);
+  obj->str = mem_malloc(n+1);
+  strncpy(obj->str, str, n);
+  obj->str[n] = 0;
+  return v;
+}

@@ -84,6 +84,7 @@ extern Klass* klass_Array3;
 extern Klass* klass_Range;
 extern Klass* klass_String;
 extern Klass* klass_Tuple;
+extern Klass* klass_Map;
 
 extern Value dsym_to_string;
 
@@ -280,6 +281,7 @@ Value array1_to_val2(uint16 num_args, ...);
 void array1_index_set(Array1* array1, int64 idx, Value val);
 Value array1_index(Array1* array1, int64 idx);
 Value array1_new(int64 num_elements);
+void array1_push(Array1* a, Value val);
 
 extern Klass* klass_Array2;
 typedef struct {
@@ -397,6 +399,7 @@ typedef struct {
 
 char* val_to_string(Value v);
 Value string_to_val(char* str);
+Value stringn_to_val(char* str, int n);
 
 //////////////////////////////////////////////////////////////////////////////
 // Tuple.c

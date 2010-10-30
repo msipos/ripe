@@ -20,7 +20,8 @@ static uint64 query(BucketType* buckets, Value* keys, uint64 size, Value key)
   const uint64 h = op_hash(key);
   bool first_empty = false;
   uint64 first_empty_place = 100000000; // This should not get returned.
-                                        // If it does, it will hopefully crash :)
+                                        // If it does, it will hopefully
+                                        // crash :)
 
   for (uint64 idx = 0; idx < size; idx++){
     // Quadratic probing

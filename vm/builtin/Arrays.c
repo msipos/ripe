@@ -71,6 +71,22 @@ void array1_index_set(Array1* array1, int64 idx, Value val)
   array1->data[util_index("Array1", idx, array1->size)] = val;
 }
 
+void array1_push(Array1* a, Value val)
+{
+  int64 size = a->size + 1;
+  a->size = size;
+  if (size > a->alloc_size) {
+    a->alloc_size *= 2;
+    if (a->alloc_size == 0) {
+      a->alloc_size = 2;
+      a->data = mem_malloc(sizeof(Value) * a->alloc_size);
+    } else {
+      a->data = mem_realloc(a->data, sizeof(Value) * a->alloc_size);
+    }
+  }
+  a->data[size - 1] = val;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Array2
 ///////////////////////////////////////////////////////////////////////////////

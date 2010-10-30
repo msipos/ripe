@@ -53,11 +53,15 @@ typedef uint16_t error;
 #include <assert.h>
 #define assert_never()  assert(false)
 
+#define ATTR_NORETURN __attribute__((noreturn))
+
 // CLIB
 #include "array.h"
 #include "mem.h"
 #include "hash.h"
 #include "dict.h"
 #include "utf8.h"
+
+
 
 #endif
