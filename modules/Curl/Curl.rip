@@ -1,5 +1,13 @@
 $
   #include <curl/curl.h>
+  #include "clib/stringbuf.h"
+
+  static size_t write_data(void *buffer, size_t size, size_t nmemb, void *userp)
+  {
+    StringBuf* sb = (StringBuf*) userp;
+    sbuf_ncat(sb, buffer, size*nmemb);
+    return nmemb;
+  }
 $
 
 module Curl
@@ -13,5 +21,22 @@ module Curl
     $
       curl_free(rv);
       curl_easy_cleanup(handle);
+    $
+    return rv
+
+  get(url)
+    $
+      StringBuf sb;
+      sbuf_init(&sb, "");
+      CURL* handle = curl_easy_init();
+      curl_easy_setopt(handle, CURLOPT_URL, val_to_string(__url));
+      curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, write_data);
+      curl_easy_setopt(handle, CURLOPT_WRITEDATA, &sb);
+      if (curl_easy_perform(handle)) exc_raise("Failed to get URL");
+      curl_easy_cleanup(handle);
+    $
+    rv = $ string_to_val(sb.str) $
+    $
+      sbuf_deinit(&sb);
     $
     return rv

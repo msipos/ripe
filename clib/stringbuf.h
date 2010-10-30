@@ -28,6 +28,7 @@ void sbuf_init(StringBuf* sbuf, const char* s);
 void sbuf_printf(StringBuf* sbuf, const char* format, ...);
 void sbuf_catc(StringBuf* sbuf, const char c);
 void sbuf_cat(StringBuf* sbuf, const char* s);
+void sbuf_ncat(StringBuf* sbuf, const char* s, int64 n);
 void sbuf_ncpy(StringBuf* sbuf, const char* s, int64 n);
 void sbuf_clear(StringBuf* sbuf);
 void sbuf_deinit(StringBuf* sbuf);

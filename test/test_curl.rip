@@ -1,0 +1,3 @@
+main()
+  text = Curl.get("http://www.google.com/ig/api?weather=Mountain+View")
+  Out.println(text)

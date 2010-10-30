@@ -1,6 +1,7 @@
 $
   #include <libxml/parser.h>
   #include <libxml/tree.h>
+  #include <libxml/xpath.h>
 $
 
 module Xml
@@ -28,6 +29,38 @@ module Xml
       $
       return node
 
+    # Apply an Xpath expression and return array of nodes that are results
+    apply_xpath(expr)
+      $
+        xmlXPathContextPtr xpath_context = xmlXPathNewContext(@doc);
+        if (!xpath_context) exc_raise("Failed to create xpath context");
+        const char* expr = val_to_string(__expr);
+        xmlXPathObjectPtr xpath_object =
+          xmlXPathEvalExpression((const xmlChar*) expr, xpath_context);
+        if (!xpath_object)
+          exc_raise("Failed to evaluate xpath expression '%s'", expr);
+        xmlNodeSetPtr nodes = xpath_object->nodesetval;
+
+        Value __array = array1_new(nodes->nodeNr);
+        Array1* array = val_to_array1(__array);
+      $
+      node = Xml.Node.new()
+      $
+        for (int i = 0; i < nodes->nodeNr; i++){
+          xmlNode** node = obj_c_data(__node);
+          *node = nodes->nodeTab[i];
+          array1_index_set(array, i+1, __node);
+        }
+        xmlXPathFreeObject(xpath_object);
+        xmlXPathFreeContext(xpath_context);
+        return __array;
+      $
+
+
+  module Node
+    const Element = $ int64_to_val(XML_ELEMENT_NODE) $
+    const Text = $ int64_to_val(XML_TEXT_NODE) $
+
   class Node
     $
       xmlNode* node;
@@ -37,7 +70,15 @@ module Xml
       pass
 
     virtual_get name()
+      $ if (!@node->name) return VALUE_NIL; $
       return $ string_to_val((const char*) @node->name) $
+
+    virtual_get type()
+      return $ int64_to_val(@node->type) $
+
+    virtual_get content()
+      $ if (!@node->content) return VALUE_NIL; $
+      return $ string_to_val((const char*) @node->content) $
 
     virtual_get child()
       $
