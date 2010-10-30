@@ -1,0 +1,64 @@
+$
+  #include <libxml/parser.h>
+  #include <libxml/tree.h>
+$
+
+module Xml
+  class Document
+    $
+      xmlDoc *doc;
+    $
+
+    constructor new_from_text(text)
+      $
+        const char* text = val_to_string(__text);
+        @doc = xmlReadMemory(text,
+                             strlen(text),
+                             "noname.xml", NULL, 0);
+        if (@doc == NULL){
+          exc_raise("Failed to parse XML text");
+        }
+      $
+
+    get_root()
+      node = Xml.Node.new()
+      $
+        xmlNode** node = obj_c_data(__node);
+        *node = xmlDocGetRootElement(@doc);
+      $
+      return node
+
+  class Node
+    $
+      xmlNode* node;
+    $
+
+    constructor new()
+      pass
+
+    virtual_get name()
+      return $ string_to_val((const char*) @node->name) $
+
+    virtual_get child()
+      $
+        xmlNode* child = @node->children;
+        if (child == NULL) return VALUE_NIL;
+      $
+      node = Xml.Node.new()
+      $
+        xmlNode** node = obj_c_data(__node);
+        *node = child;
+      $
+      return node
+
+    virtual_get next()
+      $
+        xmlNode* next = @node->next;
+        if (next == NULL) return VALUE_NIL;
+      $
+      node = Xml.Node.new()
+      $
+        xmlNode** node = obj_c_data(__node);
+        *node = next;
+      $
+      return node

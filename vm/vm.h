@@ -398,8 +398,8 @@ typedef struct {
 } String;
 
 char* val_to_string(Value v);
-Value string_to_val(char* str);
-Value stringn_to_val(char* str, int n);
+Value string_to_val(const char* str);
+Value stringn_to_val(const char* str, int n);
 
 //////////////////////////////////////////////////////////////////////////////
 // Tuple.c

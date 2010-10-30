@@ -125,6 +125,9 @@ TextFile()
   Test.test(name, tf.read_line(), "line 3\n")
   Test.test(name, tf.read_line(), eof)
   tf.close()
+  tf = TextFile.new("test/suite/textfile", TextFile.Read)
+  Test.test("TextFile.read_entire", tf.read_entire(), "line 1\nline 2\nline 3\n")
+  tf.close()
 
 Tuple()
   t = tuple(1, 2, 3)
@@ -193,6 +196,11 @@ String()
   dog = "dog"
   Test.test("string +", cat + dog, "catdog")
   Test.test("string +2", 2 + cat, "2cat")
+
+  map = Map.new()
+  map["alpha"] = "beta"
+  map["c"] = "d"
+  Test.test("string.replace", "%{alpha} %{ c }".replace(map), "beta d")
 
 Std()
   Test.test("Integer()", 123, Integer("123"))

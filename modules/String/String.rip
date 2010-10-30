@@ -122,7 +122,49 @@ class String
       return string_to_val(buf);
     $
 
-  virtual_get length()
+  replace(map)
+    key = nil
+    out = nil
+    $
+      StringBuf sb;
+
+      Format f;
+      char* s = @s.str;
+      format_init(&f, s);
+
+      FormatElement* data = (FormatElement*) f.array.data;
+      sbuf_init(&sb, "");
+      for (int64 i = 0; i < f.array.size; i++){
+        FormatElement e = data[i];
+
+        switch (e.type){
+          case FORMAT_STRING:
+            format_get_text(&f, i);
+            sbuf_cat(&sb, f.sb.str);
+            break;
+          case FORMAT_FLAG:
+            exc_raise("format flag not allowed");
+          case FORMAT_PARAM:
+            format_get_text(&f, i);
+            __key = string_to_val(f.sb.str);
+    $
+    str = map[key]
+    $
+            sbuf_cat(&sb, to_string(__str));
+            break;
+          default:
+            assert_never();
+        }
+      }
+
+      format_deinit(&f);
+      __out = string_to_val(sb.str);
+      sbuf_deinit(&sb);
+    $
+    return out
+
+
+  virtual_get size()
     $
       char* s = @s.str;
 			int l = strlen(s);

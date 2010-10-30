@@ -22,7 +22,7 @@ char* val_to_string(Value v)
   return obj->str;
 }
 
-Value string_to_val(char* str)
+Value string_to_val(const char* str)
 {
   String* obj;
   Value v = obj_new(klass_String, (void**)&obj);
@@ -30,7 +30,7 @@ Value string_to_val(char* str)
   return v;
 }
 
-Value stringn_to_val(char* str, int n)
+Value stringn_to_val(const char* str, int n)
 {
   String* obj;
   Value v = obj_new(klass_String, (void**)&obj);

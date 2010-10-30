@@ -46,6 +46,20 @@ class TextFile
       return string_to_val(buf);
     $
 
+  read_entire()
+    s = nil
+    $
+      int len;
+      fseek(@f, 0, SEEK_END);
+      len = ftell(@f);
+      fseek(@f, 0, SEEK_SET);
+      char* buf = alloca(len + 1);
+      buf[len] = 0;
+      fread(buf, len, 1, @f);
+      __s = string_to_val(buf);
+    $
+    return s
+
   print(text)
     $
       const char* text = val_to_string(__text);
