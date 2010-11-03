@@ -43,10 +43,10 @@ module Xml
 
         Value __array = array1_new(nodes->nodeNr);
         Array1* array = val_to_array1(__array);
+        for (int i = 0; i < nodes->nodeNr; i++){
       $
       node = Xml.Node.new()
       $
-        for (int i = 0; i < nodes->nodeNr; i++){
           xmlNode** node = obj_c_data(__node);
           *node = nodes->nodeTab[i];
           array1_index_set(array, i+1, __node);

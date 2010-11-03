@@ -2,6 +2,14 @@ $
   #include "clib/stringbuf.h"
 $
 
+module String
+  join(array, between)
+    s = array[1]
+    for el in array[2:]
+      s = s + between
+      s = s + el
+    return s
+
 class String
   $
     String s;
