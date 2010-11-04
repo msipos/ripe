@@ -1,4 +1,6 @@
-# Convert arg to a Double
+#$ rdoc-name to_Double
+#$ rdoc-header Double(arg)
+#$ Convert arg to a Double.  arg is allowed to be a Double, Integer, or String.
 Double(arg)
   $
     switch(__arg & MASK_TAIL){
@@ -21,7 +23,13 @@ Double(arg)
               dsym_reverse_get(obj_klass(__arg)->name));
   $
 
+#$ rdoc-name Double
+#$ rdoc-header Double
+#$ A class for a floating point number.
 class Double
+  #$ rdoc-name Double.to_string
+  #$ rdoc-header Double.to_string()
+  #$ Returns the string representation of the number.
   to_string()
     $
       char buf[128];

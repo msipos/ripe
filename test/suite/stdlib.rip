@@ -95,6 +95,14 @@ arrays()
         arr[x, y, z] = x*y*z
 
   Test.test(name, arr[5, 10, 15], 5*10*15)
+  arr = [5, 3, 1, 2, 4]
+  arr.sort!()
+  Test.test("Array1.sort!()", arr.to_string(),
+                              [1, 2, 3, 4, 5].to_string())
+  arr = ["serbia", "france", "england", "usa", "italy", "japan"]
+  arr.sort!()
+  Test.test("Array1.sort!()", arr.to_string(),
+     ["england", "france", "italy", "japan", "serbia", "usa"].to_string())
 
 subarrays()
   name = "subarrays"

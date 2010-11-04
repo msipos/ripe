@@ -3,11 +3,17 @@ $
   #define DESCENDING 2
 $
 
+#$ rdoc-name Range
+#$ rdoc-header Range
+#$ An object that embodies a range of Integers (possibly unbounded).
 class Range
   $
     Range range;
   $
 
+  #$ rdoc-name Range.get_iter
+  #$ rdoc-header Range.get_iter()
+  #$ Returns a RangeIterator over the given Range (possibly unbounded).
   get_iter()
     start = $ int64_to_val(@range.start) $
     finish = $ int64_to_val(@range.finish) $
@@ -41,6 +47,9 @@ const RangeBoundedLeft = $ int64_to_val(RANGE_BOUNDED_LEFT) $
 const RangeIteratorAscending = $ int64_to_val(ASCENDING) $
 const RangeIteratorDescending = $ int64_to_val(DESCENDING) $
 
+#$ rdoc-name RangeIterator
+#$ rdoc-header RangeIterator
+#$ Iterator over a range of numbers (possibly unbounded).
 class RangeIterator
   $
     RangeType range_type;
@@ -49,6 +58,11 @@ class RangeIterator
     int64 cur;
     int iter_type;
   $
+
+  #$ rdoc-name RangeIterator.new
+  #$ rdoc-header RangeIterator.new(range_type, start, finish, iter_type)
+  #$ Creates a new RangeIterator object. You shouldn't use this directly.
+  #$ Instead use Range.get_iter().
   constructor new(range_type, start, finish, iter_type)
     $
       @range_type = val_to_int64(__range_type);
@@ -58,6 +72,10 @@ class RangeIterator
       @iter_type = val_to_int64(__iter_type);
     $
 
+  #$ rdoc-name RangeIterator.iter
+  #$ rdoc-header RangeIterator.iter()
+  #$ Returns the next element from the Range. If no more elements in the
+  #$ Range, then it returns eof.
   iter()
     $
       switch(@iter_type){

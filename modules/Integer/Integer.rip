@@ -1,4 +1,6 @@
-# Convert arg to an integer
+#$ rdoc-name to_Integer
+#$ rdoc-header Integer(arg)
+#$ Convert arg to an Integer. Arg may be an Integer, String or a Double.
 Integer(arg)
   $
     switch(__arg & MASK_TAIL){
@@ -21,6 +23,9 @@ Integer(arg)
               dsym_reverse_get(obj_klass(__arg)->name));
   $
 
+#$ rdoc-name Integer
+#$ rdoc-header Integer
+#$ Class for an Integer datatype.
 class Integer
   to_string()
     $
@@ -29,8 +34,14 @@ class Integer
       return string_to_val(buf);
     $
 
+  #$ rdoc-name Integer.odd?
+  #$ rdoc-header Integer.odd?()
+  #$ Returns true if Integer is odd.
   odd?()
     return $ pack_bool((unpack_int64(__self) % 2) == 1) $
 
+  #$ rdoc-name Integer.even?
+  #$ rdoc-header Integer.even?()
+  #$ Returns true if Integer is even.
   even?()
     return $ pack_bool((unpack_int64(__self) % 2) == 0) $

@@ -185,6 +185,26 @@ class String
       return string_to_val(buf);
     $
 
+  __lt(other)
+    $
+      return pack_bool(strcmp(@s.str, val_to_string(__other)) < 0);
+    $
+
+  __lt2(other)
+    $
+      return pack_bool(strcmp(@s.str, val_to_string(__other)) > 0);
+    $
+
+  __gt(other)
+    $
+      return pack_bool(strcmp(@s.str, val_to_string(__other)) > 0);
+    $
+
+  __gt2(other)
+    $
+      return pack_bool(strcmp(@s.str, val_to_string(__other)) < 0);
+    $
+
   replace(map)
     key = nil
     out = nil

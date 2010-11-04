@@ -1,8 +1,67 @@
+#$ rdoc-name Array1
+#$ rdoc-header Array1
+#$ A one-dimensional array object.
+
+$
+  void merge_sort(Value* arr, int64 a, int64 b, Value* tmp)
+  {
+    if (a == b) return;
+    if (b == a + 1){
+      if (op_lt(arr[a], arr[b]) == VALUE_TRUE) return;
+      Value t = arr[b];
+      arr[b] = arr[a];
+      arr[a] = t;
+      return;
+    }
+    const int64 middle = (a+b)/2;
+    merge_sort(arr, a, middle, tmp);
+    merge_sort(arr, middle+1, b, tmp);
+
+    // Merging step
+    int64 left = a;
+    int64 right = middle+1;
+    int64 t = 0;
+    for(;;){
+      if (left > middle){
+        // Finished with left.
+        while (right <= b){
+          tmp[t] = arr[right];
+          right++; t++;
+        }
+        break;
+      }
+      if (right > b){
+        // Finished with right.
+        while (left <= middle){
+          tmp[t] = arr[left];
+          left++; t++;
+        }
+        break;
+      }
+      if (op_lt(arr[left], arr[right]) == VALUE_TRUE){
+        tmp[t] = arr[left];
+        left++; t++;
+      } else {
+        tmp[t] = arr[right];
+        right++; t++;
+      }
+    }
+
+    const int64 sz = b - a + 1;
+    for (t = 0; t < sz; t++){
+      arr[a+t] = tmp[t];
+    }
+  }
+$
+
 class Array1
   $
     Array1 a;
   $
 
+  #$ rdoc-name Array1.new_const
+  #$ rdoc-header Array1.new_const(Integer n, val)
+  #$ Create an array of n elements, all of them val.
   constructor new_const(n, val)
     $
       int64 n = val_to_int64(__n);
@@ -14,6 +73,10 @@ class Array1
       }
     $
 
+  #$ rdoc-name Array1.index
+  #$ rdoc-header Array1.index(Integer or Range i)
+  #$ If i is an Integer, this returns the i-th element of the Array1.
+  #$ If i is a range, this returns a new Array1 that is a slice of self.
   index(i)
     $
       if (obj_klass(__i) == klass_Range){
@@ -43,15 +106,28 @@ class Array1
     $
     return $ array1_index(&(@a), val_to_int64(__i)) $
 
+  #$ rdoc-name Array1.index_set
+  #$ rdoc-header Array1.index_set(Integer i, val)
+  #$ Sets the i-th element of the array to val.
   index_set(i, val)
     $ array1_index_set(&(@a), val_to_int64(__i), __val); $
 
+  #$ rdoc-name Array1.push
+  #$ rdoc-header Array1.push(val)
+  #$ Appends a Value val onto the end of the array. Returns nil.
   push(val)
     $ array1_push(&(@a), __val); $
 
+  #$ rdoc-name Array1.pop
+  #$ rdoc-header Array1.pop()
+  #$ Removes the last element of the Array1 and returns it.  Throws an
+  #$ exception if the Array1 is empty.
   pop()
     return $ array1_pop(&(@a)) $
 
+  #$ rdoc-name Array1.set_const
+  #$ rdoc-header Array1.set_const(val)
+  #$ Sets each element of the array to val.
   set_const(val)
     $
       int64 sz = @a.size;
@@ -60,6 +136,36 @@ class Array1
       }
     $
 
+  #$ rdoc-name Array1.sort_sub!
+  #$ rdoc-header Array1.sort_sub!(Integer a, Integer b)
+  #$ Sort the subset of the array (elements a through b) in place.
+  sort_sub!(a, b)
+    $
+      int64 a = util_index("Array1", val_to_int64(__a), @a.size);
+      int64 b = util_index("Array1", val_to_int64(__b), @a.size);
+      Value* arr = @a.data;
+      Value* tmp = mem_malloc(sizeof(Value) * (b - a + 1));
+      merge_sort(arr, a, b, tmp);
+      mem_free(tmp);
+    $
+
+  #$ rdoc-name Array1.sort!
+  #$ rdoc-header Array1.sort!()
+  #$ Sort array in place.
+  sort!()
+    self.sort_sub!(1, $ int64_to_val(@a.size) $)
+
+  #$ rdoc-name Array1.swap
+  #$ rdoc-header Array1.swap(i, j)
+  #$ Swap elements with indices i and j.
+  swap(i, j)
+    tmp = self[i]
+    self[i] = self[j]
+    self[j] = tmp
+
+  #$ rdoc-name Array1.to_string
+  #$ rdoc-header Array1.to_string()
+  #$ Returns a string representation of the array.
   to_string()
     $
       char buf[1024];
@@ -74,20 +180,37 @@ class Array1
       return string_to_val(buf);
     $
 
+  #$ rdoc-name Array1.size
+  #$ rdoc-header Array1.size
+  #$ Returns the size (length) of the Array1.
   virtual_get size()
     return $ int64_to_val(@a.size) $
 
+  #$ rdoc-name Array1.get_iter
+  #$ rdoc-header Array1.get_iter()
+  #$ Returns an Array1Iterator over self.
   get_iter()
     return Array1Iterator.new(self)
 
+#$ rdoc-name Array1Iterator
+#$ rdoc-header Array1Iterator
+#$ Iterator object over an Array1 (returns elements of the Array1
+#$ sequentially).
 class Array1Iterator
   private array
   private idx
 
+  #$ rdoc-name ArrayIterator.new
+  #$ rdoc-header ArrayIterator.new(Array1 array)
+  #$ Create a new Array1Iterator object over the given array.
   constructor new(array)
     @array = array
     @idx = 1
 
+  #$ rdoc-name Array1.iter
+  #$ rdoc-header Array1.iter()
+  #$ Returns the next element of the Array1. If you reached the end of the
+  #$ Array1, then return eof.
   iter()
     if @idx > @array.size
       return eof
