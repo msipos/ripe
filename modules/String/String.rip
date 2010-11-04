@@ -3,18 +3,45 @@ $
 $
 
 module String
+
+  #$ rdoc-name String.join
+  #$ rdoc-header String.join(Array1 array, String between)
+  #$ Joins string elements of array into a string.
   join(array, between)
+    if array.size == 0
+      return ""
+    if array.size == 1
+      return array[1]
     s = array[1]
     for el in array[2:]
       s = s + between
       s = s + el
     return s
 
+#$ rdoc-name String
+#$ rdoc-header String
+#$ A UTF-8 encoded string.
 class String
   $
     String s;
   $
 
+  #$ rdoc-name String.new_uniform
+  #$ rdoc-header String.new_uniform(Integer c, Integer reps)
+  #$ Creates a string of length reps, filled with characters c.
+  constructor new_uniform(c, reps)
+    $
+      int64 reps = val_to_int64(__reps);
+      int c = val_to_int64(__c);
+      @s.str = mem_malloc(reps + 1);
+      for (int64 i = 0; i < reps; i++){
+        @s.str[i] = (char) c;
+      }
+    $
+
+  #$ rdoc-name String.index
+  #$ rdoc-header String.index(Integer or Range i)
+  #$ Returns a Character (if i is an Integer) or a String, if i is a Range.
   index(i)
     $
       if (obj_klass(__i) == klass_Range){
@@ -42,14 +69,34 @@ class String
     $
     return $ int64_to_val(@s.str[util_index("String", val_to_int64(__i), strlen(@s.str))]); $
 
+  #$ rdoc-name String.index_set
+  #$ rdoc-header String.index_set(Integer i, Character c)
+  #$ Sets the i-th character of a string to c.
   index_set(i, v)
     $
       @s.str[util_index("String", val_to_int64(__i), strlen(@s.str))] = (char) val_to_int64(__v);
     $
 
+  #$ rdoc-name String.overwrite
+  #$ rdoc-header String.overwrite(String s)
+  #$ Overwrites the contents of the string with that of s.
+  overwrite(s)
+    $
+      char* s = val_to_string(__s);
+      if (s == @s.str) return VALUE_NIL;
+      mem_free(@s.str);
+      @s.str = mem_strdup(s);
+    $
+
+  #$ rdoc-name String.to_string
+  #$ rdoc-header String.to_string()
+  #$ Returns self.
   to_string()
     return self
 
+  #$ rdoc-name String.strip
+  #$ rdoc-header String.strip()
+  #$ Strips whitespace from left and right ends of the string.
   strip()
     $
       char* s = @s.str;
@@ -65,6 +112,11 @@ class String
     $
     return $ string_to_val(d) $
 
+  #$ rdoc-name String.split
+  #$ rdoc-header String.split(chars)
+  #$ Splits a string into an Array1.  The String will be split at any occurence
+  #$ of chars.  The resulting parts are guaranteed not to have any Characters
+  #$ given in chars.
   split(chars)
     arr = []
     word = nil
@@ -109,6 +161,9 @@ class String
     $
     return arr
 
+  #$ rdoc-name String.split_whitespace
+  #$ rdoc-header String.split_whitespace()
+  #$ Just like String.split(" \n\t")
   split_whitespace()
     return self.split(" \n\t")
 
@@ -171,7 +226,9 @@ class String
     $
     return out
 
-
+  #$ rdoc-name String.size
+  #$ rdoc-header String.size
+  #$ Returns the size (length) of the string.
   virtual_get size()
     $
       char* s = @s.str;

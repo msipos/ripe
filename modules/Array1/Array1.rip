@@ -49,6 +49,9 @@ class Array1
   push(val)
     $ array1_push(&(@a), __val); $
 
+  pop()
+    return $ array1_pop(&(@a)) $
+
   set_const(val)
     $
       int64 sz = @a.size;

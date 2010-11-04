@@ -5,8 +5,8 @@
 
 DATA_TYPES = ['Array1', 'Array3', 'Double', 'Flags', 'Integer', 'Map', 'Range',
               'Set', 'String', 'Tuple']
-STDLIB = ['Err', 'Math', 'Os', 'Out', 'Std', 'Stream', 'Test', 'Template',
-          'TextFile', 'Time']
+STDLIB = ['Err', 'Math', 'Os', 'Out', 'Path', 'Std', 'Stream', 'Test',
+          'Template', 'TextFile', 'Time']
 OPTIONAL_MODULES = ['Curl', 'Gd', 'Gsl', 'Json', 'MainLoop', 'Povray',
                     'Pthread', 'Sci', 'Sdl', 'Speech', 'Xml']
 MODULES = DATA_TYPES + STDLIB

@@ -1,0 +1,111 @@
+$
+  #include <sys/types.h>
+  #include <dirent.h>
+$
+
+module Path
+  const REGULAR = $ int64_to_val(DT_REG) $
+  const DIRECTORY = $ int64_to_val(DT_DIR) $
+  const SEPARATOR = '/'
+
+  join(*args)
+    return Path.join_array(args)
+
+  join_array(array)
+    if array.size == 0
+      return ""
+    if array.size == 1
+      return array[1]
+
+    tmp = array[1]
+    for el in array[2:]
+      if tmp[-1] != '/' and el[1] != '/'
+        tmp = tmp + "/" + el
+      else
+        tmp = tmp + el
+    return tmp
+
+  split_extension(name)
+    $
+      char* s = val_to_string(__name);
+      int64 n = 0;
+      char* ext = strrchr(s, '.');
+      char* sep = strrchr(s, '/');
+      if (ext == NULL or sep > ext){
+        ext = "";
+        n = strlen(s);
+      } else {
+        n = ext - s;
+      }
+    $
+    ext = $ string_to_val(ext) $
+    name = $ stringn_to_val(s, n) $
+    return tuple(name, ext)
+
+  class Dir
+    $
+      DIR* d;
+    $
+
+    constructor new(name)
+      $
+        @d = opendir(val_to_string(__name));
+        if (@d == NULL) {
+          exc_raise("failed to open directory");
+        }
+      $
+
+    read()
+      $
+        struct dirent64 de;
+        struct dirent64* dep;
+        if (readdir64_r(@d, &de, &dep)) {
+          exc_raise("failed to read directory");
+        }
+        if (dep == NULL){
+          return VALUE_EOF;
+        }
+      $
+      name = $ string_to_val(de.d_name) $
+      type = $ int64_to_val(de.d_type) $
+      return tuple(name, type)
+
+    close()
+      $
+        closedir(@d);
+      $
+
+  class Walker
+    private stack
+    private names
+
+    constructor new(name)
+      @stack = [Path.Dir.new(name)]
+      @names = [name]
+
+    get_iter()
+      return self
+
+    iter()
+      loop
+        if @stack.size == 0
+          return eof
+        last = @stack[-1]
+        res = last.read()
+        if res == eof
+          last.close()
+          @stack.pop()
+          @names.pop()
+          continue
+
+        name = res[1]
+        if name == "." or name == ".."
+          continue
+
+        path = Path.join_array(@names)
+        fullname = Path.join(path, name)
+        type = res[2]
+        if type == Path.DIRECTORY
+          @stack.push(Path.Dir.new(fullname))
+          @names.push(name)
+        return tuple(fullname, type)
