@@ -104,6 +104,12 @@ arrays()
   Test.test("Array1.sort!()", arr.to_string(),
      ["england", "france", "italy", "japan", "serbia", "usa"].to_string())
 
+  arr.insert(3, "germany")
+  Test.test("Array1.insert()",
+            arr.to_string(),
+            ["england", "france", "germany", "italy", "japan", "serbia",
+             "usa"].to_string())
+
 subarrays()
   name = "subarrays"
   my_arr = ["one", "two", "three", "four", "five", "six"]
@@ -209,6 +215,10 @@ String()
   map["alpha"] = "beta"
   map["c"] = "d"
   Test.test("string.replace", "%{alpha} %{ c }".replace(map), "beta d")
+
+  text = "This is a sentence"
+  Test.test("String.find()", text.find("is"), 3)
+  Test.test("String.find()", text.find("waldo"), nil)
 
 Std()
   Test.test("Integer()", 123, Integer("123"))

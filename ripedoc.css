@@ -10,3 +10,9 @@ div.text{
 	padding: 10px;
 	margin: 5px;
 }
+
+div.article{
+  border: 1px solid #000000;
+  padding: 5px;
+  margin: 10px;
+}

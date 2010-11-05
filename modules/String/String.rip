@@ -39,6 +39,29 @@ class String
       }
     $
 
+  #$ rdoc-name String.find
+  #$ rdoc-header String.find(String substring)
+  #$ Finds the index of the first occurence of substring in self.
+  #$ If no occurence is found, it returns nil.
+  find(substring)
+    $
+      const char* substring = val_to_string(__substring);
+      const int64 sz = strlen(@s.str);
+      const char* str  = @s.str;
+      const int64 subsz = strlen(substring);
+      for (int64 i = 0; i < sz - subsz + 1; i++){
+        for (int64 j = 0; j < subsz; j++){
+          if (str[i+j] != substring[j]){
+            goto next;
+          }
+        }
+        return int64_to_val(i + 1);
+      next:
+        continue;
+      }
+      return VALUE_NIL;
+    $
+
   #$ rdoc-name String.index
   #$ rdoc-header String.index(Integer or Range i)
   #$ Returns a Character (if i is an Integer) or a String, if i is a Range.

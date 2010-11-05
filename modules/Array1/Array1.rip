@@ -3,19 +3,28 @@
 #$ A one-dimensional array object.
 
 $
-  void merge_sort(Value* arr, int64 a, int64 b, Value* tmp)
+  static inline bool cmp(Value cmp_func, Value a, Value b)
+  {
+    if (cmp_func) {
+      return func_call2(cmp_func, a, b) == VALUE_TRUE;
+    } else {
+      return op_lt(a, b) == VALUE_TRUE;
+    }
+  }
+
+  void merge_sort(Value* arr, int64 a, int64 b, Value* tmp, Value cmp_func)
   {
     if (a == b) return;
     if (b == a + 1){
-      if (op_lt(arr[a], arr[b]) == VALUE_TRUE) return;
+      if (cmp(cmp_func, arr[a], arr[b])) return;
       Value t = arr[b];
       arr[b] = arr[a];
       arr[a] = t;
       return;
     }
     const int64 middle = (a+b)/2;
-    merge_sort(arr, a, middle, tmp);
-    merge_sort(arr, middle+1, b, tmp);
+    merge_sort(arr, a, middle, tmp, cmp_func);
+    merge_sort(arr, middle+1, b, tmp, cmp_func);
 
     // Merging step
     int64 left = a;
@@ -38,7 +47,7 @@ $
         }
         break;
       }
-      if (op_lt(arr[left], arr[right]) == VALUE_TRUE){
+      if (cmp(cmp_func, arr[left], arr[right])){
         tmp[t] = arr[left];
         left++; t++;
       } else {
@@ -112,6 +121,24 @@ class Array1
   index_set(i, val)
     $ array1_index_set(&(@a), val_to_int64(__i), __val); $
 
+  #$ rdoc-name Array1.insert
+  #$ rdoc-header Array1.insert(Integer i, val)
+  #$ Insert val into position i in the array.  Moves everything in position
+  #$ 1 and beyond one step.
+  insert(i, val)
+    $
+      const int64 size = @a.size;
+      array1_push(&(@a), __val);
+      int64 idx = util_index("Array1",
+                             val_to_int64(__i),
+                             size);
+      Value* data = @a.data;
+      for (int64 i = size - 1; i >= idx; i--){
+        data[i+1] = data[i];
+      }
+      data[idx] = __val;
+    $
+
   #$ rdoc-name Array1.push
   #$ rdoc-header Array1.push(val)
   #$ Appends a Value val onto the end of the array. Returns nil.
@@ -125,35 +152,60 @@ class Array1
   pop()
     return $ array1_pop(&(@a)) $
 
+  #$ rdoc-name Array1.reverse!
+  #$ rdoc-header Array1.reverse!()
+  #$ Reverse array in place.
+  reverse!()
+    $
+      const int64 sz = @a.size;
+      const int64 upto = sz / 2;
+      Value* data = @a.data;
+      for (int64 i = 0; i < upto; i++){
+        Value tmp = data[i];
+        int64 j = sz - i - 1;
+        data[i] = data[j];
+        data[j] = tmp;
+      }
+    $
+
   #$ rdoc-name Array1.set_const
   #$ rdoc-header Array1.set_const(val)
   #$ Sets each element of the array to val.
   set_const(val)
     $
-      int64 sz = @a.size;
+      const int64 sz = @a.size;
       for (int64 i = 0; i < sz; i++){
         @a.data[i] = __val;
       }
-    $
-
-  #$ rdoc-name Array1.sort_sub!
-  #$ rdoc-header Array1.sort_sub!(Integer a, Integer b)
-  #$ Sort the subset of the array (elements a through b) in place.
-  sort_sub!(a, b)
-    $
-      int64 a = util_index("Array1", val_to_int64(__a), @a.size);
-      int64 b = util_index("Array1", val_to_int64(__b), @a.size);
-      Value* arr = @a.data;
-      Value* tmp = mem_malloc(sizeof(Value) * (b - a + 1));
-      merge_sort(arr, a, b, tmp);
-      mem_free(tmp);
     $
 
   #$ rdoc-name Array1.sort!
   #$ rdoc-header Array1.sort!()
   #$ Sort array in place.
   sort!()
-    self.sort_sub!(1, $ int64_to_val(@a.size) $)
+    $
+      const int64 sz = @a.size;
+      if (sz < 2) return VALUE_NIL;
+      Value* arr = @a.data;
+      Value* tmp = mem_malloc(sizeof(Value) * sz);
+      merge_sort(arr, 0, sz-1, tmp, 0);
+      mem_free(tmp);
+    $
+
+  #$ rdoc-name Array1.sort_via!
+  #$ rdoc-header Array1.sort_via!(Function via)
+  #$ Sort array in place via a comparison function.  The comparison function
+  #$ must accept two elements and answer the question "is element A smaller
+  #$ than element B?"
+  sort_via!(cmp)
+    $
+      const int64 sz = @a.size;
+      if (sz < 2) return VALUE_NIL;
+      Value* arr = @a.data;
+      Value* tmp = mem_malloc(sizeof(Value) * sz);
+      merge_sort(arr, 0, sz-1, tmp, __cmp);
+      mem_free(tmp);
+    $
 
   #$ rdoc-name Array1.swap
   #$ rdoc-header Array1.swap(i, j)

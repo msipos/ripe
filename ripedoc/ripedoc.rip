@@ -68,6 +68,54 @@ process(root)
       if ext == ".c" or ext == ".h" or ext == ".y" or ext == ".l"
         process_c(path)
 
+make_links(text, names_by_size, ignore)
+  arr = [text]
+  for name in names_by_size
+    i = 1
+    loop
+      if i > arr.size
+        break
+      el = arr[i]
+
+      # Ignore those elements that are already links
+      if el.size == 0
+        i = i + 1
+        continue
+      if el[1] == '<'
+        i = i + 1
+        continue
+
+      loc = el.find(name)
+      if loc == nil
+        i = i + 1
+        continue
+
+      before = nil
+      after = nil
+      if loc == 1
+        before = ""
+      else
+        before = el[:(loc-1)]
+      middle = el[loc:(loc+name.size-1)]
+      if middle == ignore
+        i = i + 1
+        continue
+      middle = "<a href=\"#" + name + "\">" + middle + "</a>"
+
+      if loc+name.size > el.size
+        after = ""
+      else
+        after = el[(loc+name.size):]
+      arr[i] = after
+      arr.insert(i, middle)
+      arr.insert(i, before)
+      # Now i = before, i + 1 = middle, i + 2 = after
+      i = i + 2
+  return String.join(arr, "")
+
+by_size(a, b)
+  return a.size < b.size
+
 main()
   doc_map = Map.new()
 
@@ -90,11 +138,28 @@ main()
                      pad(rip_comment, 5),
                      pad(rip_doc, 5))
 
+  names = []
+  names_by_size = []
+  for name, doc in doc_map
+    names.push(name)
+    names_by_size.push(name)
+  names.sort!()
+  names_by_size.sort_via!(by_size)
+  names_by_size.reverse!()
+
+  Out.printf("\nNumber of ripedoc elements: %a\n", names.size)
+
   tf = TextFile.new("ripedoc.html", TextFile.Write)
   tf.printf("<html>\n  <head><title>Ripe Documentation</title>")
   tf.printf("<link rel=\"stylesheet\" type=\"text/css\" href=\"ripedoc.css\" /></head>\n")
   tf.printf("<body>\n")
-  for name, doc in doc_map
-    tf.printf("<div class=\"header\">%a</div>", doc[&header])
-    tf.printf("<div class=\"text\">%a</div>", doc[&text])
+  for name in names
+    doc = doc_map[name]
+
+    header = make_links(doc[&header], names_by_size, name)
+    text = make_links(doc[&text], names_by_size, name)
+    tf.printf("<div class=\"article\"><a name=\"%a\"></a>\n", name)
+    tf.printf("<div class=\"header\">%a</div>", header)
+    tf.printf("<div class=\"text\">%a</div>", text)
+    tf.print("</div>\n")
   tf.printf("</body>\n</html>")
