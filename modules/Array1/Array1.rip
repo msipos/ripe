@@ -1,3 +1,4 @@
+#$ rdoc-file Array1
 #$ rdoc-name Array1
 #$ rdoc-header Array1
 #$ A one-dimensional array object.

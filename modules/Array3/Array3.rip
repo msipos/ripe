@@ -1,8 +1,16 @@
+#$ rdoc-file Array3
+
+#$ rdoc-name Array3
+#$ rdoc-header Array3
+#$ Three dimensional array data structure.
 class Array3
   $
     Array3 a;
   $
 
+  #$ rdoc-name Array3.new_const
+  #$ rdoc-header Array3.new_const(Integer x, Integer y, Integer z, v)
+  #$ Create a new Array3 of dimensions x*y*z, and populated with elements v.
   constructor new_const(x, y, z, v)
     $
       int64 x = val_to_int64(__x);
@@ -20,6 +28,9 @@ class Array3
       }
     $
 
+  #$ rdoc-name Array3.index
+  #$ rdoc-header Array3.index(Integer x, Integer y, Integer z)
+  #$ Return the (x, y, z)-th element.
   index(x, y, z)
     $
       int64 x = val_to_int64(__x);
@@ -29,6 +40,9 @@ class Array3
       return @a.data[i];
     $
 
+  #$ rdoc-name Array3.index_set
+  #$ rdoc-header Array3.index_set(Integer x, Integer y, Integer z, v)
+  #$ Set the (x, y, z)-th element to v.
   index_set(x, y, z, v)
     $
       int64 x = val_to_int64(__x);
@@ -38,6 +52,9 @@ class Array3
       @a.data[i] = __v;
     $
 
+  #$ rdoc-name Array3.set_const
+  #$ rdoc-header Array3.set_const(v)
+  #$ Set all elements of Array3 to equal v.
   set_const(v)
     $
       const int64 total_size = @a.size_x * @a.size_y * @a.size_z;

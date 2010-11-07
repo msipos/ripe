@@ -1,3 +1,5 @@
+#$ rdoc-file Os
+
 $
   #include <stdlib.h>
   #include <unistd.h>
@@ -5,6 +7,9 @@ $
 $
 
 module Os
+  #$ rdoc-name Os.get_env
+  #$ rdoc-header Os.get_env(String var)
+  #$ Get the value of environment variable var, or nil if it is not set.
   get_env(var)
     $
       char* var = val_to_string(__var);
@@ -13,6 +18,9 @@ module Os
       return string_to_val(rv);
     $
 
+  #$ rdoc-name Os.get_environment
+  #$ rdoc-header Os.get_environment()
+  #$ Return a variable-to-value Map for the environment.
   get_environment()
     m = Map.new()
     $
@@ -35,6 +43,9 @@ module Os
     $
     return m
 
+  #$ rdoc-name Os.get_args
+  #$ rdoc-header Os.get_args()
+  #$ Return an Array1 of the command line arguments.
   get_args()
     $
       Value* args = alloca((sys_argc - 1) * sizeof(Value));

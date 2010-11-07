@@ -1,19 +1,35 @@
+#$ rdoc-file Map
+
 $
   #include "clib/stringbuf.h"
 $
 
+#$ rdoc-name Map
+#$ rdoc-header Map
+#$ A key-to-value map.
 class Map
   $
     HashTable ht;
   $
+
+  #$ rdoc-name Map.new
+  #$ rdoc-header Map.new()
+  #$ Create a new empty Map.
   constructor new()
     $
       ht_init2(&(@ht));
     $
 
+  #$ rdoc-name Map.get_iter
+  #$ rdoc-header Map.get_iter()
+  #$ Return a MapIterator over this Map.
   get_iter()
     return MapIterator.new(self)
 
+  #$ rdoc-name Map.index
+  #$ rdoc-header Map.index(key)
+  #$ Return the value associated with the given key. Throw an exception if
+  #$ the key does not exist in the Map.
   index(key)
     $
       Value result;
@@ -22,16 +38,26 @@ class Map
       exc_raise("key error: '%s'", to_string(__key));
     $
 
+  #$ rdoc-name Map.has_key?
+  #$ rdoc-header Map.has_key?(key)
+  #$ Returns true if the Map contains the given key.
   has_key?(key)
     $
       return pack_bool(ht_query2(&(@ht), __key, NULL));
     $
 
+  #$ rdoc-name Map.index_set
+  #$ rdoc-header Map.index_set(key, value)
+  #$ Add the given key to the map and assign its value to value.  If the key
+  #$ already exists in the map, then its value is overwritten by the new value.
   index_set(key, value)
     $
       ht_set2(&(@ht), __key, __value);
     $
 
+  #$ rdoc-name Map.to_string
+  #$ rdoc-header Map.to_string()
+  #$ Return a human readable representation of the Map.
   to_string()
     $
       StringBuf sb;
@@ -55,6 +81,9 @@ class Map
       return rv;
     $
 
+  #$ rdoc-name Map.size
+  #$ rdoc-header Map.size
+  #$ Number of key-value pairs in the Map.
   virtual_get size()
     return $ int64_to_val(@ht.size) $
 

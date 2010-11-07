@@ -1,3 +1,5 @@
+#$ rdoc-file Double
+
 #$ rdoc-name to_Double
 #$ rdoc-header Double(arg)
 #$ Convert arg to a Double.  arg is allowed to be a Double, Integer, or String.

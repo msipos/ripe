@@ -212,3 +212,8 @@ for module in OPTIONAL_MODULES:
     build_module(module, False)
 if len(failed_modules) > 0:
     print("WARNING: Failed building optional module(s): %s" % ", ".join(failed_modules))
+
+if "doc" in sys.argv:
+  tools.call(["ripedoc/build.sh", "2>", "/dev/null"])
+  tools.call(["ripedoc/ripedoc", "."])
+  tools.call(["mv", "*.html", "doc/"])

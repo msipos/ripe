@@ -14,3 +14,5 @@ pic.png
 product/
 test/suite/textfile
 *.exe
+doc/*.html
+ripedoc/ripedoc
