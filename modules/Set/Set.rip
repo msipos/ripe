@@ -1,40 +1,66 @@
 $
   #include "clib/stringbuf.h"
 $
+#$ rdoc-file Set
 
+#$ rdoc-name Set
+#$ rdoc-header Set
+#$ Set of unique objects. Set is like a Map, but it has only
+#$ keys (no values).
 class Set
   $
     HashTable ht;
   $
 
+  #$ rdoc-name Set.get_iter
+  #$ rdoc-header Set.get_iter()
+  #$ Get a SetIterator that iterates over the objects within the Set.
   get_iter()
     return SetIterator.new(self)
 
+  #$ rdoc-name Set.new
+  #$ rdoc-header Set.new()
+  #$ Constructs a new empty Set.
   constructor new()
     $
       ht_init(&(@ht));
     $
 
+  #$ rdoc-name Set.has?
+  #$ rdoc-header Set.has?(key)
+  #$ Return if the Set contains key.
   has?(key)
     $
       return pack_bool(ht_query(&(@ht), __key));
     $
 
+  #$ rdoc-name Set.add
+  #$ rdoc-header Set.add(key)
+  #$ Add the object to the Set.
   add(key)
     $
       ht_set(&(@ht), __key);
     $
 
+  #$ rdoc-name Set.clear
+  #$ rdoc-header Set.clear()
+  #$ Remove all objects from the Set.
   clear()
     $
       ht_clear(&(@ht));
     $
 
+  #$ rdoc-name Set.remove
+  #$ rdoc-header Set.remove(key)
+  #$ Remove an object from the Set.
   remove(key)
     $
       return pack_bool(ht_remove(&(@ht), __key));
     $
 
+  #$ rdoc-name Set.to_string
+  #$ rdoc-header Set.to_string()
+  #$ Return a string representation of the Set and its contents.
   to_string()
     $
       StringBuf sb;
@@ -58,6 +84,10 @@ class Set
       return rv;
     $
 
+  #$ rdoc-name Set.get_bucket
+  #$ rdoc-header Set.get_bucket(Integer i)
+  #$ Direct access to the buckets.  Returns the contents of the
+  #$ i-th bucket, or nil if bucket is empty.
   get_bucket(bucket)
     $
       int64 idx = val_to_int64(__bucket);
@@ -70,23 +100,39 @@ class Set
       return VALUE_NIL;
     $
 
+  #$ rdoc-name Set.size
+  #$ rdoc-header Set.size
+  #$ Number of objects in the Set.
   virtual_get size()
     return $ int64_to_val(@ht.size) $
 
+  #$ rdoc-name Set.alloc_size
+  #$ rdoc-header Set.alloc_size
+  #$ Number of buckets in the Set.
   virtual_get alloc_size()
     return $ int64_to_val(@ht.alloc_size) $
 
+#$ rdoc-name SetIterator
+#$ rdoc-header SetIterator
+#$ Iterator over a Set object.
 class SetIterator
   $
     HashTable* ht;
     int64 cur;
   $
+
+  #$ rdoc-name SetIterator.new
+  #$ rdoc-header SetIterator.new(Set set)
+  #$ Constructs a new iterator over a set.
   constructor new(set)
     $
       @ht = obj_c_data(__set);
       @cur = 0;
     $
 
+  #$ rdoc-name SetIterator.iter
+  #$ rdoc-header SetIterator.iter()
+  #$ Return the next object from the Set, or eof if you reached the end.
   iter()
     $
       while (@cur < @ht->alloc_size){

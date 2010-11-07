@@ -12,14 +12,20 @@ pad(text, width)
     return String.new_uniform(' ', width - text.size) + text
   return text
 
-global doc_group, doc_name, doc_map
+global doc_group, doc_name, doc_map, doc_file, file_map
 do_doc(line)
   arr = line.split_whitespace()
   if begins_with(arr[1], "rdoc")
     # Special line
+    if arr[1] == "rdoc-file"
+      doc_file = arr[2]
+      file_map[doc_file] = Set.new()
     if arr[1] == "rdoc-name"
       doc_name = arr[2]
+      if doc_file != nil
+        file_map[doc_file].add(doc_name)
       doc_map[doc_name] = Map.new()
+      doc_map[doc_name][&file] = doc_file
       doc_map[doc_name][&header] = ""
       doc_map[doc_name][&text] = ""
       return
@@ -40,6 +46,7 @@ process_rip(path)
       rip_comment = rip_comment + 1
     if begins_with(line, "#$")
       rip_doc = rip_doc + 1
+      rip_comment = rip_comment - 1
       do_doc(line[3:])
     rip_total = rip_total + 1
   f.close()
@@ -55,6 +62,7 @@ process_c(path)
       c_comment = c_comment + 1
     if begins_with(line, "//$")
       c_doc = c_doc + 1
+      c_comment = c_comment - 1
       do_doc(line[4:])
     c_total = c_total + 1
   f.close()
@@ -118,6 +126,7 @@ by_size(a, b)
 
 main()
   doc_map = Map.new()
+  file_map = Map.new()
 
   args = Os.get_args()
   for arg in args
