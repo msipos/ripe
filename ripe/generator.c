@@ -410,6 +410,14 @@ static const char* eval_expr_as_id(Node* expr)
   }
 }
 
+static const char* eval_type(Node* type_node)
+{
+  const char* type = node_get_string(type_node, "name");
+  if (node_num_children(type_node) == 0) return type;
+  return mem_asprintf("%s.%s", type,
+                      node_get_child(type_node, 0));
+}
+
 static const char* eval_expr(Node* expr)
 {
   if (is_unary_op(expr))
@@ -593,6 +601,16 @@ static const char* eval_expr(Node* expr)
           return util_replace(str, '@', "_c_data->");
         }
         return str;
+      }
+    case EXPR_IS_TYPE:
+      {
+        const char* type = eval_type(node_get_child(expr, 1));
+        if (query_local(type)){
+          raise_error("type in 'is' expression is a variable", expr);
+        }
+        return mem_asprintf("pack_bool(obj_klass(%s) == %s)",
+                            eval_expr(node_get_child(expr, 0)),
+                            tbl_get_type(type));
       }
     default:
       assert_never();

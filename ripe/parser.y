@@ -65,6 +65,7 @@
 %token   K_BREAK      "break"
 %token   K_CONTINUE   "continue"
 %token   K_LOOP       "loop"
+%token   K_IS         "is"
 %token   K_EOF        "eof"
 %token   K_TRY        "try"
 %token   K_CATCH      "catch"
@@ -81,6 +82,7 @@
 // Operator-like
 %left    "or"
 %left    "and"
+%left    "is"
 %left    ':'
 %left    '<' "<=" '>' ">="
 %left    "==" "!="
@@ -356,6 +358,12 @@ expr:             expr ':' expr
   node_add_child($$, $1);
   node_add_child($$, $3);
 };
+expr:             expr "is" type
+{
+  $$ = node_new(EXPR_IS_TYPE);
+  node_add_child($$, $1);
+  node_add_child($$, $3);
+};
 expr:             expr ':'
 {
   $$ = node_new(EXPR_RANGE_BOUNDED_LEFT);
@@ -389,6 +397,7 @@ expr:              dexpr
 {
   $$ = $1;
 };
+
 dexpr:             ID
 {
   $$ = $1;
@@ -428,6 +437,17 @@ dexpr:             "eof"
 dexpr:             SYMBOL
 {
   $$ = $1;
+};
+
+type:              type '.' ID
+{
+  $$ = $1;
+  node_add_child($$, $3);
+};
+type:              ID
+{
+  $$ = node_new_inherit(TYPE, $1);
+  node_set_string($$, "name", $1->text);
 };
 
 /* Helper rules */
