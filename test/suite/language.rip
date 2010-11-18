@@ -116,11 +116,20 @@ parallel()
   Test.test("parallel assign", a, 1)
   Test.test("parallel assign", b, 2)
 
+types()
+  name = "is correct type"
+  Test.test(name, 1 is Integer, true)
+  Test.test(name, "max" is String, true)
+  name = "isn't correct type"
+  Test.test(name, 1 is Double, false)
+  Test.test(name, "max" is Double, false)
+
 main()
   Test.set_verbose(false)
   operators()
   vararg()
   parallel()
+  types()
 
   obj = Class.new("testfile")
   obj.test_filename("testfile")

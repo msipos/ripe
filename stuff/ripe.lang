@@ -45,6 +45,7 @@
           <keyword>break</keyword>
           <keyword>return</keyword>
           <keyword>continue</keyword>
+          <keyword>is</keyword>
           <keyword>pass</keyword>
           <keyword>try</keyword>
           <keyword>catch</keyword>

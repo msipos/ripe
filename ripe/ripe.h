@@ -154,6 +154,7 @@ int rc_lex();
 #define EXPR_RANGE_BOUNDED_LEFT   1041
 #define EXPR_RANGE_BOUNDED_RIGHT  1042
 #define EXPR_RANGE_UNBOUNDED      1043
+#define EXPR_IS_TYPE      1044
 
 // Helper nonterminal nodes
 #define ID_LIST           1050
@@ -161,6 +162,7 @@ int rc_lex();
 #define ARG_LIST          1052
 #define OPTASSIGN_LIST    1053
 #define OPTASSIGN         1054
+#define TYPE              1055
 
 #include "ripe/parser.h"
 #include "ripe/scanner.h"
