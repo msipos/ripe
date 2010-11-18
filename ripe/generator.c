@@ -360,31 +360,6 @@ static const char* eval_index(Node* self, Node* idx, const char* assign)
   }
 }
 
-// Attempt to evaluate the EXPR_FIELD as a static field. If it succeeds, then
-// return a string of the static symbol (unregistered). Otherwise return NULL.
-static const char* eval_expr_as_static(Node* expr)
-{
-  switch(expr->type){
-    case ID:
-      // If ID is a variable, then it can't be a static symbol.
-      if (query_local(expr->text) == NULL) return expr->text;
-      else return NULL;
-    case EXPR_FIELD:
-      {
-        Node* parent = node_get_child(expr, 0);
-        Node* field = node_get_child(expr, 1);
-        assert(field->type == ID);
-        const char* s = eval_expr_as_static(parent);
-        if (s != NULL) return mem_asprintf("%s.%s", s, field->text);
-        else return NULL;
-      }
-    default:
-      // Anything other than ID or EXPR_FIELD means that it cannot be a
-      // static symbol.
-      return NULL;
-  }
-}
-
 // Attempt to evaluate the expression as an identifier with dots, otherwise
 // return NULL.
 // I.e. Std.println would evaluate and return "Std.println", but (1+1).to_string
@@ -472,16 +447,8 @@ static const char* eval_expr(Node* expr)
         assert(field->type == ID);
 
         // Attempt to evaluate parent as a static symbol.
-        const char* s = eval_expr_as_static(parent);
-        if (s != NULL){
-          // Static call
-          return mem_asprintf(
-                   "func_call%u(%s %s)",
-                   node_num_children(arg_list),
-                   tbl_get_ssym(mem_asprintf("%s.%s", s, field->text)),
-                   eval_expr_list(arg_list, true)
-                 );
-        } else {
+        const char* s = eval_expr_as_id(parent);
+        if (s == NULL or (query_local(s) != NULL)){
           // Dynamic call
           return obj_call(
                    eval_expr(parent),
@@ -490,6 +457,13 @@ static const char* eval_expr(Node* expr)
                    eval_expr_list(arg_list, true)
                  );
         }
+        // Static call
+        return mem_asprintf(
+                 "func_call%u(%s %s)",
+                 node_num_children(arg_list),
+                 tbl_get_ssym(mem_asprintf("%s.%s", s, field->text)),
+                 eval_expr_list(arg_list, true)
+               );
       }
     case EXPR_ID_CALL:
       {
@@ -542,8 +516,9 @@ static const char* eval_expr(Node* expr)
     case EXPR_FIELD:
       {
         // Attempt to evaluate this field as a static symbol.
-        const char* s = eval_expr_as_static(expr);
-        if (s == NULL){
+        Node* left = node_get_child(expr, 0);
+        const char* s = eval_expr_as_id(left);
+        if (s == NULL or query_local(s) != NULL){
           // Dynamic field.
           Node* parent = node_get_child(expr, 0);
           Node* field = node_get_child(expr, 1);
@@ -553,6 +528,7 @@ static const char* eval_expr(Node* expr)
                               tbl_get_dsym(field->text));
         } else {
           // Could be a global variable.
+          s = eval_expr_as_id(expr);
           const char* global_var = query_local(s);
           if (global_var != NULL){
             return global_var;
