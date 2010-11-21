@@ -184,8 +184,7 @@ static const char* tbl_get_ssym(const char* symbol)
   sbuf_printf(sb_header, "static Value %s;\n", ssym_c_var);
   sbuf_printf(sb_init2, "  %s = ssym_get(\"%s\");\n",
                          ssym_c_var, symbol);
-  dict_set(&tbl_ssym, &symbol, &ssym_c_var);
-  return ssym_c_var;
+  dict_set(&tbl_ssym, &symbol, &ssym_c_var);  return ssym_c_var;
 }
 
 // Returns the name of the global static C variable of type Value that
@@ -277,6 +276,11 @@ const char* context2_method_value_name;
 ///////////////////////////////////////////////////////////////////////////////
 
 static Array locals_arr; // For each function.
+typedef struct {
+  const char* c_name;
+  const char* ripe_name;
+  const char* type;
+} Variable;
 
 static void locals_init()
 {
@@ -285,7 +289,7 @@ static void locals_init()
 
 static void push_locals()
 {
-  Dict* locals = dict_new(sizeof(char*), sizeof(char*),
+  Dict* locals = dict_new(sizeof(char*), sizeof(Variable*),
                           dict_hash_string, dict_equal_string);
   array_append(&locals_arr, locals);
 }
@@ -295,16 +299,22 @@ static void pop_locals()
   array_pop(&locals_arr, Dict*);
 }
 
-static void set_local(const char* ripe_name, const char* c_name)
+static void set_local(const char* ripe_name, const char* c_name,
+                      const char* type)
 {
+  Variable* var = mem_new(Variable);
+  var->c_name = c_name;
+  var->ripe_name = ripe_name;
+  var->type = type;
   Dict* dict = array_get(&locals_arr, Dict*, locals_arr.size - 1);
-  dict_set(dict, &ripe_name, &c_name);
+  dict_set(dict, &ripe_name, &var);
 }
 
-static const char* register_local(const char* ripe_name)
+static const char* register_local(const char* ripe_name,
+                                  const char* type)
 {
   const char* c_name = util_make_c_name(ripe_name);
-  set_local(ripe_name, c_name);
+  set_local(ripe_name, c_name, type);
   return c_name;
 }
 
@@ -314,9 +324,9 @@ static const char* query_local(const char* ripe_name)
 {
   for (int i = locals_arr.size - 1; i >= 0; i--){
     Dict* dict = array_get(&locals_arr, Dict*, i);
-    const char* value;
-    if (dict_query(dict, &ripe_name, &value)){
-      return value;
+    Variable* var;
+    if (dict_query(dict, &ripe_name, &var)){
+      return var->c_name;
     }
   }
   return NULL;
@@ -599,7 +609,7 @@ static const char* eval_expr(Node* expr)
   return NULL;
 }
 
-static void compile_stmt_expr(Node* stmt)
+static void gen_stmt_expr(Node* stmt)
 {
   Node* expr = node_get_child(stmt, 0);
   if (expr->type == EXPR_ID_CALL or expr->type == EXPR_FIELD_CALL){
@@ -611,8 +621,8 @@ static void compile_stmt_expr(Node* stmt)
   }
 }
 
-static void compile_stmtlist(Node* stmtlist);
-static void compile_stmtlist_no_locals(Node* stmtlist);
+static void gen_stmtlist(Node* stmtlist);
+static void gen_stmtlist_no_locals(Node* stmtlist);
 
 static void gen_stmt_assign2(Node* left, const char* right)
 {
@@ -623,7 +633,7 @@ static void gen_stmt_assign2(Node* left, const char* right)
         if (c_name == NULL){
           // Register the variable
           sbuf_printf(sb_contents, "  Value %s = %s;\n",
-                      register_local(left->text), right);
+                      register_local(left->text, NULL), right);
         } else {
           sbuf_printf(sb_contents, "  %s = %s;\n", c_name, right);
         }
@@ -675,11 +685,11 @@ static void gen_stmt_assign(Node* left, Node* right)
   }
 }
 
-static void compile_stmt(Node* stmt)
+static void gen_stmt(Node* stmt)
 {
   switch(stmt->type){
     case STMT_EXPR:
-      compile_stmt_expr(stmt);
+      gen_stmt_expr(stmt);
       break;
     case STMT_RETURN:
       if (context2 == CONTEXT_CONSTRUCTOR){
@@ -693,7 +703,7 @@ static void compile_stmt(Node* stmt)
       {
         sbuf_printf(sb_contents, "  for(;;){\n");
         dowhile_semaphore++;
-        compile_stmtlist(node_get_child(stmt, 0));
+        gen_stmtlist(node_get_child(stmt, 0));
         dowhile_semaphore--;
         sbuf_printf(sb_contents, "  }\n");
       }
@@ -702,7 +712,7 @@ static void compile_stmt(Node* stmt)
       {
         sbuf_printf(sb_contents, "  if (%s == VALUE_TRUE) {\n",
                                   eval_expr(node_get_child(stmt, 0)));
-        compile_stmtlist(node_get_child(stmt, 1));
+        gen_stmtlist(node_get_child(stmt, 1));
         sbuf_printf(sb_contents, "  }\n");
       }
       break;
@@ -710,14 +720,14 @@ static void compile_stmt(Node* stmt)
       {
         sbuf_printf(sb_contents, "  else if (%s == VALUE_TRUE) {\n",
                                   eval_expr(node_get_child(stmt, 0)));
-        compile_stmtlist(node_get_child(stmt, 1));
+        gen_stmtlist(node_get_child(stmt, 1));
         sbuf_printf(sb_contents, "  }\n");
       }
       break;
     case STMT_ELSE:
       {
         sbuf_printf(sb_contents, "  else {\n");
-        compile_stmtlist(node_get_child(stmt, 0));
+        gen_stmtlist(node_get_child(stmt, 0));
         sbuf_printf(sb_contents, "  }\n");
       }
       break;
@@ -726,7 +736,7 @@ static void compile_stmt(Node* stmt)
         sbuf_printf(sb_contents, "  while (%s == VALUE_TRUE) {\n",
                                   eval_expr(node_get_child(stmt, 0)));
         dowhile_semaphore++;
-        compile_stmtlist(node_get_child(stmt, 1));
+        gen_stmtlist(node_get_child(stmt, 1));
         dowhile_semaphore--;
         sbuf_printf(sb_contents, "  }\n");
       }
@@ -766,7 +776,7 @@ static void compile_stmt(Node* stmt)
           if (query_local(r_variable)){
             raise_error(stmt, "variable '%s' already defined", r_variable);
           }
-          const char* c_variable = register_local(r_variable);
+          const char* c_variable = register_local(r_variable, NULL);
           sbuf_printf(sb_contents, "  for(Value %s = %s;"
                                       "%s != VALUE_EOF;"
                                       "%s = %s)"
@@ -791,7 +801,7 @@ static void compile_stmt(Node* stmt)
             if (query_local(r_variable)){
               raise_error(stmt, "variable '%s' already defined", r_variable);
             }
-            const char* c_variable2 = register_local(r_variable);
+            const char* c_variable2 = register_local(r_variable, NULL);
             sbuf_printf(sb_contents, "  Value %s = %s;\n", c_variable2,
                         obj_call(c_variable, "index", 1,
                                  mem_asprintf(", int64_to_val(%d)", i + 1))
@@ -800,7 +810,7 @@ static void compile_stmt(Node* stmt)
         }
 
         dowhile_semaphore++;
-        compile_stmtlist_no_locals(node_get_child(stmt, 2));
+        gen_stmtlist_no_locals(node_get_child(stmt, 2));
         dowhile_semaphore--;
         sbuf_printf(sb_contents, "  }\n");
         pop_locals();
@@ -813,10 +823,10 @@ static void compile_stmt(Node* stmt)
   }
 }
 
-static void compile_stmtlist(Node* stmtlist)
+static void gen_stmtlist(Node* stmtlist)
 {
   push_locals();
-  compile_stmtlist_no_locals(stmtlist);
+  gen_stmtlist_no_locals(stmtlist);
   pop_locals();
 }
 
@@ -827,12 +837,12 @@ static void gen_try(Node* try_block, Node* block_list, int i)
     case STMT_CATCH_ALL:
       sbuf_printf(sb_contents, "  EXC_CA_TRY\n");
       if (i == 0) {
-        compile_stmtlist(try_block);
+        gen_stmtlist(try_block);
       } else {
         gen_try(try_block, block_list, i-1);
       }
       sbuf_printf(sb_contents, "  EXC_CA_CATCH\n");
-      compile_stmtlist(block);
+      gen_stmtlist(block);
       sbuf_printf(sb_contents, "  EXC_CA_END\n");
       break;
     case STMT_FINALLY:
@@ -842,19 +852,19 @@ static void gen_try(Node* try_block, Node* block_list, int i)
         const char* lbl = mem_asprintf("_lbl_finally%d", counter);
         sbuf_printf(sb_contents, "  EXC_FIN_TRY(%s)\n", lbl);
         if (i == 0) {
-          compile_stmtlist(try_block);
+          gen_stmtlist(try_block);
         } else {
           gen_try(try_block, block_list, i-1);
         }
         sbuf_printf(sb_contents, "  EXC_FIN_FINALLY(%s)\n", lbl);
-        compile_stmtlist(block);
+        gen_stmtlist(block);
         sbuf_printf(sb_contents, "  EXC_FIN_END(%s)\n", lbl);
       }
       break;
   }
 }
 
-static void compile_stmtlist_no_locals(Node* stmtlist)
+static void gen_stmtlist_no_locals(Node* stmtlist)
 {
   int prev_stmt_type = 0;
   uint i = 0;
@@ -889,7 +899,7 @@ static void compile_stmtlist_no_locals(Node* stmtlist)
       }
     }
     prev_stmt_type = stmt->type;
-    compile_stmt(stmt);
+    gen_stmt(stmt);
     i++;
   }
 }
@@ -900,7 +910,7 @@ static bool check_vararg(Node* param_list)
   uint num_params = param_list->children.size;
   for (uint i = 0; i < num_params; i++){
     Node* param = node_get_child(param_list, i);
-    if (param->type == ARRAY_ARG){
+    if (node_has_string(param, "array")) {
       if (i != num_params - 1){
         raise_error(param_list, "array_argument must be last");
       }
@@ -913,32 +923,36 @@ static bool check_vararg(Node* param_list)
 // Constructs the text of the form
 //   Value __param1, Value __param2, Value __param3
 // and registers locals while doing that.
-static const char* gen_params(Node* param_list)
+static const char* gen_params(Node* param_list, const char** checkers)
 {
-  StringBuf sb;
-  sbuf_init(&sb, "");
+  StringBuf sb_params;
+  StringBuf sb_checkers;
+  sbuf_init(&sb_params, "");
+  sbuf_init(&sb_checkers, "");
   for (uint i = 0; i < param_list->children.size; i++){
     Node* param = node_get_child(param_list, i);
 
-    const char* var_name;
-    if (param->type == ARRAY_ARG){
-      // This is because ARRAY_ARG has the form
-      //     ARRAY_ARG -> ID (text = var_name)
-      // whereas regular argument has simply
-      //     ID (text = var_name).
-      var_name = node_get_child(param, 0)->text;
-    } else {
-      var_name = param->text;
+    const char* type = NULL;
+    if (node_num_children(param) > 0){
+      type = eval_type(node_get_child(param, 0));
     }
-    const char* c_var_name = register_local(var_name);
+    const char* var_name = node_get_string(param, "name");
+    const char* c_var_name = register_local(var_name, type);
+    if (type != NULL){
+      sbuf_printf(&sb_checkers, "obj_verify(%s, %s);",
+                                c_var_name,
+                                tbl_get_type(type));
+    }
     if (i == 0){
-      sbuf_printf(&sb, "Value %s", c_var_name);
+      sbuf_printf(&sb_params, "Value %s", c_var_name);
     } else {
-      sbuf_printf(&sb, ", Value %s", c_var_name);
+      sbuf_printf(&sb_params, ", Value %s", c_var_name);
     }
   }
-  const char* s = mem_strdup(sb.str);
-  sbuf_deinit(&sb);
+  const char* s = mem_strdup(sb_params.str);
+  *checkers = mem_strdup(sb_checkers.str);
+  sbuf_deinit(&sb_params);
+  sbuf_deinit(&sb_checkers);
   return s;
 }
 
@@ -946,7 +960,7 @@ static const char* gen_params(Node* param_list)
 static void gen_func_code(Node* stmt_list)
 {
   dowhile_semaphore = 0;
-  compile_stmtlist(stmt_list);
+  gen_stmtlist(stmt_list);
   // If last statement is of type STMT_RETURN, no need for another return.
   if (stmt_list->children.size == 0
         or
@@ -954,7 +968,7 @@ static void gen_func_code(Node* stmt_list)
     sbuf_printf(sb_contents, "  return VALUE_NIL;\n");
 }
 
-static void compile_function(Node* function)
+static void gen_function(Node* function)
 {
   // Deal with counter
   static uint counter = 0;
@@ -971,8 +985,10 @@ static void compile_function(Node* function)
   const char* c_name = mem_asprintf("_func%u_%s",
                                     counter,
                                     util_escape(name));
+  const char* checkers;
   sbuf_printf(sb_contents, "static Value %s(%s){\n",
-              c_name, gen_params(param_list));
+              c_name, gen_params(param_list, &checkers));
+  sbuf_printf(sb_contents, "  %s\n", checkers);
   sbuf_printf(sb_init1, "  Value v_%s = func%u_to_val(%s);\n",
               c_name, num_params, c_name);
   if (check_vararg(param_list))
@@ -1010,14 +1026,16 @@ static void gen_constructor(Node* constructor)
   sbuf_printf(sb_init1, "  ssym_set(\"%s\", %s);\n",
               r_constructor_name, c_value);
 
+  const char* checkers;
   sbuf_printf(sb_contents, "static Value %s(%s){\n",
-              c_constructor_name, gen_params(param_list));
-  set_local("self", "__self");
+              c_constructor_name, gen_params(param_list, &checkers));
+  set_local("self", "__self", NULL);
+  sbuf_printf(sb_contents, "  %s\n", checkers);
   sbuf_printf(sb_contents, "  %s* _c_data;\n", context_class_typedef);
   sbuf_printf(sb_contents, "  Value __self = obj_new(%s, (void**) &_c_data);\n",
               context_class_c_name);
   dowhile_semaphore = 0;
-  compile_stmtlist(stmt_list);
+  gen_stmtlist(stmt_list);
   sbuf_printf(sb_contents, "  return __self;\n");
   pop_locals();
   sbuf_printf(sb_contents, "}\n");
@@ -1034,7 +1052,10 @@ static void gen_method(const char* method_name, Node* param_list, Node* stmt_lis
   const char* c_method_name = mem_asprintf("_met%d_%s", counter,
                                 util_escape(r_method_name));
 
-  node_prepend_child(param_list, node_new_token(ID, "self", NULL, 0));
+  // Prepend a node for "self"
+  Node* node_self = node_new(PARAM);
+  node_set_string(node_self, "name", "self");
+  node_prepend_child(param_list, node_self);
   int num_params = param_list->children.size;
 
   push_locals();
@@ -1050,8 +1071,10 @@ static void gen_method(const char* method_name, Node* param_list, Node* stmt_lis
                            method_name,
                            context2_method_value_name);
 
+  const char* checkers;
   sbuf_printf(sb_contents, "static Value %s(%s){\n",
-              c_method_name, gen_params(param_list));
+              c_method_name, gen_params(param_list, &checkers));
+  sbuf_printf(sb_contents, "  %s\n", checkers);
   if (context_class_type == CLASS_CDATA_OBJECT
       or context_class_type == CLASS_FIELD_OBJECT){
     sbuf_printf(sb_contents, "  %s* _c_data;\n", context_class_typedef);
@@ -1228,7 +1251,7 @@ static void gen_globals(Node* ast)
           const char* c_name = mem_asprintf("_glb%d_%s", counter,
                                             util_escape(ripe_name));
 
-          set_local(ripe_name, c_name);
+          set_local(ripe_name, c_name, NULL);
           sbuf_printf(sb_header, "static Value %s;\n", c_name);
 
           Node* right = node_get_child(optassign, 0);
@@ -1269,7 +1292,7 @@ static void gen_toplevels(Node* ast)
     Node* n = node_get_child(ast, i);
     switch(n->type){
       case FUNCTION:
-        compile_function(n);
+        gen_function(n);
         break;
       case MODULE:
         {

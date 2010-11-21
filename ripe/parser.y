@@ -93,452 +93,216 @@
 
 %% ////////////////////////////////////////////////////////////// Grammar rules
 
-//         PROGRAM
-program:          START toplevel_list END
-{
-  rc_result = $2;
-};
+program:   START toplevel_list END
+                               { rc_result = $2; };
 
-//         TOPLEVEL_LIST
-toplevel_list:    toplevel_list SEP toplevel
-{
-  $$ = $1;
-  node_add_child($$, $3);
-};
-toplevel_list:    toplevel
-{
-  $$ = node_new(TOPLEVEL_LIST);
-  node_add_child($$, $1);
-};
-toplevel_list:    /* empty */
-{
-  $$ = node_new(TOPLEVEL_LIST);
-};
+toplevel_list:     toplevel_list SEP toplevel
+                               { $$ = $1;
+                                 node_add_child($$, $3); };
+toplevel_list:     toplevel    { $$ = node_new(TOPLEVEL_LIST);
+                                 node_add_child($$, $1); };
+toplevel_list:     /* empty */ { $$ = node_new(TOPLEVEL_LIST); };
 
-//         TOPLEVEL
-toplevel:           "module" ID START toplevel_list END
-{
-  $$ = node_new(MODULE);
-  node_set_string($$, "name", $2->text);
-  node_add_child($$, $4);
-};
-toplevel:         function
-{
-  $$ = $1;
-};
-toplevel:         C_CODE
-{
-  $$ = $1;
-};
-toplevel:         "class" ID START toplevel_list END
-{
-  $$ = node_new(CLASS);
-  node_set_string($$, "name", $2->text);
-  node_add_child($$, $4);
-};
-toplevel:         ID optassign_plus
-{
-  $$ = node_new(TL_VAR);
-  node_set_string($$, "annotation", $1->text);
-  node_add_child($$, $2);
-};
-toplevel:         ID ID '(' arg_star ')' block
-{
-  $$ = node_new(ANNOT_FUNCTION);
-  node_set_string($$, "annotation", $1->text);
-  node_set_string($$, "name", $2->text);
-  node_add_child($$, $4);
-  node_add_child($$, $6);
-};
+toplevel:  "module" ID START toplevel_list END
+                               { $$ = node_new(MODULE);
+                                 node_set_string($$, "name", $2->text);
+                                 node_add_child($$, $4); };
+toplevel:  C_CODE              { $$ = $1; };
+toplevel:  "class" ID START toplevel_list END
+                               { $$ = node_new(CLASS);
+                                 node_set_string($$, "name", $2->text);
+                                 node_add_child($$, $4); };
+toplevel:  ID optassign_plus   { $$ = node_new(TL_VAR);
+                                 node_set_string($$, "annotation", $1->text);
+                                 node_add_child($$, $2); };
+toplevel:  ID ID '(' param_star ')' block
+                               { $$ = node_new(ANNOT_FUNCTION);
+                                 node_set_string($$, "annotation", $1->text);
+                                 node_set_string($$, "name", $2->text);
+                                 node_add_child($$, $4);
+                                 node_add_child($$, $6); };
+toplevel:  ID '(' param_star ')' block
+                               { $$ = node_new(FUNCTION);
+                                 node_set_string($$, "name", $1->text);
+                                 node_add_child($$, $3);
+                                 node_add_child($$, $5); };
 
-function:         ID '(' arg_star ')' block
-{
-  $$ = node_new(FUNCTION);
-  node_set_string($$, "name", $1->text);
-  node_add_child($$, $3);
-  node_add_child($$, $5);
-};
+block:     START stmt_list END { $$ = $2; };
 
-block:            START stmt_list END
-{
-  $$ = $2;
-};
+stmt_list: stmt_list SEP stmt  { $$ = $1;
+                                 node_add_child($$, $3); };
+stmt_list: stmt                { $$ = node_new(STMT_LIST);
+                                 node_add_child($$, $1); };
+stmt_list: /* empty */         { $$ = node_new(STMT_LIST); };
 
-//         STMT_LIST
-stmt_list:        stmt_list SEP stmt
-{
-  $$ = $1;
-  if ($3 != NULL) node_add_child($$, $3);
-};
-stmt_list:        stmt
-{
-  $$ = node_new(STMT_LIST);
-  if ($1 != NULL) node_add_child($$, $1);
-};
-stmt_list:        /* empty */
-{
-  $$ = node_new(STMT_LIST);
-};
+stmt:      "if" expr block     { $$ = node_new(STMT_IF);
+                                 node_add_child($$, $2);
+                                 node_add_child($$, $3); };
+stmt:      "else" block        { $$ = node_new(STMT_ELSE);
+                                 node_add_child($$, $2); };
+stmt:      "elif" expr block   { $$ = node_new(STMT_ELIF);
+                                 node_add_child($$, $2);
+                                 node_add_child($$, $3); };
+stmt:      lvalue_plus '=' rvalue
+                               { $$ = node_new(STMT_ASSIGN);
+                                 node_add_child($$, $1);
+                                 node_add_child($$, $3); };
+stmt:      expr                { $$ = node_new(STMT_EXPR);
+                                 node_add_child($$, $1); };
+stmt:      "return" rvalue     { $$ = node_new(STMT_RETURN);
+                                 node_add_child($$, $2); };
+stmt:      "return"            { $$ = node_new(STMT_RETURN);
+                                 node_add_child($$, node_new(K_NIL)); };
+stmt:      "try" block         { $$ = $2;
+                                 $$->type = STMT_TRY; };
+stmt:      "catch" block       { $$ = $2;
+                                 $$->type = STMT_CATCH_ALL; };
+stmt:      "finally" block     { $$ = $2;
+                                 $$->type = STMT_FINALLY; };
+stmt:      "while" expr block  { $$ = node_new(STMT_WHILE);
+                                 node_add_child($$, $2);
+                                 node_add_child($$, $3); };
+stmt:      "loop" block        { $$ = node_new(STMT_LOOP);
+                                 node_add_child($$, $2); };
+stmt:      "for" id_plus "in" expr block
+                               { $$ = node_new(STMT_FOR);
+                                 node_add_child($$, $2);
+                                 node_add_child($$, $4);
+                                 node_add_child($$, $5); };
+stmt:      "break"             { $$ = node_new_inherit(STMT_BREAK, $1); };
+stmt:      "continue"          { $$ = node_new_inherit(STMT_CONTINUE, $1); };
+stmt:      "pass"              { $$ = node_new_inherit(STMT_PASS, $1); };
 
-//         STMT
-stmt:             "if" expr block
-{
-  $$ = node_new(STMT_IF);
-  node_add_child($$, $2);
-  node_add_child($$, $3);
-};
-stmt:             "else" block
-{
-  $$ = node_new(STMT_ELSE);
-  node_add_child($$, $2);
-};
-stmt:             "elif" expr block
-{
-  $$ = node_new(STMT_ELIF);
-  node_add_child($$, $2);
-  node_add_child($$, $3);
-};
-stmt:             expr_plus '=' expr
-{
-  $$ = node_new(STMT_ASSIGN);
-  node_add_child($$, $1);
-  node_add_child($$, $3);
-};
-stmt:             expr
-{
-  $$ = node_new(STMT_EXPR);
-  node_add_child($$, $1);
-};
-stmt:             "return" expr
-{
-  $$ = node_new(STMT_RETURN);
-  node_add_child($$, $2);
-};
-stmt:             "return"
-{
-  $$ = node_new(STMT_RETURN);
-  node_add_child($$, node_new(K_NIL));
-};
-stmt:             "try" block
-{
-  $$ = $2;
-  $$->type = STMT_TRY;
-};
-stmt:             "catch" block
-{
-  $$ = $2;
-  $$->type = STMT_CATCH_ALL;
-};
-stmt:             "finally" block
-{
-  $$ = $2;
-  $$->type = STMT_FINALLY;
-};
-stmt:             "while" expr block
-{
-  $$ = node_new(STMT_WHILE);
-  node_add_child($$, $2);
-  node_add_child($$, $3);
-};
-stmt:             "loop" block
-{
-  $$ = node_new(STMT_LOOP);
-  node_add_child($$, $2);
-};
-stmt:             "for" id_plus "in" expr block
-{
-  $$ = node_new(STMT_FOR);
-  node_add_child($$, $2);
-  node_add_child($$, $4);
-  node_add_child($$, $5);
-};
-stmt:             "break"
-{
-  $$ = node_new_inherit(STMT_BREAK, $1);
-};
-stmt:             "continue"
-{
-  $$ = node_new_inherit(STMT_CONTINUE, $1);
-};
-stmt:             "pass"
-{
-  $$ = node_new_inherit(STMT_PASS, $1);
-};
+// 4 types of expressions:
+//   those that are lvalues but are not rvalues l_expr
+//   those that are both lvalues and rvalues    lr_expr
+//   those that are only rvalues                r_expr
+//   subset of r_expr are d_expr, expressions that are direct_values
+//expr:             l_expr       { $$ = $1; };
+expr:      lr_expr             { $$ = $1; };
+expr:      r_expr              { $$ = $1; };
 
-//         EXPR
-expr:             C_CODE
-{
-  $$ = $1;
-};
-expr:             expr '.' ID
-{
-  $$ = node_new(EXPR_FIELD);
-  node_add_child($$, $1);
-  node_add_child($$, $3);
-};
-expr:             expr '.' ID '(' expr_star ')'
-{
-  $$ = node_new(EXPR_FIELD_CALL);
-  node_add_child($$, $1);
-  node_add_child($$, $3);
-  node_add_child($$, $5);
-};
-expr:             ID '(' expr_star ')'
-{
-  $$ = node_new(EXPR_ID_CALL);
-  node_add_child($$, $1);
-  node_add_child($$, $3);
-};
-expr:             '(' expr ')'
-{
-  $$ = $2;
-};
-expr:             expr '[' expr_plus ']'
-{
-  $$ = node_new(EXPR_INDEX);
-  node_add_child($$, $1);
-  node_add_child($$, $3);
-};
-expr:             '[' expr_star ']'
-{
-  $$ = node_new(EXPR_ARRAY);
-  node_add_child($$, $2);
-};
-expr:             expr '+' expr
-{
-  $$ = operator($1, $2, $3);
-};
-expr:             expr '-' expr
-{
-  $$ = operator($1, $2, $3);
-};
-expr:             expr '*' expr
-{
-  $$ = operator($1, $2, $3);
-};
-expr:             expr '/' expr
-{
-  $$ = operator($1, $2, $3);
-};
-expr:             expr "==" expr
-{
-  $$ = operator($1, $2, $3);
-};
-expr:             expr "!=" expr
-{
-  $$ = operator($1, $2, $3);
-};
-expr:             expr "and" expr
-{
-  $$ = operator($1, $2, $3);
-};
-expr:             expr "or" expr
-{
-  $$ = operator($1, $2, $3);
-};
-expr:             expr '<' expr
-{
-  $$ = operator($1, $2, $3);
-};
-expr:             expr "<=" expr
-{
-  $$ = operator($1, $2, $3);
-};
-expr:             expr '>' expr
-{
-  $$ = operator($1, $2, $3);
-};
-expr:             expr ">=" expr
-{
-  $$ = operator($1, $2, $3);
-};
-expr:             expr ':' expr
-{
-  $$ = node_new(EXPR_RANGE_BOUNDED);
-  node_add_child($$, $1);
-  node_add_child($$, $3);
-};
-expr:             expr "is" type
-{
-  $$ = node_new(EXPR_IS_TYPE);
-  node_add_child($$, $1);
-  node_add_child($$, $3);
-};
-expr:             expr ':'
-{
-  $$ = node_new(EXPR_RANGE_BOUNDED_LEFT);
-  node_add_child($$, $1);
-};
-expr:             ':' expr
-{
-  $$ = node_new(EXPR_RANGE_BOUNDED_RIGHT);
-  node_add_child($$, $2);
-};
-expr:             ':'
-{
-  $$ = node_new(EXPR_RANGE_UNBOUNDED);
-};
-expr:             '-' expr %prec '.'
-{
-  $$ = $1;
-  node_add_child($$, $2);
-};
-expr:             "not" expr %prec "and"
-{
-  $$ = $1;
-  node_add_child($$, $2);
-};
-expr:              '@' ID
-{
-  $$ = node_new_inherit(EXPR_AT_VAR, $2);
-  node_set_string($$, "name", $2->text);
-};
-expr:              dexpr
-{
-  $$ = $1;
-};
+lvalue:    lr_expr             { $$ = $1; };
+rvalue:    r_expr              { $$ = $1; };
+rvalue:    lr_expr             { $$ = $1; };
 
-dexpr:             ID
-{
-  $$ = $1;
-};
-dexpr:             INT
-{
-  $$ = $1;
-};
-dexpr:             DOUBLE
-{
-   $$ = $1;
-};
-dexpr:             STRING
-{
-  $$ = $1;
-};
-dexpr:             CHARACTER
-{
-  $$ = $1;
-};
-dexpr:             "nil"
-{
-  $$ = $1;
-};
-dexpr:             "true"
-{
-  $$ = $1;
-};
-dexpr:             "false"
-{
-  $$ = $1;
-};
-dexpr:             "eof"
-{
-  $$ = $1;
-};
-dexpr:             SYMBOL
-{
-  $$ = $1;
-};
+lr_expr:   ID                  { $$ = $1; };
+lr_expr:   '@' ID              { $$ = node_new_inherit(EXPR_AT_VAR, $2);
+                                 node_set_string($$, "name", $2->text); };
+lr_expr:   rvalue '.' ID       { $$ = node_new(EXPR_FIELD);
+                                 node_add_child($$, $1);
+                                 node_add_child($$, $3); };
+lr_expr:   rvalue '[' rvalue_plus ']'
+                               { $$ = node_new(EXPR_INDEX);
+                                 node_add_child($$, $1);
+                                 node_add_child($$, $3); };
 
-type:              type '.' ID
-{
-  $$ = $1;
-  node_add_child($$, $3);
-};
-type:              ID
-{
-  $$ = node_new_inherit(TYPE, $1);
-  node_set_string($$, "name", $1->text);
-};
+r_expr:    rvalue '.' ID '(' rvalue_star ')'
+                               { $$ = node_new(EXPR_FIELD_CALL);
+                                 node_add_child($$, $1);
+                                 node_add_child($$, $3);
+                                 node_add_child($$, $5); };
+r_expr:    ID '(' rvalue_star ')'
+                               { $$ = node_new(EXPR_ID_CALL);
+                                 node_add_child($$, $1);
+                                 node_add_child($$, $3); };
+r_expr:    '[' rvalue_star ']' { $$ = node_new(EXPR_ARRAY);
+                                 node_add_child($$, $2); };
+r_expr:    '(' rvalue ')'      { $$ = $2; };
+r_expr:    rvalue '+' rvalue   { $$ = operator($1, $2, $3); };
+r_expr:    rvalue '-' rvalue   { $$ = operator($1, $2, $3); };
+r_expr:    rvalue '*' rvalue   { $$ = operator($1, $2, $3); };
+r_expr:    rvalue '/' rvalue   { $$ = operator($1, $2, $3); };
+r_expr:    rvalue "==" rvalue  { $$ = operator($1, $2, $3); };
+r_expr:    rvalue "!=" rvalue  { $$ = operator($1, $2, $3); };
+r_expr:    rvalue "and" rvalue { $$ = operator($1, $2, $3); };
+r_expr:    rvalue "or" rvalue  { $$ = operator($1, $2, $3); };
+r_expr:    rvalue '<' rvalue   { $$ = operator($1, $2, $3); };
+r_expr:    rvalue "<=" rvalue  { $$ = operator($1, $2, $3); };
+r_expr:    rvalue '>' rvalue   { $$ = operator($1, $2, $3); };
+r_expr:    rvalue ">=" rvalue  { $$ = operator($1, $2, $3); };
+r_expr:    rvalue "is" type    { $$ = node_new(EXPR_IS_TYPE);
+                                 node_add_child($$, $1);
+                                 node_add_child($$, $3); };
+r_expr:    rvalue ':' rvalue   { $$ = node_new(EXPR_RANGE_BOUNDED);
+                                 node_add_child($$, $1);
+                                 node_add_child($$, $3); };
+r_expr:    rvalue ':'          { $$ = node_new(EXPR_RANGE_BOUNDED_LEFT);
+                                 node_add_child($$, $1); };
+r_expr:    ':' rvalue          { $$ = node_new(EXPR_RANGE_BOUNDED_RIGHT);
+                                 node_add_child($$, $2); };
+r_expr:    ':'                 { $$ = node_new(EXPR_RANGE_UNBOUNDED); };
+r_expr:    '-' rvalue %prec '.'
+                               { $$ = $1; node_add_child($$, $2); };
+r_expr:    "not" rvalue %prec "and"
+                               { $$ = $1; node_add_child($$, $2); };
+r_expr:    d_expr              { $$ = $1; };
 
-/* Helper rules */
-/* expr_star is a list of exprs, possibly empty */
-expr_star:        expr_star ',' expr
-{
-  $$ = $1;
-  node_add_child($$, $3);
-};
-expr_star:        expr
-{
-  $$ = node_new(EXPR_LIST);
-  node_add_child($$, $1);
-};
-expr_star:        /* empty */
-{
-  $$ = node_new(EXPR_LIST);
-};
-/* expr_plus is a list of exprs, at least one */
-expr_plus:        expr_plus ',' expr
-{
-  $$ = $1;
-  node_add_child($$, $3);
-};
-expr_plus:        expr
-{
-  $$ = node_new(EXPR_LIST);
-  node_add_child($$, $1);
-};
+d_expr:    C_CODE              { $$ = $1; };
+d_expr:    INT                 { $$ = $1; };
+d_expr:    DOUBLE              { $$ = $1; };
+d_expr:    STRING              { $$ = $1; };
+d_expr:    CHARACTER           { $$ = $1; };
+d_expr:    "nil"               { $$ = $1; };
+d_expr:    "true"              { $$ = $1; };
+d_expr:    "false"             { $$ = $1; };
+d_expr:    "eof"               { $$ = $1; };
+d_expr:    SYMBOL              { $$ = $1; };
 
-optassign_plus:   optassign_plus ',' optassign
-{
-  $$ = $1;
-  node_add_child($$, $3);
-};
-optassign_plus:   optassign
-{
-  $$ = node_new(OPTASSIGN_LIST);
-  node_add_child($$, $1);
-};
-optassign:        ID
-{
-  $$ = node_new_inherit(OPTASSIGN, $1);
-  node_set_string($$, "name", $1->text);
-  node_add_child($$, node_new(K_NIL));
-};
-optassign:        ID '=' dexpr
-{
-  $$ = node_new_inherit(OPTASSIGN, $1);
-  node_set_string($$, "name", $1->text);
-  node_add_child($$, $3);
-};
-optassign:        ID '=' C_CODE
-{
-  $$ = node_new_inherit(OPTASSIGN, $1);
-  node_set_string($$, "name", $1->text);
-  node_add_child($$, $3);
-};
+type:      type '.' ID         { $$ = $1;
+                                 node_add_child($$, $3); };
+type:      ID                  { $$ = node_new_inherit(TYPE, $1);
+                                 node_set_string($$, "name", $1->text); };
 
-arg:              '*' ID
-{
-  $$ = node_new(ARRAY_ARG);
-  node_add_child($$, $2);
-};
-arg:              ID
-{
-  $$ = $1;
-};
+rvalue_star: rvalue_star ',' rvalue
+                               { $$ = $1;
+                                 node_add_child($$, $3); };
+rvalue_star: rvalue            { $$ = node_new(EXPR_LIST);
+                                 node_add_child($$, $1); };
+rvalue_star: /* empty */       { $$ = node_new(EXPR_LIST); };
 
-arg_star:         arg_star ',' arg
-{
-  $$ = $1;
-  node_add_child($$, $3);
-};
-arg_star:         arg
-{
-  $$ = node_new(ARG_LIST);
-  node_add_child($$, $1);
-};
-arg_star:         /* empty */
-{
-  $$ = node_new(ARG_LIST);
-};
+rvalue_plus: rvalue_plus ',' rvalue
+                               { $$ = $1;
+                                 node_add_child($$, $3); };
+rvalue_plus: rvalue            { $$ = node_new(EXPR_LIST);
+                                 node_add_child($$, $1); };
 
-id_plus:          id_plus ',' ID
-{
-  $$ = $1;
-  node_add_child($$, $3);
-};
-id_plus:          ID
-{
-  $$ = node_new(ID_LIST);
-  node_add_child($$, $1);
-};
+lvalue_plus: lvalue_plus ',' lvalue
+                               { $$ = $1;
+                                 node_add_child($$, $3); };
+lvalue_plus: lvalue            { $$ = node_new(EXPR_LIST);
+                                 node_add_child($$, $1); };
+
+optassign_plus: optassign_plus ',' optassign
+                               { $$ = $1;
+                                 node_add_child($$, $3); };
+optassign_plus: optassign      { $$ = node_new(OPTASSIGN_LIST);
+                                 node_add_child($$, $1); };
+
+optassign: ID                  { $$ = node_new_inherit(OPTASSIGN, $1);
+                                 node_set_string($$, "name", $1->text);
+                                 node_add_child($$, node_new(K_NIL)); };
+optassign: ID '=' d_expr       { $$ = node_new_inherit(OPTASSIGN, $1);
+                                 node_set_string($$, "name", $1->text);
+                                 node_add_child($$, $3); };
+
+param:     '*' ID              { $$ = node_new(PARAM);
+                                 node_set_string($$, "array", "array");
+                                 node_set_string($$, "name", $2->text); };
+param:     type ID             { $$ = node_new(PARAM);
+                                 node_add_child($$, $1);
+                                 node_set_string($$, "name", $2->text); };
+param:     ID                  { $$ = node_new(PARAM);
+                                 node_set_string($$, "name", $1->text); };
+
+param_star: param_star ',' param
+                               { $$ = $1;
+                                 node_add_child($$, $3); };
+param_star: param              { $$ = node_new(PARAM_LIST);
+                                 node_add_child($$, $1); };
+param_star: /* empty */        { $$ = node_new(PARAM_LIST); };
+
+id_plus:   id_plus ',' ID      { $$ = $1;
+                                 node_add_child($$, $3); };
+id_plus:   ID                  { $$ = node_new(ID_LIST);
+                                 node_add_child($$, $1); };

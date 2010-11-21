@@ -120,7 +120,7 @@ int rc_lex();
 #define FUNCTION          1002
 #define STMT_LIST         1003
 #define CLASS             1004
-#define ARRAY_ARG         1006
+#define PARAM             1006
 #define ANNOT_FUNCTION    1007
 #define TL_VAR            1008  // Top-level variable (with annotation maybe)
 
@@ -159,7 +159,7 @@ int rc_lex();
 // Helper nonterminal nodes
 #define ID_LIST           1050
 #define EXPR_LIST         1051
-#define ARG_LIST          1052
+#define PARAM_LIST        1052
 #define OPTASSIGN_LIST    1053
 #define OPTASSIGN         1054
 #define TYPE              1055

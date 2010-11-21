@@ -126,14 +126,14 @@ class Array1
   #$ rdoc-name Array1.index_set
   #$ rdoc-header Array1.index_set(Integer i, val)
   #$ Sets the i-th element of the array to val.
-  index_set(i, val)
+  index_set(Integer i, val)
     $ array1_index_set(&(@a), val_to_int64(__i), __val); $
 
   #$ rdoc-name Array1.insert
   #$ rdoc-header Array1.insert(Integer i, val)
   #$ Insert val into position i in the array.  Moves everything in position
   #$ 1 and beyond one step.
-  insert(i, val)
+  insert(Integer i, val)
     $
       const int64 size = @a.size;
       array1_push(&(@a), __val);
