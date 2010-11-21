@@ -44,6 +44,28 @@ class Range
       }
     $
 
+  virtual_get start()
+    $
+      switch(@range.type){
+        case RANGE_BOUNDED:
+        case RANGE_BOUNDED_LEFT:
+          return int64_to_val(@range.start);
+        default:
+          return VALUE_NIL;
+      }
+    $
+
+  virtual_get finish()
+    $
+      switch(@range.type){
+        case RANGE_BOUNDED:
+        case RANGE_BOUNDED_RIGHT:
+          return int64_to_val(@range.finish);
+        default:
+          return VALUE_NIL;
+      }
+    $
+
 const RangeBounded = $ int64_to_val(RANGE_BOUNDED) $
 const RangeBoundedLeft = $ int64_to_val(RANGE_BOUNDED_LEFT) $
 const RangeIteratorAscending = $ int64_to_val(ASCENDING) $

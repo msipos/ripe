@@ -110,6 +110,20 @@ arrays()
             ["england", "france", "germany", "italy", "japan", "serbia",
              "usa"].to_string())
 
+  view = Array1View.new(arr, 2:4)
+  name = "Array1View"
+  Test.test(name + " 1", view[1], "france")
+  Test.test(name + " -1", view[-1], "italy")
+  Test.test(name + " 2", view[2], "germany")
+  view[2] = "poland"
+  Test.test(name + " index_set", arr[3], "poland")
+
+  view = Array1View.new(arr, 4:2)
+  name = "Array1View reverse"
+  Test.test(name + " 1", view.map_index(1), 4)
+  Test.test(name + " -1", view.map_index(-1), 2)
+  Test.test(name + " 2", view.map_index(2), 3)
+
 subarrays()
   name = "subarrays"
   my_arr = ["one", "two", "three", "four", "five", "six"]

@@ -86,35 +86,42 @@ class Array1
   #$ rdoc-name Array1.index
   #$ rdoc-header Array1.index(Integer or Range i)
   #$ If i is an Integer, this returns the i-th element of the Array1.
-  #$ If i is a range, this returns a new Array1 that is a slice of self.
+  #$ If i is a range, this returns a new Array1View that is a view of the given
+  #$ range of self.
   index(i)
+    if i is Integer
+      return $ array1_index(&(@a), val_to_int64(__i)) $
+    if i is Range
+      return Array1View.new(self, i)
+
+  #$ rdoc-name Array1.slice
+  #$ rdoc-header Array1.slice(Range r)
+  #$ This returns a new Array1 that is a slice of self.
+  slice(r)
     $
-      if (obj_klass(__i) == klass_Range){
-        Range* range = val_to_range(__i);
-        int64 start, finish;
-        util_index_range("Array1",
-                         range,
-                         @a.size,
-                         &start,
-                         &finish);
-        if (start <= finish){
-          Value v = array1_new(finish - start + 1);
-          Array1* arr = obj_c_data(v);
-          for (int64 i = start; i <= finish; i++){
-            arr->data[i - start] = @a.data[i];
-          }
-          return v;
-        } else {
-          Value v = array1_new(start - finish + 1);
-          Array1* arr = obj_c_data(v);
-          for (int64 i = 0; i < start - finish + 1; i++){
-            arr->data[i] = @a.data[start - i];
-          }
-          return v;
+      Range* range = val_to_range(__r);
+      int64 start, finish;
+      util_index_range("Array1",
+                       range,
+                       @a.size,
+                       &start,
+                       &finish);
+      if (start <= finish){
+        Value v = array1_new(finish - start + 1);
+        Array1* arr = obj_c_data(v);
+        for (int64 i = start; i <= finish; i++){
+          arr->data[i - start] = @a.data[i];
         }
+        return v;
+      } else {
+        Value v = array1_new(start - finish + 1);
+        Array1* arr = obj_c_data(v);
+        for (int64 i = 0; i < start - finish + 1; i++){
+          arr->data[i] = @a.data[start - i];
+        }
+        return v;
       }
     $
-    return $ array1_index(&(@a), val_to_int64(__i)) $
 
   #$ rdoc-name Array1.index_set
   #$ rdoc-header Array1.index_set(Integer i, val)
@@ -208,30 +215,11 @@ class Array1
       mem_free(tmp);
     $
 
-  #$ rdoc-name Array1.swap
-  #$ rdoc-header Array1.swap(i, j)
-  #$ Swap elements with indices i and j.
-  swap(i, j)
-    tmp = self[i]
-    self[i] = self[j]
-    self[j] = tmp
-
   #$ rdoc-name Array1.to_string
   #$ rdoc-header Array1.to_string()
   #$ Returns a string representation of the array.
   to_string()
-    $
-      char buf[1024];
-      buf[0] = 0;
-      strcat(buf, "[");
-      for (int i = 0; i < @a.size; i++){
-        const char* str = to_string(@a.data[i]);
-        strcat(buf, str);
-        if (i != @a.size - 1) strcat(buf, ", ");
-      }
-      strcat(buf, "]");
-      return string_to_val(buf);
-    $
+    return ArrayUtil.to_string(self)
 
   #$ rdoc-name Array1.size
   #$ rdoc-header Array1.size
@@ -245,6 +233,65 @@ class Array1
   get_iter()
     return Array1Iterator.new(self)
 
+#$ rdoc-name Array1View
+#$ rdoc-header Array1View
+#$ View of a range of Array1.  Allows most methods of Array1 to be called on
+#$ on the view.
+class Array1View
+  private array
+  private start
+  private finish
+  #$ rdoc-name Array1View.size
+  #$ rdoc-header Array1View.size
+  #$ Returns the length (size) of the view.
+  readable size
+  private ascending
+
+  constructor new(array, range)
+    @array = array
+    array_size = array.size
+    @start = ArrayUtil.index_start(array_size, range)
+    @finish = ArrayUtil.index_finish(array_size, range)
+    if @start > @finish
+      @ascending = false
+      @size = @start - @finish + 1
+    else
+      @ascending = true
+      @size = @finish - @start + 1
+
+  map_index(idx)
+    idx = ArrayUtil.index(@size, idx)
+    if @ascending
+      return @start + idx - 1
+    else
+      return @start - idx + 1
+
+  #$ rdoc-name Array1View.index
+  #$ rdoc-header Array1View.index(Integer or Range index)
+  #$ Behaves just like Array1.index().
+  index(idx)
+    if idx is Integer
+      return @array[self.map_index(idx)]
+    return Array1View.new(self, idx)
+
+  #$ rdoc-name Array1View.index_set
+  #$ rdoc-header Array1View.index_set(Integer index)
+  #$ Behaves just like Array1.index_set().
+  index_set(idx, value)
+    @array[self.map_index(idx)] = value
+
+  #$ rdoc-name Array1View.get_iter
+  #$ rdoc-header Array1View.get_iter()
+  #$ Behaves just like Array1.get_iter().
+  get_iter()
+    return Array1Iterator.new(self)
+
+  #$ rdoc-name Array1View.to_string
+  #$ rdoc-header Array1View.to_string()
+  #$ Behaves just like Array1.to_string().
+  to_string()
+    return ArrayUtil.to_string(self)
+
 #$ rdoc-name Array1Iterator
 #$ rdoc-header Array1Iterator
 #$ Iterator object over an Array1 (returns elements of the Array1
@@ -253,20 +300,48 @@ class Array1Iterator
   private array
   private idx
 
-  #$ rdoc-name ArrayIterator.new
-  #$ rdoc-header ArrayIterator.new(Array1 array)
-  #$ Create a new Array1Iterator object over the given array.
   constructor new(array)
     @array = array
     @idx = 1
 
-  #$ rdoc-name Array1.iter
-  #$ rdoc-header Array1.iter()
-  #$ Returns the next element of the Array1. If you reached the end of the
-  #$ Array1, then return eof.
   iter()
     if @idx > @array.size
       return eof
     val = @array[@idx]
     @idx = @idx + 1
     return val
+
+module ArrayUtil
+  index(size, idx)
+    if idx > size or idx == 0 or idx < -size
+      pass
+      # Raise error here
+    if idx > 0
+      return idx
+    return size + idx + 1
+
+  index_start(size, range)
+    start = range.start
+    if start == nil
+      return 1
+    return ArrayUtil.index(size, start)
+
+  index_finish(size, range)
+    finish = range.finish
+    if finish == nil
+      return size
+    return ArrayUtil.index(size, finish)
+
+  to_string(arr)
+    sz = arr.size
+    if sz == 0
+      return "[]"
+
+    i = 1
+    buf = "[" + arr[1]
+    loop
+      if i == sz
+        break
+      i = i + 1
+      buf = buf + ", " + arr[i]
+    return buf + "]"
