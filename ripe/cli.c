@@ -29,15 +29,15 @@ const char* path_join(int num, ...)
   char* cur = va_arg(ap, char*);
   for (int i = 1; i < num; i++){
     char* next = va_arg(ap, char*);
-    
+
     // Check that cur doesn't end with SEPARATOR
     int loc = strlen(cur) - 1;
     assert(loc > 0);
     if (cur[loc] == SEPARATOR) cur[loc] = 0;
-    
+
     // Check that next doesn't start with SEPARATOR
     if (next[0] == SEPARATOR) next++;
-    
+
     cur = mem_asprintf("%s%c%s", cur, SEPARATOR, next);
   }
   va_end (ap);
@@ -50,13 +50,14 @@ const char* path_get_app_dir()
   char buf[1024];
   size_t len;
   if ((len = readlink("/proc/self/exe", buf, 1024)) != -1){
+    buf[len] = 0; // readlink does not terminate buf with 0
     char* slash = strrchr(buf, SEPARATOR);
     if (slash != NULL){
       *slash = 0;
     }
     return mem_strdup(buf);
   } else {
-    fprintf(stderr, "couldn't detect app directory: %s\n", 
+    fprintf(stderr, "couldn't detect app directory: %s\n",
             strerror(errno));
     return NULL;
   }
@@ -112,24 +113,25 @@ void conf_load(Conf* conf, const char* filename)
 {
   array_init(&(conf->keys), const char*);
   array_init(&(conf->values), const char*);
-  if (not path_exists(filename)) return;
 
   FILE* f = fopen(filename, "r");
   if (f == NULL){
     fprintf(stderr, "warning: can't open file '%s' for reading: %s\n",
             filename, strerror(errno));
+    return;
   }
   char line[1024];
   while (fgets(line, 1024, f) != NULL){
+    line[1023] = 0;
     char* p = strchr(line, '=');
     if (p == NULL) continue;
     *p = 0;
     char* key = strip_whitespace(line);
     char* value = strip_whitespace(p+1);
-    // printf("key = '%s', value = '%s'\n", key, value);
     array_append(&(conf->keys), mem_strdup(key));
     array_append(&(conf->values), mem_strdup(value));
   }
+  fclose(f);
 }
 
 #include <string.h>
@@ -144,4 +146,3 @@ const char* conf_query(Conf* conf, const char* key)
   }
   return "";
 }
-
