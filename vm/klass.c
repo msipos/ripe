@@ -141,6 +141,18 @@ Value obj_new(Klass* klass, void** data)
   return pack_ptr(obj);
 }
 
+Value obj_verify_assign(Value v_obj, Klass* klass)
+{
+  Klass* klass_obj = obj_klass(v_obj);
+  if (klass_obj != klass){
+    exc_raise("TypeError: tried to assign expression of type %s"
+              " to a variable of type %s",
+              dsym_reverse_get(klass_obj->name),
+              dsym_reverse_get(klass->name));
+  }
+  return v_obj;
+}
+
 Value field_get(Value v_obj, Value field)
 {
   Klass* klass = obj_klass(v_obj);

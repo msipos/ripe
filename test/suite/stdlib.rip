@@ -3,7 +3,7 @@ Gsl()
   rng.seed_random()
   d = 0.0
   N = 1000000
-  for i in 1:N
+  for Integer i in 1:N
     if rng.roll(0.5)
       d = d + 1.0
   avg = d / N
@@ -33,7 +33,7 @@ Map()
   Test.test(name, false, map.has_key?("India"))
 
   map = Map.new()
-  for i in 1:100000
+  for Integer i in 1:100000
     map[i] = i*2
   name = "map2"
   x = 61898
@@ -109,6 +109,20 @@ arrays()
             arr.to_string(),
             ["england", "france", "germany", "italy", "japan", "serbia",
              "usa"].to_string())
+
+  view = Array1View.new(arr, 2:4)
+  name = "Array1View"
+  Test.test(name + " 1", view[1], "france")
+  Test.test(name + " -1", view[-1], "italy")
+  Test.test(name + " 2", view[2], "germany")
+  view[2] = "poland"
+  Test.test(name + " index_set", arr[3], "poland")
+
+  view = Array1View.new(arr, 4:2)
+  name = "Array1View reverse"
+  Test.test(name + " 1", view.map_index(1), 4)
+  Test.test(name + " -1", view.map_index(-1), 2)
+  Test.test(name + " 2", view.map_index(2), 3)
 
 subarrays()
   name = "subarrays"

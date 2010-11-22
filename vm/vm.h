@@ -208,6 +208,8 @@ static inline void obj_verify(Value v_obj, Klass* klass){
               dsym_reverse_get(klass_obj->name));
   }
 }
+Value obj_verify_assign(Value v_obj, Klass* klass);
+
 static inline void* obj_c_data(Value v_obj)
 {
   return &(((Object*) unpack_ptr(v_obj))->values[0]);
