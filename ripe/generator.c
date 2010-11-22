@@ -808,6 +808,10 @@ static void compile_stmt(Node* stmt)
       break;
     case STMT_PASS:
       break;
+    case STMT_RAISE:
+      sbuf_printf(sb_contents, "  exc_raise(val_to_string(%s));\n",
+                  eval_expr(node_get_child(stmt, 0)));
+      break;
     default:
       raise_error(stmt, "invalid statement type %d", stmt->type);
   }

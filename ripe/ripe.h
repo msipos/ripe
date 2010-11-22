@@ -142,6 +142,7 @@ int rc_lex();
 #define STMT_TRY          1120
 #define STMT_CATCH_ALL    1121
 #define STMT_FINALLY      1122
+#define STMT_RAISE        1123
 
 // Types of EXPRs
 #define EXPR_ID_CALL      1030

@@ -70,6 +70,7 @@
 %token   K_TRY        "try"
 %token   K_CATCH      "catch"
 %token   K_FINALLY    "finally"
+%token   K_RAISE      "raise"
 %token   K_FOR        "for"
 %token   K_IN         "in"
 %token   K_PASS       "pass"
@@ -233,6 +234,11 @@ stmt:             "finally" block
 {
   $$ = $2;
   $$->type = STMT_FINALLY;
+};
+stmt:             "raise" expr
+{
+  $$ = node_new(STMT_RAISE);
+  node_add_child($$, $2);
 };
 stmt:             "while" expr block
 {

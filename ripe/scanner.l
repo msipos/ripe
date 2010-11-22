@@ -74,6 +74,7 @@ eof                             { return K_EOF; }
 try                             { return K_TRY; }
 catch                           { return K_CATCH; }
 finally                         { return K_FINALLY; }
+raise                           { return K_RAISE; }
 for                             { return K_FOR; }
 in                              { return K_IN; }
 pass                            { return K_PASS; }

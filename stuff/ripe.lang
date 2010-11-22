@@ -50,6 +50,7 @@
           <keyword>try</keyword>
           <keyword>catch</keyword>
           <keyword>finally</keyword>
+          <keyword>raise</keyword>
           <keyword>module</keyword>
           <keyword>class</keyword>
           <keyword>constructor</keyword>
