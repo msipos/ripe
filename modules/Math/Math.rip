@@ -15,6 +15,9 @@ module Math
                )
              ) $
 
+  mod(Integer i, Integer b)
+    return $ int64_to_val(val_to_int64(__i) % val_to_int64(__b)) $
+
   rand(a, b)
     $
       int64 a = val_to_int64(__a);

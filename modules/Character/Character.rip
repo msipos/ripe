@@ -1,0 +1,5 @@
+module Character
+  to_string(c)
+    str = " "
+    str[1] = c
+    return str

@@ -236,7 +236,7 @@ module Bio
         return eof
       id_line = id_line.strip()
       if id_line[1] != '>'
-        Std.error("invalid id line '", id_line, "'")
+        raise Std.sprintf("invalid id line '%a'", id_line)
       id = id_line[2:]
       seq = ""
       loop

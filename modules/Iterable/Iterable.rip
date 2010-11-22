@@ -1,0 +1,6 @@
+module Iterable
+  collect(iterable)
+    arr = []
+    for x in iterable
+      arr.push(x)
+    return arr
