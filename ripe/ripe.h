@@ -155,6 +155,7 @@ int rc_lex();
 #define EXPR_RANGE_BOUNDED_RIGHT  1042
 #define EXPR_RANGE_UNBOUNDED      1043
 #define EXPR_IS_TYPE      1044
+#define EXPR_TYPED_ID     1045
 
 // Helper nonterminal nodes
 #define ID_LIST           1050

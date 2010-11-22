@@ -135,12 +135,12 @@ stmt_list: stmt                { $$ = node_new(STMT_LIST);
                                  node_add_child($$, $1); };
 stmt_list: /* empty */         { $$ = node_new(STMT_LIST); };
 
-stmt:      "if" expr block     { $$ = node_new(STMT_IF);
+stmt:      "if" rvalue block   { $$ = node_new(STMT_IF);
                                  node_add_child($$, $2);
                                  node_add_child($$, $3); };
 stmt:      "else" block        { $$ = node_new(STMT_ELSE);
                                  node_add_child($$, $2); };
-stmt:      "elif" expr block   { $$ = node_new(STMT_ELIF);
+stmt:      "elif" rvalue block { $$ = node_new(STMT_ELIF);
                                  node_add_child($$, $2);
                                  node_add_child($$, $3); };
 stmt:      lvalue_plus '=' rvalue
@@ -159,12 +159,13 @@ stmt:      "catch" block       { $$ = $2;
                                  $$->type = STMT_CATCH_ALL; };
 stmt:      "finally" block     { $$ = $2;
                                  $$->type = STMT_FINALLY; };
-stmt:      "while" expr block  { $$ = node_new(STMT_WHILE);
+stmt:      "while" rvalue block
+                               { $$ = node_new(STMT_WHILE);
                                  node_add_child($$, $2);
                                  node_add_child($$, $3); };
 stmt:      "loop" block        { $$ = node_new(STMT_LOOP);
                                  node_add_child($$, $2); };
-stmt:      "for" id_plus "in" expr block
+stmt:      "for" lvalue_plus "in" expr block
                                { $$ = node_new(STMT_FOR);
                                  node_add_child($$, $2);
                                  node_add_child($$, $4);
@@ -178,13 +179,19 @@ stmt:      "pass"              { $$ = node_new_inherit(STMT_PASS, $1); };
 //   those that are both lvalues and rvalues    lr_expr
 //   those that are only rvalues                r_expr
 //   subset of r_expr are d_expr, expressions that are direct_values
-//expr:             l_expr       { $$ = $1; };
+expr:      l_expr              { $$ = $1; };
 expr:      lr_expr             { $$ = $1; };
 expr:      r_expr              { $$ = $1; };
 
+lvalue:    l_expr              { $$ = $1; };
 lvalue:    lr_expr             { $$ = $1; };
+
 rvalue:    r_expr              { $$ = $1; };
 rvalue:    lr_expr             { $$ = $1; };
+
+l_expr:    type ID             { $$ = node_new(EXPR_TYPED_ID);
+                                 node_set_string($$, "name", $2->text);
+                                 node_add_child($$, $1); };
 
 lr_expr:   ID                  { $$ = $1; };
 lr_expr:   '@' ID              { $$ = node_new_inherit(EXPR_AT_VAR, $2);
@@ -200,7 +207,7 @@ lr_expr:   rvalue '[' rvalue_plus ']'
 r_expr:    rvalue '.' ID '(' rvalue_star ')'
                                { $$ = node_new(EXPR_FIELD_CALL);
                                  node_add_child($$, $1);
-                                 node_add_child($$, $3);
+                                 node_set_string($$, "name", $3->text);
                                  node_add_child($$, $5); };
 r_expr:    ID '(' rvalue_star ')'
                                { $$ = node_new(EXPR_ID_CALL);
@@ -301,8 +308,3 @@ param_star: param_star ',' param
 param_star: param              { $$ = node_new(PARAM_LIST);
                                  node_add_child($$, $1); };
 param_star: /* empty */        { $$ = node_new(PARAM_LIST); };
-
-id_plus:   id_plus ',' ID      { $$ = $1;
-                                 node_add_child($$, $3); };
-id_plus:   ID                  { $$ = node_new(ID_LIST);
-                                 node_add_child($$, $1); };

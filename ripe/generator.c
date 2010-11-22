@@ -275,7 +275,7 @@ const char* context2_method_value_name;
 // LOCAL VARIABLE STACK
 ///////////////////////////////////////////////////////////////////////////////
 
-static Array locals_arr; // For each function.
+static Array locals_arr; // A dictionary for each function (block).
 typedef struct {
   const char* c_name;
   const char* ripe_name;
@@ -320,24 +320,123 @@ static const char* register_local(const char* ripe_name,
 
 // Test if ripe_name is a currently defined variable. Otherwise it should be
 // treated like a static symbol.
-static const char* query_local(const char* ripe_name)
+static Variable* query_local_full(const char* ripe_name)
 {
   for (int i = locals_arr.size - 1; i >= 0; i--){
     Dict* dict = array_get(&locals_arr, Dict*, i);
     Variable* var;
     if (dict_query(dict, &ripe_name, &var)){
-      return var->c_name;
+      return var;
     }
   }
   return NULL;
+}
+
+static const char* query_local(const char* ripe_name)
+{
+  Variable* var = query_local_full(ripe_name);
+  if (var == NULL) return NULL;
+  return var->c_name;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// CREATING AST
+///////////////////////////////////////////////////////////////////////////////
+
+static Node* create_id(const char* id)
+{
+  Node* rv = node_new(ID);
+  rv->text = mem_strdup(id);
+  return rv;
+}
+
+static Node* create_int(int64 i)
+{
+  Node* rv = node_new(INT);
+  rv->text = mem_asprintf("%"PRId64, i);
+  return rv;
+}
+
+static Node* create_expr_index1(Node* left, Node* index)
+{
+  Node* expr_list = node_new(EXPR_LIST);
+  node_add_child(expr_list, index);
+  Node* rv = node_new(EXPR_INDEX);
+  node_add_child(rv, left);
+  node_add_child(rv, expr_list);
+  return rv;
+}
+
+static Node* create_field_call(Node* callee, char* field_name, int64 num, ...)
+{
+  Node* rv = node_new(EXPR_FIELD_CALL);
+  node_add_child(rv, callee);
+  node_set_string(rv, "name", field_name);
+  Node* expr_list = node_new(EXPR_LIST);
+  va_list ap;
+  va_start(ap, num);
+  for (int64 i = 0; i < num; i++){
+    node_add_child(expr_list, va_arg(ap, Node*));
+  }
+  va_end(ap);
+  node_add_child(rv, expr_list);
+  return rv;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // EVALUATING AST
 ///////////////////////////////////////////////////////////////////////////////
 static uint dowhile_semaphore;
-
 static const char* eval_expr(Node* expr);
+
+static inline bool compare_types(const char* t1, const char* t2)
+{
+  if (t1 == t2) return true;
+  if (t1 == NULL or t2 == NULL) return false;
+  return strcmp(t1, t2) == 0;
+}
+
+static const char* infer_type(Node* expr)
+{
+  switch(expr->type){
+    case K_NIL:
+      return "Nil";
+    case K_EOF:
+      return "Eof";
+    case ID:
+      {
+        Variable* var = query_local_full(expr->text);
+        if (var == NULL) return NULL;
+        return var->type;
+      }
+    case DOUBLE:
+      return "Double";
+    case STRING:
+      return "String";
+    case SYMBOL:
+    case INT:
+    case CHARACTER:
+      return "Integer";
+    case EXPR_ARRAY:
+      return "Array1";
+    case EXPR_RANGE_BOUNDED:
+    case EXPR_RANGE_BOUNDED_LEFT:
+    case EXPR_RANGE_BOUNDED_RIGHT:
+    case EXPR_RANGE_UNBOUNDED:
+      return "Range";
+    case K_TRUE:
+    case K_FALSE:
+    case EXPR_IS_TYPE:
+    case EXPR_FIELD_CALL:
+    case EXPR_INDEX:
+    case EXPR_ID_CALL:
+    case EXPR_FIELD:
+    case EXPR_AT_VAR:
+    case C_CODE:
+    default:
+      return NULL;
+  }
+}
 
 static const char* eval_expr_list(Node* expr_list, bool first_comma)
 {
@@ -356,25 +455,38 @@ static const char* eval_expr_list(Node* expr_list, bool first_comma)
   return result;
 }
 
-static const char* obj_call(const char* obj, const char* method, int num_args,
-                            const char* comma_args)
+static const char* eval_obj_call(Node* obj, const char* method_name,
+                             Node* expr_list)
 {
-  return mem_asprintf("method_call%d(%s, %s %s)",
-                      num_args, obj, tbl_get_dsym(method), comma_args);
+  const char* type = infer_type(obj);
+  if (type == NULL) {
+    return mem_asprintf("method_call%d(%s, %s %s)",
+                        node_num_children(expr_list),
+                        eval_expr(obj),
+                        tbl_get_dsym(method_name),
+                        eval_expr_list(expr_list, true));
+  } else {
+    return mem_asprintf("func_call%d(%s, %s %s)",
+                        node_num_children(expr_list) + 1,
+                        tbl_get_ssym(mem_asprintf("%s.%s", type, method_name)),
+                        eval_expr(obj),
+                        eval_expr_list(expr_list, true));
+  }
 }
 
 // Returns code for accessing index (if assign = NULL), or setting index
 // when assign is of type expr.
-static const char* eval_index(Node* self, Node* idx, const char* assign)
+static const char* eval_index(Node* self, Node* idx, Node* assign)
 {
   if (assign == NULL) {
-    return obj_call(eval_expr(self), "index", idx->children.size,
-                    eval_expr_list(idx, true));
+    return eval_obj_call(self, "index", idx);
   } else {
-    return obj_call(eval_expr(self), "index_set", idx->children.size+1,
-                    mem_asprintf("%s, %s",
-                                 eval_expr_list(idx, true),
-                                 assign));
+    Node* arg_list = node_new(EXPR_LIST);
+    for (int i = 0; i < node_num_children(idx); i++){
+      node_add_child(arg_list, node_get_child(idx, i));
+    }
+    node_add_child(arg_list, assign);
+    return eval_obj_call(self, "index_set", arg_list);
   }
 }
 
@@ -468,26 +580,20 @@ static const char* eval_expr(Node* expr)
     case EXPR_FIELD_CALL:
       {
         Node* parent = node_get_child(expr, 0);
-        Node* field = node_get_child(expr, 1);
-        Node* arg_list = node_get_child(expr, 2);
-        assert(field->type == ID);
+        const char* field = node_get_string(expr, "name");
+        Node* arg_list = node_get_child(expr, 1);
 
         // Attempt to evaluate parent as a static symbol.
         const char* s = eval_expr_as_id(parent);
         if (s == NULL or (query_local(s) != NULL)){
           // Dynamic call
-          return obj_call(
-                   eval_expr(parent),
-                   field->text,
-                   node_num_children(arg_list),
-                   eval_expr_list(arg_list, true)
-                 );
+          return eval_obj_call(parent, field, arg_list);
         }
         // Static call
         return mem_asprintf(
                  "func_call%u(%s %s)",
                  node_num_children(arg_list),
-                 tbl_get_ssym(mem_asprintf("%s.%s", s, field->text)),
+                 tbl_get_ssym(mem_asprintf("%s.%s", s, field)),
                  eval_expr_list(arg_list, true)
                );
       }
@@ -624,40 +730,66 @@ static void gen_stmt_expr(Node* stmt)
 static void gen_stmtlist(Node* stmtlist);
 static void gen_stmtlist_no_locals(Node* stmtlist);
 
-static void gen_stmt_assign2(Node* left, const char* right)
+static void gen_stmt_assign2(Node* lvalue, Node* rvalue)
 {
-  switch(left->type){
+  const char* right = eval_expr(rvalue);
+  const char* rtype = infer_type(rvalue);
+  switch(lvalue->type){
     case ID:
       {
-        const char* c_name = query_local(left->text);
-        if (c_name == NULL){
-          // Register the variable
+        Variable* var = query_local_full(lvalue->text);
+        if (var == NULL){
+          // Register the variable (untyped)
           sbuf_printf(sb_contents, "  Value %s = %s;\n",
-                      register_local(left->text, NULL), right);
+                      register_local(lvalue->text, NULL), right);
+          break;
+        }
+
+        if (var->type == NULL or compare_types(var->type, rtype)){
+          sbuf_printf(sb_contents, "  %s = %s;\n", var->c_name, right);
         } else {
-          sbuf_printf(sb_contents, "  %s = %s;\n", c_name, right);
+          sbuf_printf(sb_contents, "  %s = obj_verify_assign(%s, %s);\n",
+                      var->c_name, right, tbl_get_type(var->type));
+        }
+      }
+      break;
+    case EXPR_TYPED_ID:
+      {
+        const char* ripe_name = node_get_string(lvalue, "name");
+        const char* type = eval_type(node_get_child(lvalue, 0));
+        Variable* var = query_local_full(ripe_name);
+        if (var != NULL){
+          raise_error(lvalue, "variable '%s' already defined", ripe_name);
+        }
+        const char* c_name = register_local(ripe_name, type);
+        if (compare_types(type, rtype)){
+          sbuf_printf(sb_contents, "  Value %s = %s;\n",
+                      c_name, right);
+        } else {
+          sbuf_printf(sb_contents, "  Value %s = obj_verify_assign(%s, %s);\n",
+                      c_name, right, tbl_get_type(type));
         }
       }
       break;
     case EXPR_INDEX:
       sbuf_printf(sb_contents, "  %s;\n",
-                  eval_index(node_get_child(left, 0),
-                             node_get_child(left, 1),
-                             right));
+                  eval_index(node_get_child(lvalue, 0),
+                             node_get_child(lvalue, 1),
+                             rvalue));
       break;
     case EXPR_FIELD:
       sbuf_printf(sb_contents, "  field_set(%s, %s, %s);\n",
-                  eval_expr(node_get_child(left, 0)),
-                  tbl_get_dsym(node_get_child(left, 1)->text),
+                  eval_expr(node_get_child(lvalue, 0)),
+                  tbl_get_dsym(node_get_child(lvalue, 1)->text),
                   right);
       break;
     case EXPR_AT_VAR:
       sbuf_printf(sb_contents, "  %s = %s;\n",
-                  eval_expr(left),
+                  eval_expr(lvalue),
                   right);
       break;
     default:
-      raise_error(left, "invalid lvalue of assignment statement");
+      assert_never();
   }
 }
 
@@ -665,22 +797,19 @@ static void gen_stmt_assign(Node* left, Node* right)
 {
   if (node_num_children(left) == 1){
     left = node_get_child(left, 0);
-    gen_stmt_assign2(left, eval_expr(right));
+    gen_stmt_assign2(left, right);
   } else {
     static int counter = 0;
     counter++;
     char* tmp_variable = mem_asprintf("_tmp_assign_%d", counter);
-    sbuf_printf(sb_contents, "  const Value %s = %s;\n",
-                tmp_variable, eval_expr(right));
+
+    Node* id_tmp = create_id(tmp_variable);
+    gen_stmt_assign2(id_tmp,
+                     right);
+
     for (int i = 0; i < node_num_children(left); i++){
       Node* l = node_get_child(left, i);
-      gen_stmt_assign2(l, obj_call(
-                                   tmp_variable,
-                                   "index",
-                                   1,
-                                   mem_asprintf(", int64_to_val(%d)", i + 1)
-                                  )
-                      );
+      gen_stmt_assign2(l, create_expr_index1(id_tmp, create_int(i+1) ));
     }
   }
 }
@@ -760,53 +889,25 @@ static void gen_stmt(Node* stmt)
       {
         static int iterator_counter = 0;
         iterator_counter++;
+        const char* rip_iterator = mem_asprintf("_iterator%d", iterator_counter);
+        Node* id_iterator = create_id(rip_iterator);
+        Node* expr = node_get_child(stmt, 1);
+        Node* lvalue_list = node_get_child(stmt, 0);
 
-        const char* c_iterator = mem_asprintf("_iterator%d", iterator_counter);
-        const char* c_object = eval_expr(node_get_child(stmt, 1));
-
-        // First get the iterator.
-        sbuf_printf(sb_contents, "  Value %s = %s;\n",
-                    c_iterator, obj_call(c_object, "get_iter", 0, ""));
-
-        const char* c_iterator_call = obj_call(c_iterator, "iter", 0, "");
-        Node* id_list = node_get_child(stmt, 0);
         push_locals();
-        if (node_num_children(id_list) == 1){
-          const char* r_variable = node_get_child(id_list, 0)->text;
-          if (query_local(r_variable)){
-            raise_error(stmt, "variable '%s' already defined", r_variable);
-          }
-          const char* c_variable = register_local(r_variable, NULL);
-          sbuf_printf(sb_contents, "  for(Value %s = %s;"
-                                      "%s != VALUE_EOF;"
-                                      "%s = %s)"
-                                      "{\n",
-                      c_variable, c_iterator_call,
-                      c_variable,
-                      c_variable, c_iterator_call
-                      );
+        gen_stmt_assign2(id_iterator, create_field_call(expr, "get_iter", 0));
+        Node* iterator_call = create_field_call(id_iterator, "iter", 0);
+
+        sbuf_printf(sb_contents, "  for(;;){");
+        Node* id_temp = create_id(mem_asprintf("_iterator_temp%d",
+                                              iterator_counter));
+        gen_stmt_assign2(id_temp, iterator_call);
+        sbuf_printf(sb_contents, "  if (%s == VALUE_EOF) break;\n", eval_expr(id_temp));
+
+        if (node_num_children(lvalue_list) == 1){
+          gen_stmt_assign2(node_get_child(lvalue_list, 0), id_temp);
         } else {
-          const char* c_variable = mem_asprintf("_iterator_temp%d",
-                                                iterator_counter);
-          sbuf_printf(sb_contents, "  for(Value %s = %s;"
-                                      "%s != VALUE_EOF;"
-                                      "%s = %s)"
-                                      "{\n",
-                      c_variable, c_iterator_call,
-                      c_variable,
-                      c_variable, c_iterator_call
-                      );
-          for (int i = 0; i < node_num_children(id_list); i++){
-            const char* r_variable = node_get_child(id_list, i)->text;
-            if (query_local(r_variable)){
-              raise_error(stmt, "variable '%s' already defined", r_variable);
-            }
-            const char* c_variable2 = register_local(r_variable, NULL);
-            sbuf_printf(sb_contents, "  Value %s = %s;\n", c_variable2,
-                        obj_call(c_variable, "index", 1,
-                                 mem_asprintf(", int64_to_val(%d)", i + 1))
-                       );
-          }
+          gen_stmt_assign(lvalue_list, id_temp);
         }
 
         dowhile_semaphore++;

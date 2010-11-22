@@ -337,8 +337,8 @@ module ArrayUtil
     if sz == 0
       return "[]"
 
-    i = 1
-    buf = "[" + arr[1]
+    Integer i = 1
+    String buf = "[" + arr[1]
     loop
       if i == sz
         break

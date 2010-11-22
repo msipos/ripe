@@ -10,7 +10,6 @@ traverse(node, i)
     traverse(node.child, i + 1)
   if node.next != nil
     traverse(node.next, i)
-  1 = "hello"
 
 main()
   xml_doc = "<doc> <temperature c=\"25\" /> </doc>"
