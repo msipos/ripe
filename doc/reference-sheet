@@ -1,0 +1,35 @@
+// generator.c
+const char* tbl_get_dsym(const char*);
+const char* tbl_get_ssym(const char*);
+
+static void push_locals();
+static void pop_locals();
+static void set_local(const char* ripe_name, const char* c_name,
+                      const char* type);
+static const char* register_local(const char* ripe_name, const char* type);
+static Variable* query_local_full(const char* ripe_name);
+typedef struct {
+  const char* c_name;
+  const char* ripe_name;
+  const char* type;
+} Variable;
+
+static Node* create_int(int64 i);
+static Node* create_expr_index1(Node* left, Node* index);
+static Node* create_id(const char* id);
+static Node* create_field_call(Node* callee, char* field_name, int64 num, ...);
+
+static const char* infer_type(Node* expr);
+static const char* eval_obj_call(Node* obj, const char* method_name,
+                                 Node* expr_list)
+static void gen_stmt_assign2(Node* lvalue, Node* rvalue);
+
+// Grammar
+stmt:      "for" id_plus "in" expr block
+stmt->[id_plus, expr, block]
+r_expr:    rvalue '.' ID '(' rvalue_star ')'
+r_expr->[rvalue, rvalue_star], type: EXPR_FIELD_CALL name: ID
+
+// func-generated.h
+Value func_call2(Value, Value, Value);
+Value method_call2(Value v_obj, Value dsym, Value arg1, Value arg2);
