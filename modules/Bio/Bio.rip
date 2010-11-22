@@ -1,0 +1,251 @@
+$
+  #include <ctype.h>
+
+  static inline bool is_gap(char c)
+  {
+    if (c == '-') return true;
+    return false;
+  }
+
+  static inline bool is_letter(char c)
+  {
+    char t = toupper(c);
+    if (t == 'C' or t == 'G' or t == 'A' or t == 'T' or t == 'N') return true;
+    return false;
+  }
+
+  static double get_distance(char* seq1, char*seq2)
+  {
+    int l = strlen(seq1);
+    int n1 = 0, n2 = 0, n = 0;
+    for (int i = 0; i < l; i++){
+      if (is_letter(seq1[i])) n1++;
+      if (is_letter(seq2[i])) n2++;
+      if (is_letter(seq1[i]) or is_letter(seq2[i]))
+        if (toupper(seq1[i]) == toupper(seq2[i])) n++;
+    }
+    double d = 1.0 - ((double)n) * 2.0 / ((double)n1 + n2);
+    return d;
+  }
+
+  typedef struct {
+      int64 size;
+      float* probs_A;
+      float* probs_C;
+      float* probs_G;
+      float* probs_T;
+      float* probs_gap;
+  } ProbRecord;
+$
+
+module Bio
+  dist_ss(seq1, seq2)
+    s1 = seq1.seq
+    s2 = seq2.seq
+    $
+      char* s1 = val_to_string(__s1);
+      char* s2 = val_to_string(__s2);
+      if (strlen(s1) != strlen(s2)){
+        exc_raise("two sequences have different length");
+      }
+      return double_to_val(get_distance(s1, s2));
+    $
+
+  class BufferedFile
+    private tf
+    private line_last
+    private line_buffer
+
+    constructor new(filename)
+      @tf = TextFile.new(filename, TextFile.Read)
+      @line_last = nil
+      @line_buffer = nil
+
+    read_line()
+      if @line_buffer == nil
+        @line_last = @tf.read_line()
+        return @line_last
+      else
+        @line_last = @line_buffer
+        @line_buffer = nil
+        return @line_last
+
+    back_up()
+      @line_buffer = @line_last
+
+  class ProbRecord
+    $
+      int64 size;
+      float* probs_A;
+      float* probs_C;
+      float* probs_G;
+      float* probs_T;
+      float* probs_gap;
+    $
+
+    constructor new(size)
+      $
+        @size = val_to_int64(__size);
+        @probs_A = mem_malloc(@size * sizeof(float));
+        @probs_C = mem_malloc(@size * sizeof(float));
+        @probs_G = mem_malloc(@size * sizeof(float));
+        @probs_T = mem_malloc(@size * sizeof(float));
+        @probs_gap = mem_malloc(@size * sizeof(float));
+      $
+
+    calc_median(set)
+      $
+        int64 seqs = 0;
+        const int64 size = @size;
+        for (int64 i = 0; i < size; i++){
+          @probs_A[i] = 0.0;
+          @probs_C[i] = 0.0;
+          @probs_G[i] = 0.0;
+          @probs_T[i] = 0.0;
+          @probs_gap[i] = 0.0;
+        }
+      $
+      for record in set
+        seq = record.seq
+        $
+          seqs++;
+          char* s = val_to_string(__seq);
+          const int64 ssize = strlen(s);
+          if (ssize != size)
+            exc_raise("Record and ProbRecord don't match size"
+                      " (%"PRId64" and %"PRId64")", ssize, size);
+          for (int64 i = 0; i < size; i++){
+            switch(s[i]){
+              case '-':
+              case '.':
+                @probs_gap[i] += 1.0;
+                break;
+              case 'a':
+              case 'A':
+                @probs_A[i] += 1.0;
+                break;
+              case 'c':
+              case 'C':
+                @probs_C[i] += 1.0;
+                break;
+              case 'g':
+              case 'G':
+                @probs_G[i] += 1.0;
+                break;
+              case 't':
+              case 'T':
+                @probs_T[i] += 1.0;
+            }
+          }
+        $
+      $
+        for (int64 i = 0; i < size; i++){
+          @probs_A[i] = @probs_A[i] / seqs;
+          @probs_C[i] = @probs_C[i] / seqs;
+          @probs_G[i] = @probs_G[i] / seqs;
+          @probs_T[i] = @probs_T[i] / seqs;
+          @probs_gap[i] = @probs_gap[i] / seqs;
+        }
+      $
+
+    dist_s(record)
+      seq = record.seq
+      $
+        const int64 size = @size;
+        const char* s = val_to_string(__seq);
+        int64 ssize = strlen(s);
+        if (ssize != size)
+          exc_raise("Record and ProbRecord don't match size"
+                    " (%"PRId64" and %"PRId64")", ssize, size);
+        double dist = 0.0;
+        for (int64 i = 0; i < size; i++){
+          switch(s[i]){
+              case '-':
+              case '.':
+                dist += @probs_gap[i];
+                break;
+              case 'a':
+              case 'A':
+                dist += @probs_A[i];
+                break;
+              case 'c':
+              case 'C':
+                dist += @probs_C[i];
+                break;
+              case 'g':
+              case 'G':
+                dist += @probs_G[i];
+                break;
+              case 't':
+              case 'T':
+                dist += @probs_T[i];
+          }
+        }
+        return double_to_val(1.0 - dist / ((double)size));
+      $
+
+    dist_p(prec)
+      $
+        ProbRecord* pr = obj_c_data(__prec);
+        const int64 size = @size;
+        const int64 psize = pr->size;
+        if (psize != size)
+          exc_raise("ProbRecord and ProbRecord don't match size"
+                    " (%"PRId64" and %"PRId64")", psize, size);
+        double dist = 0.0;
+        double d;
+        for (int64 i = 0; i < size; i++){
+          d = (@probs_gap[i] - pr->probs_gap[i]);
+          dist += d*d;
+          d = (@probs_A[i] - pr->probs_A[i]);
+          dist += d*d;
+          d = (@probs_C[i] - pr->probs_C[i]);
+          dist += d*d;
+          d = (@probs_G[i] - pr->probs_G[i]);
+          dist += d*d;
+          d = (@probs_T[i] - pr->probs_T[i]);
+          dist += d*d;
+        }
+        return double_to_val(dist / ((double) size) / 5.0);
+      $
+
+  class Record
+    writable id
+    writable seq
+
+    constructor new(id, seq)
+      @id = id
+      @seq = seq
+
+    virtual_get size()
+      s = @seq
+      return $ int64_to_val(strlen(val_to_string(__s))) $
+
+  class FastaFile
+    private buf_file
+
+    constructor new_from_file(filename)
+      @buf_file = Bio.BufferedFile.new(filename)
+
+    get_iter()
+      return self
+
+    iter()
+      id_line = @buf_file.read_line()
+      if id_line == eof
+        return eof
+      id_line = id_line.strip()
+      if id_line[1] != '>'
+        Std.error("invalid id line '", id_line, "'")
+      id = id_line[2:]
+      seq = ""
+      loop
+        line = @buf_file.read_line()
+        if line == eof
+          break
+        line = line.strip()
+        if line[1] == '>'
+          @buf_file.back_up()
+          break
+        seq = seq + line
+      return Bio.Record.new(id, seq)
