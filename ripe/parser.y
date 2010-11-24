@@ -117,7 +117,7 @@ toplevel:  ID optassign_plus   { $$ = node_new(TL_VAR);
                                  node_set_string($$, "annotation", $1->text);
                                  node_add_child($$, $2); };
 toplevel:  ID ID '(' param_star ')' block
-                               { $$ = node_new(ANNOT_FUNCTION);
+                               { $$ = node_new(FUNCTION);
                                  node_set_string($$, "annotation", $1->text);
                                  node_set_string($$, "name", $2->text);
                                  node_add_child($$, $4);

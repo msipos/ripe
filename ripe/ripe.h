@@ -121,7 +121,6 @@ int rc_lex();
 #define STMT_LIST         1003
 #define CLASS             1004
 #define PARAM             1006
-#define ANNOT_FUNCTION    1007
 #define TL_VAR            1008  // Top-level variable (with annotation maybe)
 
 // Types of STMTs

@@ -1288,8 +1288,8 @@ static void gen_class(Node* klass)
   for (int i = 0; i < ast->children.size; i++){
     Node* n = node_get_child(ast, i);
     switch(n->type){
-      case ANNOT_FUNCTION:
-        {
+      case FUNCTION:
+        if (node_has_string(n, "annotation")){
           const char* annotation = node_get_string(n, "annotation");
           if (strcmp(annotation, "constructor")==0){
             gen_constructor(n);
@@ -1317,12 +1317,11 @@ static void gen_class(Node* klass)
             raise_error(n, "function annotated with '%s'"
                         " not allowed inside a class", annotation);
           }
+        } else {
+          gen_method(node_get_string(n, "name"),
+                      node_get_child(n, 0),
+                      node_get_child(n, 1));
         }
-        break;
-      case FUNCTION:
-        gen_method(node_get_string(n, "name"),
-                    node_get_child(n, 0),
-                    node_get_child(n, 1));
         break;
       case C_CODE:
       case TL_VAR:
@@ -1397,6 +1396,11 @@ static void gen_toplevels(Node* ast)
     Node* n = node_get_child(ast, i);
     switch(n->type){
       case FUNCTION:
+        if (node_has_string(n, "annotation")){
+          raise_error(n, "annotated functions (with annotation '%s') "
+                         "not allowed outside of a class",
+                         node_get_string(n, "annotation"));
+        }
         gen_function(n);
         break;
       case MODULE:
@@ -1421,15 +1425,38 @@ static void gen_toplevels(Node* ast)
           gen_class(n);
         }
         break;
-      case ANNOT_FUNCTION:
-        raise_error(n, "annotated functions not allowed outside of a class");
       default:
         assert_never();
     }
   }
 }
 
-#include <errno.h>
+int generate_type_info(Node* ast)
+{
+  for (int i = 0; i < ast->children.size; i++){
+    Node* n = node_get_child(ast, i);
+    switch(n->type){
+      case FUNCTION:
+        break;
+      case MODULE:
+        {
+          const char* name = node_get_string(n, "name");
+          module_push(name);
+          generate_type_info(node_get_child(n, 0));
+          module_pop(name);
+        }
+        break;
+      case C_CODE:
+        break;
+      case TL_VAR:
+        break;
+      case CLASS:
+      default:
+        break;
+    }
+  }
+}
+
 int generate(Node* ast, const char* module_name, const char* i_source_filename)
 {
   locals_init();
