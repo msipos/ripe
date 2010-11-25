@@ -1,0 +1,49 @@
+#$ rdoc-file Array2
+
+#$ rdoc-name Array2
+#$ rdoc-header Array2
+#$ Two dimensional array data structure.
+class Array2
+  $
+    Array2 a;
+  $
+
+  #$ rdoc-name Array2.new_const
+  #$ rdoc-header Array2.new_const(Integer x, Integer y, v)
+  #$ Create a new Array2 of dimensions x*y, and populated with elements v.
+  constructor new_const(Integer x, Integer y, v)
+    $
+      int64 size_x = val_to_int64(__x);
+      int64 size_y = val_to_int64(__y);
+
+      @a.size_x = size_x;
+      @a.size_y = size_y;
+      if (size_x < 1 or size_y < 1)
+        exc_raise("invalid Array3 size (%"PRId64"x%"PRId64")", size_x, size_y);
+      int64 total_size = size_x * size_y;
+      Value* data = mem_malloc(total_size * sizeof(Value));
+      for (int64 t = 0; t < total_size; t++){
+        data[t] = __v;
+      }
+      @a.data = data;
+    $
+
+  #$ rdoc-name Array2.index
+  #$ rdoc-header Array2.index(Integer x, Integer y)
+  #$ Return the (x, y)-th element.
+  index(Integer x, Integer y)
+    $
+      int64 x = val_to_int64(__x);
+      int64 y = val_to_int64(__y);
+      return @a.data[array2_index(&(@a), x, y)];
+    $
+
+  #$ rdoc-name Array2.index_set
+  #$ rdoc-header Array2.index_set(Integer x, Integer y, v)
+  #$ Set the (x, y)-th element to v.
+  index_set(Integer x, Integer y, v)
+    $
+      int64 x = val_to_int64(__x);
+      int64 y = val_to_int64(__y);
+      @a.data[array2_index(&(@a), x, y)] = __v;
+    $

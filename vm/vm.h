@@ -286,12 +286,13 @@ Value array1_new(int64 num_elements);
 void array1_push(Array1* a, Value val);
 Value array1_pop(Array1* a);
 
-extern Klass* klass_Array2;
 typedef struct {
   uint64 size_x;
   uint64 size_y;
   Value* data;
 } Array2;
+int64 array2_index(Array2* array, int64 x, int64 y);
+
 typedef struct {
   uint64 size_x;
   uint64 size_y;
@@ -299,11 +300,6 @@ typedef struct {
   Value* data;
 } Array3;
 uint64 array3_index(Array3* array3, uint64 x, uint64 y, uint64 z);
-
-Value array2_index(Value v_array, int64 x, int64 y);
-void array2_index_set(Value v_array, int64 x, int64 y, Value v_val);
-void init1_Arrays();
-void init2_Arrays();
 
 //////////////////////////////////////////////////////////////////////////////
 // Complex.c

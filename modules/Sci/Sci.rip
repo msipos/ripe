@@ -1,4 +1,26 @@
 module Sci
+  module Bin
+    histogram(A, num_bins)
+      min = Iterable.min(A)
+      max = Iterable.max(A)
+
+      size_bin = Double(max - min) / num_bins
+      bins_x = Array1.new_const(num_bins, 0)
+      for i in 1:num_bins
+        bins_x[i] = min + size_bin*(i-0.5)
+
+      delta = 1.0 / A.size
+      bins = Array1.new_const(num_bins, 0)
+      for x in A
+        bin = 0
+        if x == max
+          bin = num_bins
+        else
+          bin = Math.ceil((x - min) / size_bin) + 1
+        bins[bin] = bins[bin] + delta
+
+      return tuple(bins_x, bins)
+
   lin_fit(X, Y)
     n = X.get_size()
     xbar = 0.0

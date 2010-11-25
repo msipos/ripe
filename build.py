@@ -3,8 +3,8 @@
 # Possible build flags are "force", "quiet", "nodebug", "nogc", "profile"
 
 
-DATA_TYPES = ['Array1', 'Array3', 'Double', 'Flags', 'Integer', 'Map', 'Range',
-              'Set', 'String', 'Tuple']
+DATA_TYPES = ['Array1', 'Array2', 'Array3', 'Double', 'Flags', 'Integer', 'Map',
+              'Range', 'Set', 'String', 'Tuple']
 STDLIB = ['Character', 'Err', 'Iterable', 'Math', 'Os', 'Out', 'Path',
           'Std', 'Stream', 'Test', 'Template', 'TextFile', 'Time']
 OPTIONAL_MODULES = ['Bio', 'Curl', 'Gd', 'Gsl', 'Json', 'MainLoop',

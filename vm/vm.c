@@ -45,9 +45,6 @@ int main(int argc, char** argv)
   stack_push_annotation("init1_Object");
     init1_Object();
   stack_pop();
-  stack_push_annotation("init1_Arrays");
-    init1_Arrays();
-  stack_pop();
   stack_push_annotation("init1_Complex");
     init1_Complex();
   stack_pop();
@@ -66,9 +63,6 @@ int main(int argc, char** argv)
   stack_pop();
   stack_push_annotation("init2_Object");
     init2_Object();
-  stack_pop();
-  stack_push_annotation("init2_Arrays");
-    init2_Arrays();
   stack_pop();
   stack_push_annotation("init2_Complex");
     init2_Complex();

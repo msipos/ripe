@@ -19,7 +19,18 @@ module Gd
           exc_raise("gdImageCreateTrueColor failed");
         }
       $
-  
+
+    constructor new_from_file(filename)
+      name, ext = Path.split_extension(filename)
+      if ext == ".png"
+        $
+          FILE *in;
+          in = fopen(val_to_string(__filename), "rb");
+          @image = gdImageCreateFromPng(in);
+          fclose(in);
+        $
+
+
     set_pixel_rgb(x, y, r, g, b)
       $
         int color = gdImageColorAllocate(@image,
@@ -28,7 +39,17 @@ module Gd
                                          val_to_int64(__b));
         gdImageSetPixel(@image, val_to_int64(__x)-1, val_to_int64(__y)-1, color);
       $
-    
+
+    get_pixel_rgb(x, y)
+      $
+        int color = gdImageGetPixel(@image, val_to_int64(__x)-1,
+                                            val_to_int64(__y)-1);
+      $
+      red = $ int64_to_val(gdImageRed(@image, color)) $
+      green = $ int64_to_val(gdImageGreen(@image, color)) $
+      blue = $ int64_to_val(gdImageBlue(@image, color)) $
+      return tuple(red, green, blue)
+
     filled_rectangle_rgb(x1, y1, x2, y2, r, g, b)
       $
         int color = gdImageColorAllocate(@image,
@@ -39,7 +60,7 @@ module Gd
                                        val_to_int64(__x2)-1, val_to_int64(__y2)-1,
                                        color);
       $
-    
+
     filled_arc(cx, cy, w, h, s, e, color)
       $
         gdImageFilledArc(@image,
@@ -52,16 +73,22 @@ module Gd
                          val_to_int64(__color),
                          gdArc);
       $
-    
+
     save_png(filename)
       $
-        
+
         FILE* f = fopen(val_to_string(__filename), "wb");
-        if (f == NULL) exc_raise("cannot open '%s' for writing", 
+        if (f == NULL) exc_raise("cannot open '%s' for writing",
                                  val_to_string(__filename));
         gdImagePng(@image, f);
         fclose(f);
       $
+
+    virtual_get size_x()
+      return $ int64_to_val(gdImageSX(@image)) $
+
+    virtual_get size_y()
+      return $ int64_to_val(gdImageSY(@image)) $
 
   color(image, r, g, b)
     $
@@ -70,4 +97,3 @@ module Gd
                                                        val_to_int64(__g),
                                                        val_to_int64(__b)));
     $
-  

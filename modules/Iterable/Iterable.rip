@@ -4,3 +4,21 @@ module Iterable
     for x in iterable
       arr.push(x)
     return arr
+
+  first(iterable)
+    for x in iterable
+      return x
+
+  max(iterable)
+    max = Iterable.first(iterable)
+    for x in iterable
+      if x > max
+        max = x
+    return max
+
+  min(iterable)
+    min = Iterable.first(iterable)
+    for x in iterable
+      if x < min
+        min = x
+    return min

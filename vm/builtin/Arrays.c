@@ -104,30 +104,7 @@ void array1_push(Array1* a, Value val)
 // Array2
 ///////////////////////////////////////////////////////////////////////////////
 
-Klass* klass_Array2;
-
-static Value ripe_array2_new_const(Value v_x, Value v_y, Value v_val)
-{
-  Array2* self;
-  Value v_self = obj_new(klass_Array2, (void**) &self);
-
-  int64 size_x = val_to_int64(v_x);
-  int64 size_y = val_to_int64(v_y);
-
-  self->size_x = size_x;
-  self->size_y = size_y;
-  if (size_x < 1 or size_y < 1)
-    exc_raise("invalid Array3 size (%"PRId64"x%"PRId64")", size_x, size_y);
-  int64 total_size = size_x * size_y;
-  Value* data = mem_malloc(total_size * sizeof(Value));
-  for (int64 t = 0; t < total_size; t++){
-    data[t] = v_val;
-  }
-  self->data = data;
-  return v_self;
-}
-
-static inline int64 array2_map_index(Array2* array, int64 x, int64 y)
+int64 array2_index(Array2* array, int64 x, int64 y)
 {
   int64 size_x = array->size_x;
   int64 size_y = array->size_y;
@@ -137,60 +114,6 @@ static inline int64 array2_map_index(Array2* array, int64 x, int64 y)
   } else {
     exc_raise("invalid Array2 index (%"PRId64", %"PRId64")", x, y);
   }
-}
-
-Value array2_index(Value v_array, int64 x, int64 y)
-{
-  obj_verify(v_array, klass_Array2);
-  Array2* array = obj_c_data(v_array);
-  return array->data[array2_map_index(array, x, y)];
-}
-
-void array2_index_set(Value v_array, int64 x, int64 y, Value v_val)
-{
-  obj_verify(v_array, klass_Array2);
-  Array2* array = obj_c_data(v_array);
-  array->data[array2_map_index(array, x, y)] = v_val;
-}
-
-static Value ripe_array2_index(Value v_self, Value v_x, Value v_y)
-{
-  Array2* array = obj_c_data(v_self);
-  return array->data[array2_map_index(array,
-                                      val_to_int64(v_x),
-                                      val_to_int64(v_y))];
-}
-
-static Value ripe_array2_index_set(Value v_self, Value v_x, Value v_y,
-                                   Value v_val)
-{
-  Array2* array2 = obj_c_data(v_self);
-  array2->data[array2_map_index(array2,
-                                val_to_int64(v_x),
-                                val_to_int64(v_y))] = v_val;
-  return VALUE_NIL;
-}
-
-static Value ripe_array2_get_size_x(Value v_self)
-{
-  Array2* array = obj_c_data(v_self);
-  return int64_to_val(array->size_x);
-}
-
-static Value ripe_array2_get_size_y(Value v_self)
-{
-  Array2* array = obj_c_data(v_self);
-  return int64_to_val(array->size_y);
-}
-
-static Value ripe_array2_set_const(Value v_self, Value v_val)
-{
-  Array2* array = obj_c_data(v_self);
-  int64 total_size = array->size_x * array->size_y;
-  for (int64 i = 0; i < total_size; i++){
-    array->data[i] = v_val;
-  }
-  return VALUE_NIL;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -210,40 +133,4 @@ uint64 array3_index(Array3* array, uint64 x, uint64 y, uint64 z)
     exc_raise("invalid Array3 index (%"PRIu64", %"PRIu64", %"PRIu64")",
               x, y, z);
   }
-}
-
-
-///////////////////////////////////////////////////////////////////////////////
-// Init
-///////////////////////////////////////////////////////////////////////////////
-
-void init1_Arrays()
-{
-  klass_Array2 = klass_new(dsym_get("Array2"),
-                           dsym_get("Object"),
-                           KLASS_CDATA_OBJECT,
-                           sizeof(Array2));
-
-  // Array2
-  ssym_set("Array2.new_const", func3_to_val(ripe_array2_new_const));
-  klass_new_method(klass_Array2,
-                   dsym_get("index"),
-                   func3_to_val(ripe_array2_index));
-  klass_new_method(klass_Array2,
-                   dsym_get("index_set"),
-                   func4_to_val(ripe_array2_index_set));
-  klass_new_method(klass_Array2,
-                   dsym_get("get_size_x"),
-                   func1_to_val(ripe_array2_get_size_x));
-  klass_new_method(klass_Array2,
-                   dsym_get("get_size_y"),
-                   func1_to_val(ripe_array2_get_size_y));
-  klass_new_method(klass_Array2,
-                   dsym_get("set_const"),
-                   func2_to_val(ripe_array2_set_const));
-}
-
-void init2_Arrays()
-{
-
 }
