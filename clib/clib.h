@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+#define strequal(x,y)  (0 == strcmp(x,y))
 
 // Data types
 #include <iso646.h>

@@ -91,27 +91,8 @@ void gen_c()
     printf("Value func_call%d(Value func", n);
     print_mult("Value arg", n, 1, 1);
     printf("){\n");
-    printf("  obj_verify(func, klass_func);\n");
     printf("  stack_push_func(func);\n");
     printf("  Func* c_data = obj_c_data(func);\n");
-    printf("  if (c_data->var_params){\n");
-    if (n > 0){
-      printf("    Value args[%d] = {", n);
-      print_mult("arg", n, 0, 1);
-      printf("};\n");
-      printf("    Value rv = func_call_opt_helper(c_data, %d, args);\n", n);
-      printf("    stack_pop();\n");
-      printf("    return rv;\n");
-    } else {
-      printf("    Value rv = func_call_opt_helper(c_data, 0, NULL);\n");
-      printf("    stack_pop();\n");
-      printf("    return rv;\n");
-    }
-    printf("  }\n");
-    printf("  if (c_data->num_params != %d){\n", n);
-    printf("    exc_raise(\"function that takes %%d arguments called with %%d\"\n");
-    printf("              \" arguments\", c_data->num_params, %d);\n", n);
-    printf("  }\n");
     printf("  Value rv = c_data->func%d(", n);
     print_mult("arg", n, 0, 1);
     printf(");\n");

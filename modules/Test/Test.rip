@@ -29,7 +29,7 @@ module Test
         Err.printf("%a OK\n", name)
     else
       c_false = c_false + 1
-      Err.printf("%a FAIL\n", name)
+      Err.printf("%a FAIL (%a != %a)\n", name, a, b)
 
   error()
     $

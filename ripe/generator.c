@@ -291,7 +291,7 @@ static Node* create_field_call(Node* callee, char* field_name, int64 num, ...)
 static uint dowhile_semaphore;
 static const char* eval_expr(Node* expr);
 
-static inline bool compare_types(const char* t1, const char* t2)
+static bool compare_types(const char* t1, const char* t2)
 {
   if (t1 == t2) return true;
   if (t1 == NULL or t2 == NULL) return false;
@@ -360,20 +360,20 @@ static const char* eval_expr_list(Node* expr_list, bool first_comma)
 static const char* eval_obj_call(Node* obj, const char* method_name,
                              Node* expr_list)
 {
-  const char* type = infer_type(obj);
-  if (type == NULL) {
+//  const char* type = infer_type(obj);
+//  if (type == NULL) {
     return mem_asprintf("method_call%d(%s, %s %s)",
                         node_num_children(expr_list),
                         eval_expr(obj),
                         tbl_get_dsym(method_name),
                         eval_expr_list(expr_list, true));
-  } else {
-    return mem_asprintf("func_call%d(%s, %s %s)",
-                        node_num_children(expr_list) + 1,
-                        tbl_get_ssym(mem_asprintf("%s.%s", type, method_name)),
-                        eval_expr(obj),
-                        eval_expr_list(expr_list, true));
-  }
+//  } else {
+//    return mem_asprintf("func_call%d(%s, %s %s)",
+//                        node_num_children(expr_list) + 1,
+//                        tbl_get_ssym(mem_asprintf("%s.%s", type, method_name)),
+//                        eval_expr(obj),
+//                        eval_expr_list(expr_list, true));
+//  }
 }
 
 // Returns code for accessing index (if assign = NULL), or setting index
@@ -415,6 +415,56 @@ static const char* eval_expr_as_id(Node* expr)
       // static symbol.
       return NULL;
   }
+}
+
+static const char* eval_static_call(const char* ssym, Node* arg_list)
+{
+  TyperRecord* tr = typer_query(ssym);
+  assert(tr != NULL);
+  int num_args = node_num_children(arg_list);
+  int min_params = num_args;
+  int num_params = tr->num_params;
+  bool is_vararg = false;
+
+  // Check if vararg
+  if (tr->num_params > 0 and
+      tr->param_types[tr->num_params-1] != NULL
+       and strequal("*", tr->param_types[tr->num_params-1])){
+    is_vararg = true;
+    min_params = tr->num_params - 1;
+    if (num_args < min_params)
+      err_node(arg_list, "'%s' called with %d arguments but expect at least %d",
+               ssym, num_args, min_params);
+  } else {
+    if (tr->num_params != num_args)
+      err_node(arg_list, "'%s' called with %d arguments but expect %d", ssym,
+               num_args, tr->num_params);
+  }
+  const char* buf = mem_asprintf("func_call%d(%s", num_params,
+                                 tbl_get_ssym(ssym));
+  for (int i = 0; i < min_params; i++){
+    const char* param_type = tr->param_types[i];
+    Node* arg = node_get_child(arg_list, i);
+    const char* arg_type = infer_type(arg);
+
+    if (typer_needs_check(param_type, arg_type)){
+      buf = mem_asprintf("%s, obj_verify_assign(%s, %s)", buf, eval_expr(arg),
+                         tbl_get_type(param_type));
+    } else {
+      buf = mem_asprintf("%s, %s", buf, eval_expr(arg));
+    }
+  }
+  if (is_vararg){
+    buf = mem_asprintf("%s, tuple_to_val(%d", buf, num_args - min_params);
+    for (int i = min_params; i < num_args; i++){
+      Node* arg = node_get_child(arg_list, i);
+      buf = mem_asprintf("%s, %s", buf, eval_expr(arg));
+    }
+    buf = mem_asprintf("%s)", buf);
+  }
+  buf = mem_asprintf("%s)", buf);
+
+  return buf;
 }
 
 static const char* eval_expr(Node* expr)
@@ -484,12 +534,7 @@ static const char* eval_expr(Node* expr)
           return eval_obj_call(parent, field, arg_list);
         }
         // Static call
-        return mem_asprintf(
-                 "func_call%u(%s %s)",
-                 node_num_children(arg_list),
-                 tbl_get_ssym(mem_asprintf("%s.%s", s, field)),
-                 eval_expr_list(arg_list, true)
-               );
+        return eval_static_call(mem_asprintf("%s.%s", s, field), arg_list);
       }
     case EXPR_ID_CALL:
       {
@@ -498,24 +543,23 @@ static const char* eval_expr(Node* expr)
         assert(left->type == ID);
         if (query_local(left->text))
           err_node(expr, "variable '%s' called as a function", left->text);
-        if (strcmp(left->text, "tuple") == 0){
+        if (strequal(left->text, "tuple")){
           return mem_asprintf(
                    "tuple_to_val(%u %s)",
                    node_num_children(arg_list),
                    eval_expr_list(arg_list, true)
                  );
         }
-        if (strcmp(left->text, "call_func") == 0){
+        // TODO: Deprecate call_func and allow variables to be called as
+        // functions.
+        if (strequal(left->text, "call_func")){
           return mem_asprintf("func_call%u(%s)",
                                node_num_children(arg_list) - 1,
                                eval_expr_list(arg_list, false));
         }
-        return mem_asprintf(
-                 "func_call%u(%s %s)",
-                 node_num_children(arg_list),
-                 tbl_get_ssym(left->text),
-                 eval_expr_list(arg_list, true)
-               );
+
+        // At this point it must be a static call.
+        return eval_static_call(left->text, arg_list);
       }
       break;
     case EXPR_RANGE_BOUNDED:

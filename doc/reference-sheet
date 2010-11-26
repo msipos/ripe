@@ -24,6 +24,16 @@ static const char* eval_obj_call(Node* obj, const char* method_name,
                                  Node* expr_list)
 static void gen_stmt_assign2(Node* lvalue, Node* rvalue);
 
+// typer.c
+
+typedef struct {
+  const char* name;
+  // For a function or method, this is the return type:
+  const char* rv;
+  int num_params;
+  const char** param_types;
+} TyperRecord;
+
 // Grammar
 stmt:      "for" id_plus "in" expr block
 stmt->[id_plus, expr, block]

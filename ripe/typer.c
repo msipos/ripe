@@ -193,3 +193,11 @@ void typer_ast(Node* ast)
     }
   }
 }
+
+bool typer_needs_check(const char* destination, const char* source)
+{
+  if (destination == NULL) return false;
+  if (source == NULL) return true;
+  if (strequal(destination, source)) return false;
+  err("require type '%s' but got type '%s'", destination, source);
+}

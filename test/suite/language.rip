@@ -55,23 +55,23 @@ test_vars3(arg1, arg2, arg3, *args)
   Test.test("vararg", args.to_string(), var_arr.to_string())
 
 vararg()
-  var_arr = []
+  var_arr = tuple()
   test_vars1(1)
-  var_arr = [2,3]
+  var_arr = tuple(2,3)
   test_vars1(1, 2, 3)
-  var_arr = [2,3,4,5]
+  var_arr = tuple(2,3,4,5)
   test_vars1(1, 2, 3, 4, 5)
 
-  var_arr = []
+  var_arr = tuple()
   test_vars0()
-  var_arr = [1,2,3]
+  var_arr = tuple(1,2,3)
   test_vars0(1, 2, 3)
-  var_arr = [1,2,3,4,5]
+  var_arr = tuple(1,2,3,4,5)
   test_vars0(1, 2, 3, 4, 5)
 
-  var_arr = [4,5]
+  var_arr = tuple(4,5)
   test_vars3(1, 2, 3, 4, 5)
-  var_arr = []
+  var_arr = tuple()
   test_vars3(1, 2, 3)
 
 exceptions()

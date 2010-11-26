@@ -138,6 +138,7 @@ TyperRecord* typer_query(const char* name);
 void typer_ast(Node* ast);
 void typer_dump(FILE* f);
 void typer_load(FILE* f);
+bool typer_needs_check(const char* destination, const char* source);
 
 //////////////////////////////////////////////////////////////////////////////
 // ripe/build-tree.c

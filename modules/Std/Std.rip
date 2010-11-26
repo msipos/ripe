@@ -11,7 +11,7 @@ module Std
   sprintf_array(format, array)
     $
       char* f = val_to_string(__format);
-      Array1* array = val_to_array1(__array);
+      Tuple* array = val_to_tuple(__array);
       uint64 len = format(NULL, f, array->size, array->data);
       char out[len];
       format(out, f, array->size, array->data);

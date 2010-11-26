@@ -179,10 +179,13 @@ int compile_c(const char* in_filename, const char* out_filename)
   return 0;
 }
 
-void type_info_from_modules()
+void type_info_from_modules(const char* ignore)
 {
   for (int i = 0; i < modules.size; i++){
     Module* module = array_get(&modules, Module*, i);
+    if (ignore != NULL and strcmp(ignore, module->module_name) == 0){
+      continue;
+    }
     if (module->type_path != NULL){
       FILE* f = fopen(module->type_path, "r");
       if (f == NULL) err("can't open type file '%s' for reading: %s",
@@ -233,6 +236,13 @@ int compile_rip(int num_files, const char** in_filenames, const char* module_nam
   const char* tmp = tempnam(NULL, "ripe");
   const char* c_filename = mem_asprintf("%s.c", tmp);
 
+  // First populate typer info
+  for (int i = 0; i < num_files; i++){
+    const char* in_path = in_filenames[i];
+    Node* ast = build_tree(in_path);
+    typer_ast(ast);
+  }
+
   if (compile_to_c(num_files, in_filenames, module_name, c_filename)){
     remove(c_filename);
     exit(1);
@@ -281,6 +291,9 @@ int build(const char* out_filename)
 
 int dump_c(const char* in_filename, const char* module_name)
 {
+  Node* ast = build_tree(in_filename);
+  typer_ast(ast);
+
   const char* tmp = tempnam(NULL, "ripe");
   const char* tmp_filename = mem_asprintf("%s.c", tmp);
   if (compile_to_c(1, &in_filename, module_name, tmp_filename))
@@ -408,7 +421,7 @@ int main(int argc, char* const* argv)
 
   if (mode == MODE_DUMP_T){
     typer_init();
-    type_info_from_modules();
+    type_info_from_modules(NULL);
     typer_dump(stdout);
     return 0;
   }
@@ -416,9 +429,10 @@ int main(int argc, char* const* argv)
   if (optind == argc) err("no source file given");
 
   // Time to load typer info. Only for particular modes that require it.
-  if (mode == MODE_MODULE or mode == MODE_BUILD or mode == MODE_RUN){
+  if (mode == MODE_MODULE or mode == MODE_BUILD or mode == MODE_RUN
+      or mode == MODE_DUMP_C){
     typer_init();
-    type_info_from_modules();
+    type_info_from_modules(module_name);
   }
 
   char* in_filename;

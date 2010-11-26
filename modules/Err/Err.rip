@@ -5,7 +5,7 @@ $
 module Err
   print(*args)
     $
-      Array1* arr = val_to_array1(__args);
+      Tuple* arr = val_to_tuple(__args);
       char buf[format_simple(NULL, arr->size, arr->data)];
       format_simple(buf, arr->size, arr->data);
       fputs(buf, stderr);
@@ -13,7 +13,7 @@ module Err
 
   println(*args)
     $
-      Array1* arr = val_to_array1(__args);
+      Tuple* arr = val_to_tuple(__args);
       char buf[format_simple(NULL, arr->size, arr->data)];
       format_simple(buf, arr->size, arr->data);
       fputs(buf, stderr);
@@ -22,7 +22,7 @@ module Err
 
   printf(format, *args)
     $
-      Array1* arr = val_to_array1(__args);
+      Tuple* arr = val_to_tuple(__args);
       char* f = val_to_string(__format);
       char buf[format(NULL, f, arr->size, arr->data)];
       format(buf, f, arr->size, arr->data);
