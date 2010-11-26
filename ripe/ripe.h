@@ -69,6 +69,26 @@ bool node_has_string(Node* n, const char* key);
 void node_draw(Node* ast);
 
 //////////////////////////////////////////////////////////////////////////////
+// ripe/ast.c
+//////////////////////////////////////////////////////////////////////////////
+
+const char* module_get_prefix();
+void module_pop();
+void module_push(const char* name);
+const char* eval_type(Node* type_node);
+
+//////////////////////////////////////////////////////////////////////////////
+// ripe/error.c
+//////////////////////////////////////////////////////////////////////////////
+
+extern const char* err_filename;
+extern int log_verbosity;
+void err_node(Node* node, const char* format, ...);
+void err(const char* format, ...);
+void warn(const char* format, ...);
+void logging(const char* format, ...);
+
+//////////////////////////////////////////////////////////////////////////////
 // ripe/dump.c
 //////////////////////////////////////////////////////////////////////////////
 
@@ -87,6 +107,9 @@ void dump_output(FILE* f, const char* module_name);
 // Returns non-zero in case of an error.
 int generate(Node* ast, const char* module_name, const char* source_filename);
 
+// Dump type info
+void generate_type_info(Node* ast);
+
 //////////////////////////////////////////////////////////////////////////////
 // ripe/operator.c
 //////////////////////////////////////////////////////////////////////////////
@@ -98,10 +121,29 @@ bool is_binary_op(Node* node);
 const char* binary_op_map(int type);
 
 //////////////////////////////////////////////////////////////////////////////
+// ripe/typer.c
+//////////////////////////////////////////////////////////////////////////////
+
+typedef struct {
+  const char* name;
+  // For a function or method, this is the return type:
+  const char* rv;
+  int num_params;
+  const char** param_types;
+} TyperRecord;
+
+void typer_init();
+void typer_add(TyperRecord* tr);
+TyperRecord* typer_query(const char* name);
+void typer_ast(Node* ast);
+void typer_dump(FILE* f);
+void typer_load(FILE* f);
+
+//////////////////////////////////////////////////////////////////////////////
 // ripe/build-tree.c
 //////////////////////////////////////////////////////////////////////////////
 
-// Parse the given file. Returns NULL in case of error.
+// Parse the given file.
 Node* build_tree(const char* filename);
 
 // Dump the tokens read from a file.

@@ -84,15 +84,18 @@ ripe_hs = [
             'ripe/scanner.h'
           ]
 ripe_srcs = [
-               'ripe/ripe.c',
-               'ripe/dump.c',
-               'ripe/cli.c',
-               'ripe/build-tree.c',
-               'ripe/parser.c',
-               'ripe/scanner.c',
+               'ripe/ast.c',
                'ripe/astnode.c',
+               'ripe/build-tree.c',
+               'ripe/cli.c',
+               'ripe/dump.c',
+               'ripe/error.c',
+               'ripe/generator.c',
                'ripe/operator.c',
-               'ripe/generator.c'
+               'ripe/parser.c',
+               'ripe/ripe.c',
+               'ripe/scanner.c',
+               'ripe/typer.c',
              ]
 ripe_objs = tools.cons_objs(ripe_srcs, ripe_hs + clib_hs)
 tools.cons_bin('product/ripe', ripe_objs + clib_objs, [])
@@ -160,7 +163,21 @@ f.close()
 # BUILD MODULES
 ##############################################################################
 
-module_deps = vm_hs + clib_hs + ['modules/modules.h', 'product/ripe']
+type_deps = ['product/ripe']
+def type_module(module):
+    path = 'modules/%s/%s.rip' % (module, module)
+    out = 'product/modules/%s/%s.typ' % (module, module)
+    if tools.depends(out, type_deps + [path]):
+        tools.pprint('MOD', path, out)
+        tools.mkdir_safe('product/modules/%s' % module)
+        tools.call(['product/ripe', '-t', path, '>', out])
+    return out
+
+type_infos = []
+for module in MODULES + OPTIONAL_MODULES:
+    type_infos.append(type_module(module))
+
+module_deps = vm_hs + clib_hs + ['modules/modules.h', 'product/ripe'] + type_infos
 failed_modules = []
 
 def cons_module(src, dest, module, required, extra_CFLAGS=''):

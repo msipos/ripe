@@ -70,65 +70,6 @@ static const char* util_make_c_name(const char* ripe_name)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// ERROR HANDLING
-///////////////////////////////////////////////////////////////////////////////
-
-static jmp_buf jb;
-static const char* source_filename;
-static int error_line_max;
-static int error_line_min;
-
-// Try to populate error_filename and error_line_* with information from this
-// node.
-static void error_traverse(Node* node)
-{
-  if (node->line != -1) {
-    if (error_line_max == -1) {
-      error_line_max = node->line;
-      error_line_min = node->line;
-    } else {
-      if (error_line_max < node->line) error_line_max = node->line;
-      if (error_line_min > node->line) error_line_min = node->line;
-    }
-  }
-  for (int i = 0; i < node_num_children(node); i++){
-    error_traverse(node_get_child(node, i));
-  }
-}
-
-// If node != NULL, attempt to query information about the location of the
-// error.
-static void raise_error(Node* node, const char* format, ...)
-{
-  error_line_min = -1;
-  error_line_max = -1;
-  if (node != NULL) error_traverse(node);
-  const char* error_numbers = NULL;
-  if (error_line_min != -1){
-    if (error_line_min == error_line_max){
-      error_numbers = mem_asprintf("%d", error_line_min);
-    } else {
-      error_numbers = mem_asprintf("%d-%d", error_line_min, error_line_max);
-    }
-  }
-
-  if (error_numbers != NULL){
-    fprintf(stderr, "%s:%s: ", source_filename, error_numbers);
-  } else {
-    fprintf(stderr, "%s: ", source_filename);
-  }
-
-  va_list ap;
-  va_start (ap, format);
-  vfprintf(stderr, format, ap);
-  va_end (ap);
-  fprintf(stderr, "\n");
-  exit(1);
-
-  longjmp(jb, 1);
-}
-
-///////////////////////////////////////////////////////////////////////////////
 // DYNAMIC SYMBOL, STATIC SYMBOL AND TYPE TABLES
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -206,45 +147,6 @@ static const char* tbl_get_dsym(const char* symbol)
                          dsym_c_var, symbol);
   dict_set(&tbl_dsym, &symbol, &dsym_c_var);
   return dsym_c_var;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// MODULE STACK
-///////////////////////////////////////////////////////////////////////////////
-static Array module_stack;
-static const char* module_prefix;
-
-static void module_init()
-{
-  array_init(&module_stack, const char*);
-  module_prefix = "";
-}
-
-static void module_gen_prefix()
-{
-  if (module_stack.size > 0){
-    module_prefix = array_get(&module_stack, char*, 0);
-    for (int i = 1; i < module_stack.size; i++){
-      module_prefix = mem_asprintf("%s.%s", module_prefix,
-                                   array_get(&module_stack, char*, i));
-    }
-    module_prefix = mem_asprintf("%s.", module_prefix);
-  } else {
-    module_prefix = "";
-  }
-}
-
-static void module_push(const char* name)
-{
-  array_append(&module_stack, mem_strdup(name));
-  module_gen_prefix();
-}
-
-static void module_pop()
-{
-  assert(module_stack.size > 0);
-  array_pop(&module_stack, const char*);
-  module_gen_prefix();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -515,14 +417,6 @@ static const char* eval_expr_as_id(Node* expr)
   }
 }
 
-static const char* eval_type(Node* type_node)
-{
-  const char* type = node_get_string(type_node, "name");
-  if (node_num_children(type_node) == 0) return type;
-  return mem_asprintf("%s.%s", type,
-                      node_get_child(type_node, 0));
-}
-
 static const char* eval_expr(Node* expr)
 {
   if (is_unary_op(expr))
@@ -603,7 +497,7 @@ static const char* eval_expr(Node* expr)
         Node* arg_list = node_get_child(expr, 1);
         assert(left->type == ID);
         if (query_local(left->text))
-          raise_error(expr, "variable '%s' called as a function", left->text);
+          err_node(expr, "variable '%s' called as a function", left->text);
         if (strcmp(left->text, "tuple") == 0){
           return mem_asprintf(
                    "tuple_to_val(%u %s)",
@@ -673,10 +567,10 @@ static const char* eval_expr(Node* expr)
       {
         const char* name = node_get_string(expr, "name");
         if (context != CONTEXT_CLASS){
-          raise_error(expr, "'@%s' in something that's not a class", name);
+          err_node(expr, "'@%s' in something that's not a class", name);
         }
         if (context_class_type != CLASS_FIELD_OBJECT){
-          raise_error(expr, "'@%s' in a class that's not a field class", name);
+          err_node(expr, "'@%s' in a class that's not a field class", name);
         }
         char* field_int_var;
         if (not dict_query(context_class_dict, &name, &field_int_var)){
@@ -694,7 +588,7 @@ static const char* eval_expr(Node* expr)
         const char* str = util_trim_ends(expr->text);
         if (context2 == CONTEXT_METHOD or context2 == CONTEXT_CONSTRUCTOR){
           if (strchr(str, '@') != NULL and context_class_type != CLASS_CDATA_OBJECT)
-            raise_error(expr, "@ in C code in a class that is not cdata");
+            err_node(expr, "@ in C code in a class that is not cdata");
           return util_replace(str, '@', "_c_data->");
         }
         return str;
@@ -703,7 +597,7 @@ static const char* eval_expr(Node* expr)
       {
         const char* type = eval_type(node_get_child(expr, 1));
         if (query_local(type)){
-          raise_error(expr, "type '%s' in 'is' expression is a variable", type);
+          err_node(expr, "type '%s' in 'is' expression is a variable", type);
         }
         return mem_asprintf("pack_bool(obj_klass(%s) == %s)",
                             eval_expr(node_get_child(expr, 0)),
@@ -723,7 +617,7 @@ static void gen_stmt_expr(Node* stmt)
   } else if (expr->type == C_CODE) {
     sbuf_printf(sb_contents, "  %s\n", eval_expr(expr));
   } else {
-    raise_error(stmt, "invalid expression in an expression statement");
+    err_node(stmt, "invalid expression in an expression statement");
   }
 }
 
@@ -759,7 +653,7 @@ static void gen_stmt_assign2(Node* lvalue, Node* rvalue)
         const char* type = eval_type(node_get_child(lvalue, 0));
         Variable* var = query_local_full(ripe_name);
         if (var != NULL){
-          raise_error(lvalue, "variable '%s' already defined", ripe_name);
+          err_node(lvalue, "variable '%s' already defined", ripe_name);
         }
         const char* c_name = register_local(ripe_name, type);
         if (compare_types(type, rtype)){
@@ -822,7 +716,7 @@ static void gen_stmt(Node* stmt)
       break;
     case STMT_RETURN:
       if (context2 == CONTEXT_CONSTRUCTOR){
-        raise_error(stmt, "return not allowed in a constructor");
+        err_node(stmt, "return not allowed in a constructor");
       }
       sbuf_printf(sb_contents, "  return %s;\n",
                                 eval_expr(node_get_child(stmt, 0)));
@@ -872,13 +766,13 @@ static void gen_stmt(Node* stmt)
       break;
     case STMT_BREAK:
       if (dowhile_semaphore == 0){
-        raise_error(stmt, "break outside a loop");
+        err_node(stmt, "break outside a loop");
       }
       sbuf_printf(sb_contents, "  break;\n");
       break;
     case STMT_CONTINUE:
       if (dowhile_semaphore == 0){
-        raise_error(stmt, "continue outside a loop");
+        err_node(stmt, "continue outside a loop");
       }
       sbuf_printf(sb_contents, "  continue;\n");
       break;
@@ -924,7 +818,7 @@ static void gen_stmt(Node* stmt)
                   eval_expr(node_get_child(stmt, 0)));
       break;
     default:
-      raise_error(stmt, "invalid statement type %d", stmt->type);
+      err_node(stmt, "invalid statement type %d", stmt->type);
   }
 }
 
@@ -991,7 +885,7 @@ static void gen_stmtlist_no_locals(Node* stmtlist)
 
       int num_tblocks = node_num_children(sublist);
       if (num_tblocks == 0){
-        raise_error(stmt, "try block not followed by any other block");
+        err_node(stmt, "try block not followed by any other block");
       }
       gen_try(stmt, sublist, num_tblocks - 1);
       continue;
@@ -1000,7 +894,7 @@ static void gen_stmtlist_no_locals(Node* stmtlist)
     if (stmt->type == STMT_ELSE or stmt->type == STMT_ELIF){
       if (prev_stmt_type != STMT_IF and
           prev_stmt_type != STMT_ELIF){
-        raise_error(stmt, "statement must follow if or elif");
+        err_node(stmt, "statement must follow if or elif");
       }
     }
     prev_stmt_type = stmt->type;
@@ -1017,7 +911,7 @@ static bool check_vararg(Node* param_list)
     Node* param = node_get_child(param_list, i);
     if (node_has_string(param, "array")) {
       if (i != num_params - 1){
-        raise_error(param_list, "array_argument must be last");
+        err_node(param_list, "array_argument must be last");
       }
       return true;
     }
@@ -1078,7 +972,7 @@ static void gen_function(Node* function)
   // Deal with counter
   static uint counter = 0;
   counter++;
-  const char* name = mem_asprintf("%s%s", module_prefix,
+  const char* name = mem_asprintf("%s%s", module_get_prefix(),
                                   node_get_string(function, "name"));
   Node* param_list = node_get_child(function, 0);
   Node* stmt_list = node_get_child(function, 1);
@@ -1113,7 +1007,7 @@ static void gen_constructor(Node* constructor)
   static int counter = 0;
   counter++;
   const char* r_constructor_name = mem_asprintf("%s%s.%s",
-    module_prefix, context_class_name, node_get_string(constructor, "name"));
+    module_get_prefix(), context_class_name, node_get_string(constructor, "name"));
   const char* c_constructor_name = mem_asprintf("_cons%d_%s", counter,
                                         util_escape(r_constructor_name));
 
@@ -1153,7 +1047,7 @@ static void gen_method(const char* method_name, Node* param_list, Node* stmt_lis
   static int counter = 0;
   counter++;
   const char* r_method_name = mem_asprintf("%s%s.%s",
-    module_prefix, context_class_name, method_name);
+    module_get_prefix(), context_class_name, method_name);
   const char* c_method_name = mem_asprintf("_met%d_%s", counter,
                                 util_escape(r_method_name));
 
@@ -1211,14 +1105,14 @@ static void gen_class(Node* klass)
     Node* n = node_get_child(ast, i);
     if (n->type == C_CODE){
       if (context_class_type == CLASS_FIELD_OBJECT){
-        raise_error(klass, "class %s with both cdata and fields",
+        err_node(klass, "class %s with both cdata and fields",
                     context_class_name);
       }
       context_class_type = CLASS_CDATA_OBJECT;
     }
     if (n->type == TL_VAR){
       if (context_class_type == CLASS_CDATA_OBJECT){
-        raise_error(klass, "class %s with both cdata and fields",
+        err_node(klass, "class %s with both cdata and fields",
                     context_class_name);
       }
       context_class_type = CLASS_FIELD_OBJECT;
@@ -1262,7 +1156,7 @@ static void gen_class(Node* klass)
           } else if (strcmp(annotation, "private") == 0){
             var_type = "0";
           } else {
-            raise_error(n, "invalid annotation '%s' inside class '%s'",
+            err_node(n, "invalid annotation '%s' inside class '%s'",
                             annotation, context_class_name);
           }
 
@@ -1314,7 +1208,7 @@ static void gen_class(Node* klass)
                         var_name,
                         context2_method_value_name);
           } else {
-            raise_error(n, "function annotated with '%s'"
+            err_node(n, "function annotated with '%s'"
                         " not allowed inside a class", annotation);
           }
         } else {
@@ -1328,7 +1222,7 @@ static void gen_class(Node* klass)
         /* Ignore */
         break;
       default:
-        raise_error(n, "top level not allowed inside a class");
+        err_node(n, "top level not allowed inside a class");
     }
   }
   context = CONTEXT_NONE;
@@ -1351,7 +1245,7 @@ static void gen_globals(Node* ast)
 
           static int counter = 0;
           counter++;
-          const char* ripe_name = mem_asprintf("%s%s", module_prefix, var_name);
+          const char* ripe_name = mem_asprintf("%s%s", module_get_prefix(), var_name);
           const char* c_name = mem_asprintf("_glb%d_%s", counter,
                                             util_escape(ripe_name));
 
@@ -1369,7 +1263,7 @@ static void gen_globals(Node* ast)
 
           static int counter = 0;
           counter++;
-          const char* ripe_name = mem_asprintf("%s%s", module_prefix, var_name);
+          const char* ripe_name = mem_asprintf("%s%s", module_get_prefix(), var_name);
           Node* right = node_get_child(optassign, 0);
 
           sbuf_printf(sb_init1, "  ssym_set(\"%s\", %s);\n",
@@ -1377,7 +1271,7 @@ static void gen_globals(Node* ast)
                       eval_expr(right));
         }
       } else {
-        raise_error(n, "invalid annotation '%s' at top level", annotation);
+        err_node(n, "invalid annotation '%s' at top level", annotation);
       }
     }
     if (n->type == MODULE){
@@ -1397,7 +1291,7 @@ static void gen_toplevels(Node* ast)
     switch(n->type){
       case FUNCTION:
         if (node_has_string(n, "annotation")){
-          raise_error(n, "annotated functions (with annotation '%s') "
+          err_node(n, "annotated functions (with annotation '%s') "
                          "not allowed outside of a class",
                          node_get_string(n, "annotation"));
         }
@@ -1431,44 +1325,14 @@ static void gen_toplevels(Node* ast)
   }
 }
 
-int generate_type_info(Node* ast)
-{
-  for (int i = 0; i < ast->children.size; i++){
-    Node* n = node_get_child(ast, i);
-    switch(n->type){
-      case FUNCTION:
-        break;
-      case MODULE:
-        {
-          const char* name = node_get_string(n, "name");
-          module_push(name);
-          generate_type_info(node_get_child(n, 0));
-          module_pop(name);
-        }
-        break;
-      case C_CODE:
-        break;
-      case TL_VAR:
-        break;
-      case CLASS:
-      default:
-        break;
-    }
-  }
-}
-
 int generate(Node* ast, const char* module_name, const char* i_source_filename)
 {
   locals_init();
   tables_init();
-  module_init();
   context = CONTEXT_NONE;
 
   // Set up error handling.
-  source_filename = i_source_filename;
-  if (setjmp(jb)){
-    return 1;
-  }
+  err_filename = i_source_filename;
 
   // First item on the locals stack refers to the global variables.
   push_locals();

@@ -21,7 +21,6 @@ int compile_c(const char* in_filename, const char* out_filename);
 
 // Global flags
 const char* app_dir = NULL;
-int verbose = 0;
 const char* cflags = "";  // cflags are used when compiling to build .o
 const char* lflags = "";  // lflags are used when compiling to build binary
 
@@ -37,6 +36,7 @@ typedef struct {
   int flag;
   const char* module_name;
   const char* obj_filename;
+  const char* type_path;
 } Module;
 
 void module_init()
@@ -54,11 +54,10 @@ void module_cleanup()
   }
 }
 
-void module_add(const char* module_name, const char* obj_filename, int flag)
+void module_add(const char* module_name, const char* obj_filename,
+                const char* type_path, int flag)
 {
-  if (verbose){
-    fprintf(stderr, "module '%s' is at %s\n", module_name, obj_filename);
-  }
+  logging("module '%s' is at %s", module_name, obj_filename);
 
   // Check that this module is not loaded twice
   for (int i = 0; i < modules.size; i++){
@@ -69,6 +68,7 @@ void module_add(const char* module_name, const char* obj_filename, int flag)
   Module* module = mem_new(Module);
   module->module_name = module_name;
   module->obj_filename = obj_filename;
+  module->type_path = type_path;
   module->flag = flag;
 
   // Attempt to load meta file
@@ -92,8 +92,12 @@ void module_add_by_name(const char* module_name)
                                       app_dir,
                                       module_name,
                                       module_name);
-  module_add(mem_strdup(module_name),
-             obj_path, 0);
+  const char* type_path = mem_asprintf("%s/modules/%s/%s.typ",
+                                       app_dir,
+                                       module_name,
+                                       module_name);
+
+  module_add(mem_strdup(module_name), obj_path, type_path, 0);
 }
 
 const char* module_gcc()
@@ -102,9 +106,8 @@ const char* module_gcc()
   for (int i = 0; i < modules.size; i++){
     Module* module = array_get(&modules, Module*, i);
     if (not path_exists(module->obj_filename)){
-      fprintf(stderr, "error: cannot find module '%s' (looked for %s)\n",
-              module->module_name, module->obj_filename);
-      exit(1);
+      err("cannot find module '%s' (looked for %s)",
+          module->module_name, module->obj_filename);
     }
     gcc = mem_asprintf("%s %s", gcc, module->obj_filename);
   }
@@ -117,18 +120,13 @@ void module_build_loader(const char* loader_obj_filename)
   const char* tmp = tempnam(NULL, "ripe");
   const char* loader_c_filename = mem_asprintf("%s.c", tmp);
 
-  if (verbose){
-    fprintf(stderr, "writing module loaders to '%s'\n",
-            loader_c_filename);
-  }
+  logging("writing module loaders to '%s'", loader_c_filename);
 
   FILE* f = fopen(loader_c_filename, "w");
-  if (f == NULL){
-    fprintf(stderr, "error: can't build loader object\n");
-    fprintf(stderr, "while opening '%s' for writing: %s\n",
-            loader_c_filename, strerror(errno));
-    exit(1);
+  if (f == NULL) {
+    err("can't open '%s' for writing: %s", loader_c_filename, strerror(errno));
   }
+
   fprintf(f, "void stack_push_annotation(char* annotation);\n");
   fprintf(f, "void stack_pop();\n");
 
@@ -169,17 +167,39 @@ void module_build_loader(const char* loader_obj_filename)
 int compile_c(const char* in_filename, const char* out_filename)
 {
   if (not path_exists(in_filename)) {
-    fprintf(stderr, "cannot open '%s' for reading\n", in_filename);
-    return 1;
+    err("cannot open '%s' for reading", in_filename);
   }
 
   char* cmd_line = mem_asprintf("gcc %s -c %s -o %s",
                                 cflags, in_filename, out_filename);
-  if (verbose) printf("%s\n", cmd_line);
+  logging("%s", cmd_line);
   if (system(cmd_line)){
     return 1;
   }
   return 0;
+}
+
+void type_info_from_modules()
+{
+  for (int i = 0; i < modules.size; i++){
+    Module* module = array_get(&modules, Module*, i);
+    if (module->type_path != NULL){
+      FILE* f = fopen(module->type_path, "r");
+      if (f == NULL) err("can't open type file '%s' for reading: %s",
+                         module->type_path,
+                         strerror(errno));
+      typer_load(f);
+      fclose(f);
+    }
+  }
+}
+
+void type_info(const char* in_filename)
+{
+  Node* ast = build_tree(in_filename);
+  typer_init();
+  typer_ast(ast);
+  typer_dump(stdout);
 }
 
 int compile_to_c(int num_files, const char** in_filenames,
@@ -190,32 +210,16 @@ int compile_to_c(int num_files, const char** in_filenames,
   // Now for each input file
   for (int i = 0; i < num_files; i++){
     const char* in_filename = in_filenames[i];
+    logging("compiling '%s' to '%s'", in_filename, out_filename);
 
-    if (verbose) {
-      printf("compiling '%s' to '%s'\n", in_filename, out_filename);
-    }
-    if (not path_exists(in_filename)) {
-      fprintf(stderr, "cannot open '%s' for reading\n", in_filename);
-      exit(1);
-    }
     Node* ast = build_tree(in_filename);
-    if (ast == NULL){
-      fprintf(stderr, "error while parsing '%s'\n", in_filename);
-      exit(1);
-    }
-
-    if (generate(ast, module_name, in_filename)){
-      fprintf(stderr, "error while generating '%s'\n", in_filename);
-      exit(1);
-    }
+    generate(ast, module_name, in_filename);
   }
 
   // Output handling.
   FILE* f = fopen(out_filename, "w");
   if (f == NULL){
-    fprintf(stderr, "cannot open '%s' for writing: %s\n",
-            out_filename, strerror(errno));
-    return 1;
+    err("cannot open '%s' for writing: %s\n", out_filename, strerror(errno));
   }
   dump_output(f, module_name);
   fclose(f);
@@ -244,8 +248,7 @@ int compile_rip(int num_files, const char** in_filenames, const char* module_nam
 void add_ripe_source(const char* in_filename)
 {
   if (not path_exists(in_filename)) {
-    fprintf(stderr, "error: cannot open '%s' for reading\n", in_filename);
-    exit(1);
+    err("error: cannot open '%s' for reading\n", in_filename);
   }
 
   const char* tmp = tempnam(NULL, "ripe");
@@ -256,7 +259,7 @@ void add_ripe_source(const char* in_filename)
   const char* module_name = mem_asprintf("_User%d", counter);
 
   compile_rip(1, &in_filename, module_name, o_filename);
-  module_add(module_name, o_filename, FLAG_CLEANUP);
+  module_add(module_name, o_filename, NULL, FLAG_CLEANUP);
 }
 
 int build(const char* out_filename)
@@ -269,7 +272,7 @@ int build(const char* out_filename)
   char* cmd_line = mem_asprintf("gcc %s %s %s %s/vm.o -o %s",
                                 lflags, module_gcc(), loader_filename,
                                 app_dir, out_filename);
-  if (verbose) printf("%s\n", cmd_line);
+  logging("%s", cmd_line);
   int rv = system(cmd_line);
   remove(loader_filename);
   module_cleanup();
@@ -321,7 +324,7 @@ int main(int argc, char* const* argv)
   if (strcmp(conf_query(&conf, "verbose"), "1") == 0 or
       strcmp(conf_query(&conf, "verbose"), "true") == 0 or
       strcmp(conf_query(&conf, "verbose"), "yes") == 0){
-    verbose = 1;
+    log_verbosity = 1;
   }
   const char* modules = conf_query(&conf, "modules");
 
@@ -351,14 +354,16 @@ int main(int argc, char* const* argv)
   #define MODE_RUN    3
   #define MODE_DUMP_C 4
   #define MODE_DUMP_S 5
+  #define MODE_TYPE   6
+  #define MODE_DUMP_T 7
 
   int mode = MODE_RUN;
 
   int c;
-  while ((c = getopt(argc, argv, "bcdvo:n:m:f:s")) != -1){
+  while ((c = getopt(argc, argv, "utbcdvo:n:m:f:s")) != -1){
     switch(c){
       case 'v':
-        verbose = 1;
+        log_verbosity = 1;
         break;
       case 'b':
         mode = MODE_BUILD;
@@ -372,9 +377,15 @@ int main(int argc, char* const* argv)
       case 's':
         mode = MODE_DUMP_S;
         break;
+      case 't':
+        mode = MODE_TYPE;
+        break;
 /*      case 'h':*/
 /*        display_help();*/
 /*        return 0;*/
+      case 'u':
+        mode = MODE_DUMP_T;
+        break;
       case 'o':
         out_filename = optarg;
         break;
@@ -393,28 +404,28 @@ int main(int argc, char* const* argv)
         return 1;
     }
   }
-  if (optind == argc){
-    fprintf(stderr, "error: no source file given\n");
-    return 1;
+  logging("cflags = %s", cflags);
+
+  if (mode == MODE_DUMP_T){
+    typer_init();
+    type_info_from_modules();
+    typer_dump(stdout);
+    return 0;
   }
 
-  if (verbose){
-    fprintf(stderr, "cflags = %s\n", cflags);
+  if (optind == argc) err("no source file given");
+
+  // Time to load typer info. Only for particular modes that require it.
+  if (mode == MODE_MODULE or mode == MODE_BUILD or mode == MODE_RUN){
+    typer_init();
+    type_info_from_modules();
   }
 
   char* in_filename;
   switch(mode){
     case MODE_MODULE:
-      if (out_filename == NULL){
-        out_filename = "out.o";
-      }
-      if (argc - optind < 1){
-        fprintf(stderr, "error: must provide at least one source file\n");
-        return 1;
-      }
-      if (module_name == NULL){
-        module_name = "Module";
-      }
+      if (out_filename == NULL) out_filename = "out.o";
+      if (module_name == NULL) module_name = "Module";
 
       Array rip_files;
       array_init(&rip_files, const char*);
@@ -424,76 +435,51 @@ int main(int argc, char* const* argv)
         if (strcmp(input_extension, ".rip") == 0){
           array_append(&rip_files, in_filename);
         } else {
-          fprintf(stderr, "error: unknown extension: %s\n",
-                  input_extension);
-          return 1;
+          err("unknown extension: '%s'", input_extension);
         }
       }
       compile_rip(rip_files.size, (const char**) (rip_files.data), module_name,
                   out_filename);
       return 0;
     case MODE_BUILD:
+      if (module_name != NULL) warn("module name ignored in build mode");
       if (out_filename == NULL){
         out_filename = "ripe.out";
-      }
-      if (argc - optind < 1){
-        fprintf(stderr, "error: must provide at least one source file");
-        return 1;
       }
       for (int i = optind; i < argc; i++){
         in_filename = argv[i];
         add_ripe_source(in_filename);
       }
-      if (module_name != NULL){
-        fprintf(stderr, "warning: module name ignored in build mode\n");
-      }
-      return build(out_filename);
 
-      break;
+      return build(out_filename);
     case MODE_DUMP_C:
-      if (out_filename != NULL){
-        fprintf(stderr, "warning: output filename ignored in dump C mode\n");
-      }
-      if (argc - optind > 1){
-        fprintf(stderr, "error: only 1 Ripe file supported (for now)");
-        return 1;
-      }
+      if (argc - optind > 1) err("only 1 Ripe file supported");
+      if (out_filename != NULL) warn("output filename ignored in dump C mode");
+
       if (module_name == NULL){
         module_name = "User";
       }
       in_filename = argv[optind];
       return dump_c(in_filename, module_name);
     case MODE_DUMP_S:
-      if (out_filename != NULL){
-        fprintf(stderr, "warning: output filename ignored in dump ast mode\n");
-      }
-      if (argc - optind > 1){
-        fprintf(stderr, "error: only 1 Ripe file supported (for now)");
-        return 1;
-      }
-      if (module_name != NULL){
-        fprintf(stderr, "warning: module name ignored in dump ast mode\n");
-      }
-      {
-        Node* ast = build_tree(argv[optind]);
-        node_draw(ast);
-      }
+      if (argc - optind > 1) err("only 1 Ripe file supported");
+      if (out_filename != NULL) warn("output filename ignored in dump ast mode");
+      if (module_name != NULL) warn("module name ignored in dump ast mode");
+
+      Node* ast = build_tree(argv[optind]);
+      node_draw(ast);
       break;
     case MODE_RUN:
-      if (out_filename != NULL){
-        fprintf(stderr, "warning: output filename ignored in run mode\n");
-      }
-      if (module_name != NULL){
-        fprintf(stderr, "warning: module name ignored in run mode\n");
-      }
-      if (argc - optind < 1){
-        fprintf(stderr, "error: must provide at least one source file");
-        return 1;
-      }
+      if (out_filename != NULL) warn("output filename ignored in run mode");
+      if (module_name != NULL) warn("module name ignored in run mode");
+
       for (int i = optind; i < argc; i++){
         in_filename = argv[i];
         add_ripe_source(in_filename);
       }
       return run();
+    case MODE_TYPE:
+      type_info(argv[optind]);
+      break;
   }
 }

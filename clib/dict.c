@@ -170,6 +170,21 @@ bool dict_query(Dict* d, void* key, void* value)
   return false;
 }
 
+bool dict_has_bucket(Dict* d, int64 place)
+{
+  return (*get_flag(d, d->data, place)) == BUCKET_FULL;
+}
+
+void* dict_get_bucket_key(Dict* d, int64 place)
+{
+  return get_key(d, d->data, place);
+}
+
+void* dict_get_bucket_value(Dict* d, int64 place)
+{
+  return get_value(d, d->data, place);
+}
+
 uint64 dict_hash_string(void* key)
 {
   return hash_string(*((char**) key));

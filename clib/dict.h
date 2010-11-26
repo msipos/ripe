@@ -55,4 +55,10 @@ bool dict_equal_uint32(void* key1, void* key2);
 uint64 dict_hash_uint64(void* key);
 bool dict_equal_uint64(void* key1, void* key2);
 
+// Direct bucket access (place = 0...alloc_size-1)
+bool dict_has_bucket(Dict* d, int64 place);
+void* dict_get_bucket_key(Dict* d, int64 place);
+void* dict_get_bucket_value(Dict* d, int64 place);
+
+
 #endif

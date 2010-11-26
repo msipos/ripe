@@ -28,31 +28,12 @@ void buf_cat(const char* text)
   sbuf_cat(&buf_sb, text);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Error reporting.
-///////////////////////////////////////////////////////////////////////////////
-#include <setjmp.h>
-#include <stdarg.h>
-
-const char* current_filename;
 int current_line;
-jmp_buf jb;
-
-void parser_error(const char* format, ...)
-{
-  va_list ap;
-  va_start (ap, format);
-  vfprintf(stderr, format, ap);
-  fprintf(stderr, "\n");
-  va_end (ap);
-
-  longjmp(jb, 1);
-}
 
 // This gets called from bison.
 void rc_error(const char*s)
 {
-   parser_error("%s:%d %s", current_filename, current_line - 1, s);
+   err("line %d: %s", current_line - 1, s);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -80,12 +61,11 @@ static Node* lex_read()
   int tok = yylex();
   current_line = yylineno;
   if (tok == UNKNOWN){
-    parser_error("%s:%d invalid characters '%s'", current_filename,
-                 current_line, yytext);
+    err("line %d: invalid characters '%s'", current_line, yytext);
   }
   const char* token_text = yytext;
   if (tok == STRING) token_text = buf_sb.str;
-  return node_new_token(tok, mem_strdup(token_text), current_filename, yylineno);
+  return node_new_token(tok, mem_strdup(token_text), NULL, yylineno);
 }
 
 // Returns non-zero if EOF reached.
@@ -182,10 +162,7 @@ int rc_lex()
             break;
           }
           if (pop_indentation < indentation) {
-            parser_error("%s:%d error, invalid indentation level",
-                         current_filename,
-                         first->line);
-            exit(1);
+            err("line %d: invalid indentation level", first->line);
           }
         }
       }
@@ -216,26 +193,17 @@ Node* rc_result;
 
 Node* build_tree(const char* filename)
 {
-  current_filename = mem_strdup(filename);
+  err_filename = filename;
   FILE* f = fopen(filename, "r");
-  if (f == NULL){
-    fprintf(stderr, "cannot open '%s' for reading: %s\n", filename, strerror(errno));
-    return NULL;
-  }
+  if (f == NULL)
+    err("cannot open '%s' for reading: %s", filename, strerror(errno));
 
-  if (!setjmp(jb)){
-    lex_init();
-    yyin = f;
-    if (rc_parse()){
-      fclose(f);
-      return NULL;
-    }
-    fclose(f);
-    return rc_result;
-  } else {
-    fclose(f);
-    return NULL;
-  }
+  lex_init();
+  yyin = f;
+  rc_parse();
+  fclose(f);
+
+  return rc_result;
 }
 
 void dump_tokens(const char* filename)
