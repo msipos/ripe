@@ -42,6 +42,8 @@ if "nodebug" in sys.argv:
     conf["CFLAGS"].append("-DNDEBUG")
 else:
     conf["CFLAGS"].append("-g")
+if "nostack" in sys.argv:
+    conf["CFLAGS"].append("-DNOSTACK")
 
 # Construct required directories
 required_dirs = ['bin', 'product', 'product/include', 'product/include/clib',
@@ -96,6 +98,8 @@ ripe_srcs = [
                'ripe/ripe.c',
                'ripe/scanner.c',
                'ripe/typer.c',
+               'ripe/util.c',
+               'ripe/vars.c'
              ]
 ripe_objs = tools.cons_objs(ripe_srcs, ripe_hs + clib_hs)
 tools.cons_bin('product/ripe', ripe_objs + clib_objs, [])

@@ -91,12 +91,16 @@ void gen_c()
     printf("Value func_call%d(Value func", n);
     print_mult("Value arg", n, 1, 1);
     printf("){\n");
+    #ifndef NOSTACK
     printf("  stack_push_func(func);\n");
+    #endif
     printf("  Func* c_data = obj_c_data(func);\n");
     printf("  Value rv = c_data->func%d(", n);
     print_mult("arg", n, 0, 1);
     printf(");\n");
+    #ifndef NOSTACK
     printf("  stack_pop();\n");
+    #endif
     printf("  return rv;\n");
     printf("}\n");
   }

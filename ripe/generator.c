@@ -19,57 +19,6 @@
 #include <setjmp.h>
 
 ///////////////////////////////////////////////////////////////////////////////
-// UTILITY
-///////////////////////////////////////////////////////////////////////////////
-static const char* util_trim_ends(const char* input)
-{
-  char* txt = mem_strdup(input);
-  txt++;
-  txt[strlen(txt)-1] = 0;
-  return txt;
-}
-
-// In str, replace each character c by string replace
-static const char* util_replace(const char* str, const char c,
-                                const char* replace)
-{
-  // Ultra inneficient, but who cares.
-  StringBuf sb;
-  sbuf_init(&sb, "");
-  while(*str != 0){
-    if (*str == c){
-      sbuf_printf(&sb, "%s", replace);
-    } else {
-      sbuf_printf(&sb, "%c", *str);
-    }
-    str++;
-  }
-  const char* out = mem_strdup(sb.str);
-  sbuf_deinit(&sb);
-  return out;
-}
-
-// Replace all occurences of '?', '!' and '.' with '_'
-static const char* util_escape(const char* input)
-{
-  char* output = mem_strdup(input);
-  char* s = output;
-  while (*s != 0){
-    if (*s == '?' or *s == '!' or *s == '.'){
-      *s = '_';
-    }
-    s++;
-  }
-  return output;
-}
-
-static const char* util_make_c_name(const char* ripe_name)
-{
-  char* c_name = mem_asprintf("__%s", ripe_name);
-  return util_escape(c_name);
-}
-
-///////////////////////////////////////////////////////////////////////////////
 // DYNAMIC SYMBOL, STATIC SYMBOL AND TYPE TABLES
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -174,171 +123,10 @@ int context2;
 const char* context2_method_value_name;
 
 ///////////////////////////////////////////////////////////////////////////////
-// LOCAL VARIABLE STACK
-///////////////////////////////////////////////////////////////////////////////
-
-static Array locals_arr; // A dictionary for each function (block).
-typedef struct {
-  const char* c_name;
-  const char* ripe_name;
-  const char* type;
-} Variable;
-
-static void locals_init()
-{
-  array_init(&locals_arr, Dict*);
-}
-
-static void push_locals()
-{
-  Dict* locals = dict_new(sizeof(char*), sizeof(Variable*),
-                          dict_hash_string, dict_equal_string);
-  array_append(&locals_arr, locals);
-}
-
-static void pop_locals()
-{
-  array_pop(&locals_arr, Dict*);
-}
-
-static void set_local(const char* ripe_name, const char* c_name,
-                      const char* type)
-{
-  Variable* var = mem_new(Variable);
-  var->c_name = c_name;
-  var->ripe_name = ripe_name;
-  var->type = type;
-  Dict* dict = array_get(&locals_arr, Dict*, locals_arr.size - 1);
-  dict_set(dict, &ripe_name, &var);
-}
-
-static const char* register_local(const char* ripe_name,
-                                  const char* type)
-{
-  const char* c_name = util_make_c_name(ripe_name);
-  set_local(ripe_name, c_name, type);
-  return c_name;
-}
-
-// Test if ripe_name is a currently defined variable. Otherwise it should be
-// treated like a static symbol.
-static Variable* query_local_full(const char* ripe_name)
-{
-  for (int i = locals_arr.size - 1; i >= 0; i--){
-    Dict* dict = array_get(&locals_arr, Dict*, i);
-    Variable* var;
-    if (dict_query(dict, &ripe_name, &var)){
-      return var;
-    }
-  }
-  return NULL;
-}
-
-static const char* query_local(const char* ripe_name)
-{
-  Variable* var = query_local_full(ripe_name);
-  if (var == NULL) return NULL;
-  return var->c_name;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// CREATING AST
-///////////////////////////////////////////////////////////////////////////////
-
-static Node* create_id(const char* id)
-{
-  Node* rv = node_new(ID);
-  rv->text = mem_strdup(id);
-  return rv;
-}
-
-static Node* create_int(int64 i)
-{
-  Node* rv = node_new(INT);
-  rv->text = mem_asprintf("%"PRId64, i);
-  return rv;
-}
-
-static Node* create_expr_index1(Node* left, Node* index)
-{
-  Node* expr_list = node_new(EXPR_LIST);
-  node_add_child(expr_list, index);
-  Node* rv = node_new(EXPR_INDEX);
-  node_add_child(rv, left);
-  node_add_child(rv, expr_list);
-  return rv;
-}
-
-static Node* create_field_call(Node* callee, char* field_name, int64 num, ...)
-{
-  Node* rv = node_new(EXPR_FIELD_CALL);
-  node_add_child(rv, callee);
-  node_set_string(rv, "name", field_name);
-  Node* expr_list = node_new(EXPR_LIST);
-  va_list ap;
-  va_start(ap, num);
-  for (int64 i = 0; i < num; i++){
-    node_add_child(expr_list, va_arg(ap, Node*));
-  }
-  va_end(ap);
-  node_add_child(rv, expr_list);
-  return rv;
-}
-
-///////////////////////////////////////////////////////////////////////////////
 // EVALUATING AST
 ///////////////////////////////////////////////////////////////////////////////
 static uint dowhile_semaphore;
 static const char* eval_expr(Node* expr);
-
-static bool compare_types(const char* t1, const char* t2)
-{
-  if (t1 == t2) return true;
-  if (t1 == NULL or t2 == NULL) return false;
-  return strcmp(t1, t2) == 0;
-}
-
-static const char* infer_type(Node* expr)
-{
-  switch(expr->type){
-    case K_NIL:
-      return "Nil";
-    case K_EOF:
-      return "Eof";
-    case ID:
-      {
-        Variable* var = query_local_full(expr->text);
-        if (var == NULL) return NULL;
-        return var->type;
-      }
-    case DOUBLE:
-      return "Double";
-    case STRING:
-      return "String";
-    case SYMBOL:
-    case INT:
-    case CHARACTER:
-      return "Integer";
-    case EXPR_ARRAY:
-      return "Array1";
-    case EXPR_RANGE_BOUNDED:
-    case EXPR_RANGE_BOUNDED_LEFT:
-    case EXPR_RANGE_BOUNDED_RIGHT:
-    case EXPR_RANGE_UNBOUNDED:
-      return "Range";
-    case K_TRUE:
-    case K_FALSE:
-    case EXPR_IS_TYPE:
-    case EXPR_FIELD_CALL:
-    case EXPR_INDEX:
-    case EXPR_ID_CALL:
-    case EXPR_FIELD:
-    case EXPR_AT_VAR:
-    case C_CODE:
-    default:
-      return NULL;
-  }
-}
 
 static const char* eval_expr_list(Node* expr_list, bool first_comma)
 {
@@ -357,23 +145,77 @@ static const char* eval_expr_list(Node* expr_list, bool first_comma)
   return result;
 }
 
+static const char* eval_static_call(const char* ssym, Node* arg_list)
+{
+  TyperRecord* tr = typer_query(ssym);
+  // In case this is a call to a method '#' must be replaced with '.' from here
+  // on.
+  ssym = util_replace(ssym, '#', ".");
+
+  assert(tr != NULL);
+  int num_args = node_num_children(arg_list);
+  int min_params = num_args;
+  int num_params = tr->num_params;
+  bool is_vararg = false;
+
+  // Check if vararg
+  if (tr->num_params > 0 and
+      tr->param_types[tr->num_params-1] != NULL
+       and strequal("*", tr->param_types[tr->num_params-1])){
+    is_vararg = true;
+    min_params = tr->num_params - 1;
+    if (num_args < min_params)
+      err_node(arg_list, "'%s' called with %d arguments but expect at least %d",
+               ssym, num_args, min_params);
+  } else {
+    if (tr->num_params != num_args)
+      err_node(arg_list, "'%s' called with %d arguments but expect %d", ssym,
+               num_args, tr->num_params);
+  }
+  const char* buf = mem_asprintf("func_call%d(%s", num_params,
+                                 tbl_get_ssym(ssym));
+  for (int i = 0; i < min_params; i++){
+    const char* param_type = tr->param_types[i];
+    Node* arg = node_get_child(arg_list, i);
+    const char* arg_type = typer_infer(arg);
+
+    if (typer_needs_check(param_type, arg_type)){
+      buf = mem_asprintf("%s, obj_verify_assign(%s, %s)", buf, eval_expr(arg),
+                         tbl_get_type(param_type));
+    } else {
+      buf = mem_asprintf("%s, %s", buf, eval_expr(arg));
+    }
+  }
+  if (is_vararg){
+    buf = mem_asprintf("%s, tuple_to_val(%d", buf, num_args - min_params);
+    for (int i = min_params; i < num_args; i++){
+      Node* arg = node_get_child(arg_list, i);
+      buf = mem_asprintf("%s, %s", buf, eval_expr(arg));
+    }
+    buf = mem_asprintf("%s)", buf);
+  }
+  buf = mem_asprintf("%s)", buf);
+
+  return buf;
+}
+
 static const char* eval_obj_call(Node* obj, const char* method_name,
                              Node* expr_list)
 {
-//  const char* type = infer_type(obj);
-//  if (type == NULL) {
-    return mem_asprintf("method_call%d(%s, %s %s)",
-                        node_num_children(expr_list),
-                        eval_expr(obj),
-                        tbl_get_dsym(method_name),
-                        eval_expr_list(expr_list, true));
-//  } else {
-//    return mem_asprintf("func_call%d(%s, %s %s)",
-//                        node_num_children(expr_list) + 1,
-//                        tbl_get_ssym(mem_asprintf("%s.%s", type, method_name)),
-//                        eval_expr(obj),
-//                        eval_expr_list(expr_list, true));
-//  }
+    const char* type = typer_infer(obj);
+    if (type == NULL) {
+      return mem_asprintf("method_call%d(%s, %s %s)",
+                          node_num_children(expr_list),
+                          eval_expr(obj),
+                          tbl_get_dsym(method_name),
+                          eval_expr_list(expr_list, true));
+    } else {
+      Node* arg_list = node_new_expr_list();
+      node_add_child(arg_list, obj);
+      node_extend_children(arg_list, expr_list);
+      return eval_static_call(mem_asprintf("%s#%s", type, method_name),
+                              arg_list);
+    }
 }
 
 // Returns code for accessing index (if assign = NULL), or setting index
@@ -415,56 +257,6 @@ static const char* eval_expr_as_id(Node* expr)
       // static symbol.
       return NULL;
   }
-}
-
-static const char* eval_static_call(const char* ssym, Node* arg_list)
-{
-  TyperRecord* tr = typer_query(ssym);
-  assert(tr != NULL);
-  int num_args = node_num_children(arg_list);
-  int min_params = num_args;
-  int num_params = tr->num_params;
-  bool is_vararg = false;
-
-  // Check if vararg
-  if (tr->num_params > 0 and
-      tr->param_types[tr->num_params-1] != NULL
-       and strequal("*", tr->param_types[tr->num_params-1])){
-    is_vararg = true;
-    min_params = tr->num_params - 1;
-    if (num_args < min_params)
-      err_node(arg_list, "'%s' called with %d arguments but expect at least %d",
-               ssym, num_args, min_params);
-  } else {
-    if (tr->num_params != num_args)
-      err_node(arg_list, "'%s' called with %d arguments but expect %d", ssym,
-               num_args, tr->num_params);
-  }
-  const char* buf = mem_asprintf("func_call%d(%s", num_params,
-                                 tbl_get_ssym(ssym));
-  for (int i = 0; i < min_params; i++){
-    const char* param_type = tr->param_types[i];
-    Node* arg = node_get_child(arg_list, i);
-    const char* arg_type = infer_type(arg);
-
-    if (typer_needs_check(param_type, arg_type)){
-      buf = mem_asprintf("%s, obj_verify_assign(%s, %s)", buf, eval_expr(arg),
-                         tbl_get_type(param_type));
-    } else {
-      buf = mem_asprintf("%s, %s", buf, eval_expr(arg));
-    }
-  }
-  if (is_vararg){
-    buf = mem_asprintf("%s, tuple_to_val(%d", buf, num_args - min_params);
-    for (int i = min_params; i < num_args; i++){
-      Node* arg = node_get_child(arg_list, i);
-      buf = mem_asprintf("%s, %s", buf, eval_expr(arg));
-    }
-    buf = mem_asprintf("%s)", buf);
-  }
-  buf = mem_asprintf("%s)", buf);
-
-  return buf;
 }
 
 static const char* eval_expr(Node* expr)
@@ -624,6 +416,7 @@ static const char* eval_expr(Node* expr)
           sbuf_printf(sb_init2, "  %s = klass_get_field_int("
                       "%s, dsym_get(\"%s\"));\n", field_int_var,
                       context_class_c_name, name);
+          dict_set(context_class_dict, &name, &field_int_var);
         }
         return mem_asprintf("_c_data[%s]", field_int_var);
       }
@@ -671,7 +464,7 @@ static void gen_stmtlist_no_locals(Node* stmtlist);
 static void gen_stmt_assign2(Node* lvalue, Node* rvalue)
 {
   const char* right = eval_expr(rvalue);
-  const char* rtype = infer_type(rvalue);
+  const char* rtype = typer_infer(rvalue);
   switch(lvalue->type){
     case ID:
       {
@@ -683,7 +476,7 @@ static void gen_stmt_assign2(Node* lvalue, Node* rvalue)
           break;
         }
 
-        if (var->type == NULL or compare_types(var->type, rtype)){
+        if (not typer_needs_check(var->type, rtype)){
           sbuf_printf(sb_contents, "  %s = %s;\n", var->c_name, right);
         } else {
           sbuf_printf(sb_contents, "  %s = obj_verify_assign(%s, %s);\n",
@@ -700,7 +493,7 @@ static void gen_stmt_assign2(Node* lvalue, Node* rvalue)
           err_node(lvalue, "variable '%s' already defined", ripe_name);
         }
         const char* c_name = register_local(ripe_name, type);
-        if (compare_types(type, rtype)){
+        if (not typer_needs_check(type, rtype)){
           sbuf_printf(sb_contents, "  Value %s = %s;\n",
                       c_name, right);
         } else {
@@ -741,13 +534,13 @@ static void gen_stmt_assign(Node* left, Node* right)
     counter++;
     char* tmp_variable = mem_asprintf("_tmp_assign_%d", counter);
 
-    Node* id_tmp = create_id(tmp_variable);
+    Node* id_tmp = node_new_id(tmp_variable);
     gen_stmt_assign2(id_tmp,
                      right);
 
     for (int i = 0; i < node_num_children(left); i++){
       Node* l = node_get_child(left, i);
-      gen_stmt_assign2(l, create_expr_index1(id_tmp, create_int(i+1) ));
+      gen_stmt_assign2(l, node_new_expr_index1(id_tmp, node_new_int(i+1) ));
     }
   }
 }
@@ -828,16 +621,16 @@ static void gen_stmt(Node* stmt)
         static int iterator_counter = 0;
         iterator_counter++;
         const char* rip_iterator = mem_asprintf("_iterator%d", iterator_counter);
-        Node* id_iterator = create_id(rip_iterator);
+        Node* id_iterator = node_new_id(rip_iterator);
         Node* expr = node_get_child(stmt, 1);
         Node* lvalue_list = node_get_child(stmt, 0);
 
         push_locals();
-        gen_stmt_assign2(id_iterator, create_field_call(expr, "get_iter", 0));
-        Node* iterator_call = create_field_call(id_iterator, "iter", 0);
+        gen_stmt_assign2(id_iterator, node_new_field_call(expr, "get_iter", 0));
+        Node* iterator_call = node_new_field_call(id_iterator, "iter", 0);
 
         sbuf_printf(sb_contents, "  for(;;){");
-        Node* id_temp = create_id(mem_asprintf("_iterator_temp%d",
+        Node* id_temp = node_new_id(mem_asprintf("_iterator_temp%d",
                                               iterator_counter));
         gen_stmt_assign2(id_temp, iterator_call);
         sbuf_printf(sb_contents, "  if (%s == VALUE_EOF) break;\n", eval_expr(id_temp));
@@ -966,26 +759,20 @@ static bool check_vararg(Node* param_list)
 // Constructs the text of the form
 //   Value __param1, Value __param2, Value __param3
 // and registers locals while doing that.
-static const char* gen_params(Node* param_list, const char** checkers)
+static const char* gen_params(Node* param_list)
 {
   StringBuf sb_params;
-  StringBuf sb_checkers;
   sbuf_init(&sb_params, "");
-  sbuf_init(&sb_checkers, "");
   for (uint i = 0; i < param_list->children.size; i++){
     Node* param = node_get_child(param_list, i);
 
     const char* type = NULL;
+    if (node_has_string(param, "array")) type = "Tuple";
     if (node_num_children(param) > 0){
       type = eval_type(node_get_child(param, 0));
     }
     const char* var_name = node_get_string(param, "name");
     const char* c_var_name = register_local(var_name, type);
-    if (type != NULL){
-      sbuf_printf(&sb_checkers, "obj_verify(%s, %s);",
-                                c_var_name,
-                                tbl_get_type(type));
-    }
     if (i == 0){
       sbuf_printf(&sb_params, "Value %s", c_var_name);
     } else {
@@ -993,9 +780,7 @@ static const char* gen_params(Node* param_list, const char** checkers)
     }
   }
   const char* s = mem_strdup(sb_params.str);
-  *checkers = mem_strdup(sb_checkers.str);
   sbuf_deinit(&sb_params);
-  sbuf_deinit(&sb_checkers);
   return s;
 }
 
@@ -1018,8 +803,9 @@ static void gen_function(Node* function)
   counter++;
   const char* name = mem_asprintf("%s%s", module_get_prefix(),
                                   node_get_string(function, "name"));
-  Node* param_list = node_get_child(function, 0);
-  Node* stmt_list = node_get_child(function, 1);
+  Node* rv_type = node_get_child(function, 0);
+  Node* param_list = node_get_child(function, 1);
+  Node* stmt_list = node_get_child(function, 2);
   uint num_params = param_list->children.size;
   context2 = CONTEXT_FUNC;
 
@@ -1028,10 +814,8 @@ static void gen_function(Node* function)
   const char* c_name = mem_asprintf("_func%u_%s",
                                     counter,
                                     util_escape(name));
-  const char* checkers;
   sbuf_printf(sb_contents, "static Value %s(%s){\n",
-              c_name, gen_params(param_list, &checkers));
-  sbuf_printf(sb_contents, "  %s\n", checkers);
+              c_name, gen_params(param_list));
   sbuf_printf(sb_init1, "  Value v_%s = func%u_to_val(%s);\n",
               c_name, num_params, c_name);
   if (check_vararg(param_list))
@@ -1055,8 +839,9 @@ static void gen_constructor(Node* constructor)
   const char* c_constructor_name = mem_asprintf("_cons%d_%s", counter,
                                         util_escape(r_constructor_name));
 
-  Node* param_list = node_get_child(constructor, 0);
-  Node* stmt_list = node_get_child(constructor, 1);
+  Node* rv_type = node_get_child(constructor, 0);
+  Node* param_list = node_get_child(constructor, 1);
+  Node* stmt_list = node_get_child(constructor, 2);
   int num_params = param_list->children.size;
 
   push_locals();
@@ -1069,11 +854,9 @@ static void gen_constructor(Node* constructor)
   sbuf_printf(sb_init1, "  ssym_set(\"%s\", %s);\n",
               r_constructor_name, c_value);
 
-  const char* checkers;
   sbuf_printf(sb_contents, "static Value %s(%s){\n",
-              c_constructor_name, gen_params(param_list, &checkers));
-  set_local("self", "__self", NULL);
-  sbuf_printf(sb_contents, "  %s\n", checkers);
+              c_constructor_name, gen_params(param_list));
+  set_local("self", "__self", context_class_name);
   sbuf_printf(sb_contents, "  %s* _c_data;\n", context_class_typedef);
   sbuf_printf(sb_contents, "  Value __self = obj_new(%s, (void**) &_c_data);\n",
               context_class_c_name);
@@ -1084,7 +867,8 @@ static void gen_constructor(Node* constructor)
   sbuf_printf(sb_contents, "}\n");
 }
 
-static void gen_method(const char* method_name, Node* param_list, Node* stmt_list)
+static void gen_method(const char* method_name, Node* rv_type,
+                       Node* param_list, Node* stmt_list)
 {
   context2 = CONTEXT_METHOD;
 
@@ -1097,6 +881,7 @@ static void gen_method(const char* method_name, Node* param_list, Node* stmt_lis
 
   // Prepend a node for "self"
   Node* node_self = node_new(PARAM);
+  node_add_child(node_self, node_new_type(context_class_name));
   node_set_string(node_self, "name", "self");
   node_prepend_child(param_list, node_self);
   int num_params = param_list->children.size;
@@ -1114,10 +899,8 @@ static void gen_method(const char* method_name, Node* param_list, Node* stmt_lis
                            method_name,
                            context2_method_value_name);
 
-  const char* checkers;
   sbuf_printf(sb_contents, "static Value %s(%s){\n",
-              c_method_name, gen_params(param_list, &checkers));
-  sbuf_printf(sb_contents, "  %s\n", checkers);
+              c_method_name, gen_params(param_list));
   if (context_class_type == CLASS_CDATA_OBJECT
       or context_class_type == CLASS_FIELD_OBJECT){
     sbuf_printf(sb_contents, "  %s* _c_data;\n", context_class_typedef);
@@ -1227,38 +1010,38 @@ static void gen_class(Node* klass)
     Node* n = node_get_child(ast, i);
     switch(n->type){
       case FUNCTION:
-        if (node_has_string(n, "annotation")){
-          const char* annotation = node_get_string(n, "annotation");
-          if (strcmp(annotation, "constructor")==0){
-            gen_constructor(n);
-          } else if (strcmp(annotation, "virtual_set")==0){
-            const char* var_name = node_get_string(n, "name");
-            gen_method(mem_asprintf("set_%s", var_name),
-                        node_get_child(n, 0),
-                        node_get_child(n, 1));
-            sbuf_printf(sb_init1,
-                        "  klass_new_virtual_writer(%s, dsym_get(\"%s\"), %s);\n",
-                        context_class_c_name,
-                        var_name,
-                        context2_method_value_name);
-          } else if (strcmp(annotation, "virtual_get")==0){
-            const char* var_name = node_get_string(n, "name");
-            gen_method(mem_asprintf("get_%s", var_name),
-                        node_get_child(n, 0),
-                        node_get_child(n, 1));
-            sbuf_printf(sb_init1,
-                        "  klass_new_virtual_reader(%s, dsym_get(\"%s\"), %s);\n",
-                        context_class_c_name,
-                        var_name,
-                        context2_method_value_name);
+        {
+          Node* rv_type = node_get_child(n, 0);
+          Node* param_list = node_get_child(n, 1);
+          Node* stmt_list = node_get_child(n, 2);
+          const char* name = node_get_string(n, "name");
+          if (node_has_string(n, "annotation")){
+            const char* annotation = node_get_string(n, "annotation");
+            if (strcmp(annotation, "constructor")==0){
+              gen_constructor(n);
+            } else if (strcmp(annotation, "virtual_set")==0){
+              gen_method(mem_asprintf("set_%s", name),
+                         rv_type, param_list, stmt_list);
+              sbuf_printf(sb_init1,
+                          "  klass_new_virtual_writer(%s, dsym_get(\"%s\"), %s);\n",
+                          context_class_c_name,
+                          name,
+                          context2_method_value_name);
+            } else if (strcmp(annotation, "virtual_get")==0){
+              gen_method(mem_asprintf("get_%s", name),
+                         rv_type, param_list, stmt_list);
+              sbuf_printf(sb_init1,
+                          "  klass_new_virtual_reader(%s, dsym_get(\"%s\"), %s);\n",
+                          context_class_c_name,
+                          name,
+                          context2_method_value_name);
+            } else {
+              err_node(n, "function annotated with '%s'"
+                          " not allowed inside a class", annotation);
+            }
           } else {
-            err_node(n, "function annotated with '%s'"
-                        " not allowed inside a class", annotation);
+            gen_method(name, rv_type, param_list, stmt_list);
           }
-        } else {
-          gen_method(node_get_string(n, "name"),
-                      node_get_child(n, 0),
-                      node_get_child(n, 1));
         }
         break;
       case C_CODE:
@@ -1371,7 +1154,6 @@ static void gen_toplevels(Node* ast)
 
 int generate(Node* ast, const char* module_name, const char* i_source_filename)
 {
-  locals_init();
   tables_init();
   context = CONTEXT_NONE;
 

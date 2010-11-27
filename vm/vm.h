@@ -74,9 +74,8 @@ extern int sys_argc;
 extern char** sys_argv;
 
 extern Klass* klass_Nil;
-extern Klass* klass_False;
-extern Klass* klass_True;
 extern Klass* klass_Eof;
+extern Klass* klass_Bool;
 extern Klass* klass_Integer;
 extern Klass* klass_Double;
 extern Klass* klass_Array1;
@@ -172,10 +171,10 @@ static inline Klass* obj_klass(Value v_obj)
       if (v_masked == v_obj) return klass_Nil;
       return *((Klass**) unpack_ptr(v_obj));
     case 0b0100:
-      if (v_masked == v_obj) return klass_False;
+      if (v_masked == v_obj) return klass_Bool;
       return *((Klass**) unpack_ptr(v_obj));
     case 0b1000:
-      if (v_masked == v_obj) return klass_True;
+      if (v_masked == v_obj) return klass_Bool;
       return *((Klass**) unpack_ptr(v_obj));
     case 0b1100:
       if (v_masked == v_obj) return klass_Eof;

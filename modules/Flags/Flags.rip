@@ -2,13 +2,11 @@ class Nil
   to_string()
     return "nil"
 
-class False
+class Bool
   to_string()
+    if self
+      return "true"
     return "false"
-
-class True
-  to_string()
-    return "true"
 
 class Eof
   to_string()

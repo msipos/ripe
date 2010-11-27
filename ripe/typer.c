@@ -107,27 +107,34 @@ void typer_load(FILE* f)
   }
 }
 
-static const char** typer_params(Node* param_list, int* num_params)
+static const char** typer_params(Node* param_list, int* num_params,
+                                 const char* first)
 {
   *num_params = node_num_children(param_list);
+  if (first != NULL) (*num_params)++;
   const char** out = mem_malloc((*num_params)*sizeof(const char*));
+  if (first != NULL) out[0] = mem_strdup(first);
+
   for (int i = 0; i < param_list->children.size; i++){
+    int j = i;
+    if (first != NULL) j++;
     Node* n = node_get_child(param_list, i);
     assert(n->type == PARAM);
     if (n->children.size == 0){
-      if (node_has_string(n, "array")) out[i] = "*";
-      else out[i] = NULL;
+      if (node_has_string(n, "array")) out[j] = "*";
+      else out[j] = NULL;
     } else {
-      out[i] = eval_type(node_get_child(n, 0));
+      out[j] = eval_type(node_get_child(n, 0));
     }
   }
   return out;
 }
 
-static void typer_add3(const char* name, const char* rv, Node* params)
+static void typer_add3(const char* name, const char* rv, Node* params,
+                       const char* first)
 {
   int num_params;
-  const char** param_types = typer_params(params, &num_params);
+  const char** param_types = typer_params(params, &num_params, first);
   typer_add2(name, rv, num_params, param_types);
 }
 
@@ -139,19 +146,19 @@ static void typer_ast_class(const char* class_name, Node* ast)
       case FUNCTION:
         {
           const char* name = node_get_string(n, "name");
+          Node* param_list = node_get_child(n, 1);
+          const char* rv = eval_type(node_get_child(n, 0));
           if (node_has_string(n, "annotation")){
             const char* annotation = node_get_string(n, "annotation");
             if (strcmp(annotation, "constructor") == 0){
               typer_add3(mem_asprintf("%s.%s", class_name, name),
-                         class_name,
-                         node_get_child(n, 0));
+                         class_name, param_list, NULL);
             } else {
               // Ignore.
             }
           } else {
             typer_add3(mem_asprintf("%s#%s", class_name, name),
-                       NULL,
-                       node_get_child(n, 0));
+                       rv, param_list, class_name);
           }
         }
         break;
@@ -170,8 +177,9 @@ void typer_ast(Node* ast)
         {
           const char* name = mem_asprintf("%s%s", module_get_prefix(),
                                                   node_get_string(n, "name"));
-
-          typer_add3(name, NULL, node_get_child(n, 0));
+          const char* rv = eval_type(node_get_child(n, 0));
+          Node* param_list = node_get_child(n, 1);
+          typer_add3(name, rv, param_list, NULL);
         }
         break;
       case MODULE:
@@ -200,4 +208,47 @@ bool typer_needs_check(const char* destination, const char* source)
   if (source == NULL) return true;
   if (strequal(destination, source)) return false;
   err("require type '%s' but got type '%s'", destination, source);
+}
+
+const char* typer_infer(Node* expr)
+{
+  switch(expr->type){
+    case K_NIL:
+      return "Nil";
+    case K_EOF:
+      return "Eof";
+    case ID:
+      {
+        Variable* var = query_local_full(expr->text);
+        if (var == NULL) return NULL;
+        return var->type;
+      }
+    case DOUBLE:
+      return "Double";
+    case STRING:
+      return "String";
+    case SYMBOL:
+    case INT:
+    case CHARACTER:
+      return "Integer";
+    case EXPR_ARRAY:
+      return "Array1";
+    case EXPR_RANGE_BOUNDED:
+    case EXPR_RANGE_BOUNDED_LEFT:
+    case EXPR_RANGE_BOUNDED_RIGHT:
+    case EXPR_RANGE_UNBOUNDED:
+      return "Range";
+    case K_TRUE:
+    case K_FALSE:
+    case EXPR_IS_TYPE:
+      return "Bool";
+    case EXPR_FIELD_CALL:
+    case EXPR_INDEX:
+    case EXPR_ID_CALL:
+    case EXPR_FIELD:
+    case EXPR_AT_VAR:
+    case C_CODE:
+    default:
+      return NULL;
+  }
 }

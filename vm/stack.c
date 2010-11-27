@@ -30,7 +30,7 @@ typedef struct {
   char* annotation;
 } Element;
 
-#define STACK_SIZE 100000
+#define STACK_SIZE 200000
 __thread Element stack[STACK_SIZE];
 __thread int64 stack_idx = 0;
 

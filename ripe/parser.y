@@ -50,37 +50,40 @@
 %token   C_CODE
 // Keywords are labeled with K_ prefix. All keywords should appear in lex_get2()
 // in addition to here.
-%token   K_MODULE     "module"
-%token   K_RETURN     "return"
-%token   K_TRUE       "true"
-%token   K_FALSE      "false"
-%token   K_NIL        "nil"
-%token   K_AND        "and"
-%token   K_OR         "or"
-%token   K_NOT        "not"
-%token   K_IF         "if"
-%token   K_ELSE       "else"
-%token   K_ELIF       "elif"
-%token   K_WHILE      "while"
-%token   K_BREAK      "break"
-%token   K_CONTINUE   "continue"
-%token   K_LOOP       "loop"
-%token   K_IS         "is"
-%token   K_EOF        "eof"
-%token   K_TRY        "try"
-%token   K_CATCH      "catch"
-%token   K_FINALLY    "finally"
-%token   K_RAISE      "raise"
-%token   K_FOR        "for"
-%token   K_IN         "in"
-%token   K_PASS       "pass"
-%token   K_CLASS      "class"
+%token   K_MODULE      "module"
+%token   K_RETURN      "return"
+%token   K_TRUE        "true"
+%token   K_FALSE       "false"
+%token   K_NIL         "nil"
+%token   K_AND         "and"
+%token   K_OR          "or"
+%token   K_NOT         "not"
+%token   K_IF          "if"
+%token   K_ELSE        "else"
+%token   K_ELIF        "elif"
+%token   K_WHILE       "while"
+%token   K_BREAK       "break"
+%token   K_CONTINUE    "continue"
+%token   K_LOOP        "loop"
+%token   K_IS          "is"
+%token   K_EOF         "eof"
+%token   K_TRY         "try"
+%token   K_CATCH       "catch"
+%token   K_FINALLY     "finally"
+%token   K_RAISE       "raise"
+%token   K_FOR         "for"
+%token   K_IN          "in"
+%token   K_PASS        "pass"
+%token   K_CLASS       "class"
+%token   K_CONSTRUCTOR "constructor"
+%token   K_VIRTUAL_GET "virtual_get"
+%token   K_VIRTUAL_SET "virtual_set"
+// Operator-like
 %token   OP_EQUAL     "=="
 %token   OP_NOT_EQUAL "!="
 %token   OP_ASSIGN    ":="
 %token   OP_LTE       "<="
 %token   OP_GTE       ">="
-// Operator-like
 %left    "or"
 %left    "and"
 %left    "is"
@@ -116,17 +119,24 @@ toplevel:  "class" ID START toplevel_list END
 toplevel:  ID optassign_plus   { $$ = node_new(TL_VAR);
                                  node_set_string($$, "annotation", $1->text);
                                  node_add_child($$, $2); };
-toplevel:  ID ID '(' param_star ')' block
+toplevel:  annotation ID '(' param_star ')' block
                                { $$ = node_new(FUNCTION);
-                                 node_set_string($$, "annotation", $1->text);
+                                 node_set_string($$, "annotation",
+                                                     $1->text);
                                  node_set_string($$, "name", $2->text);
+                                 node_add_child($$, node_new_type(NULL));
                                  node_add_child($$, $4);
                                  node_add_child($$, $6); };
 toplevel:  ID '(' param_star ')' block
                                { $$ = node_new(FUNCTION);
                                  node_set_string($$, "name", $1->text);
+                                 node_add_child($$, node_new_type(NULL));
                                  node_add_child($$, $3);
                                  node_add_child($$, $5); };
+
+annotation: "constructor"      { $$ = $1; };
+annotation: "virtual_get"      { $$ = $1; };
+annotation: "virtual_set"      { $$ = $1; };
 
 block:     START stmt_list END { $$ = $2; };
 

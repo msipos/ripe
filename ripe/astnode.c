@@ -49,6 +49,14 @@ void node_add_child(Node* parent, Node* child)
   array_append( &(parent->children), child);
 }
 
+void node_extend_children(Node* new_parent, Node* old_parent)
+{
+  for (int i = 0; i < node_num_children(old_parent); i++){
+    Node* child = node_get_child(old_parent, i);
+    node_add_child(new_parent, child);
+  }
+}
+
 void node_prepend_child(Node* parent, Node* child)
 {
   array_prepend( &(parent->children), sizeof(Node*), &child);
@@ -106,4 +114,56 @@ static void node_draw_r(Node* ast, int level)
 void node_draw(Node* ast)
 {
   node_draw_r(ast, 0);
+}
+
+Node* node_new_id(const char* id)
+{
+  Node* rv = node_new(ID);
+  rv->text = mem_strdup(id);
+  return rv;
+}
+
+Node* node_new_int(int64 i)
+{
+  Node* rv = node_new(INT);
+  rv->text = mem_asprintf("%"PRId64, i);
+  return rv;
+}
+
+Node* node_new_expr_index1(Node* left, Node* index)
+{
+  Node* expr_list = node_new(EXPR_LIST);
+  node_add_child(expr_list, index);
+  Node* rv = node_new(EXPR_INDEX);
+  node_add_child(rv, left);
+  node_add_child(rv, expr_list);
+  return rv;
+}
+
+Node* node_new_expr_list()
+{
+  return node_new(EXPR_LIST);
+}
+
+Node* node_new_field_call(Node* callee, char* field_name, int64 num, ...)
+{
+  Node* rv = node_new(EXPR_FIELD_CALL);
+  node_add_child(rv, callee);
+  node_set_string(rv, "name", field_name);
+  Node* expr_list = node_new(EXPR_LIST);
+  va_list ap;
+  va_start(ap, num);
+  for (int64 i = 0; i < num; i++){
+    node_add_child(expr_list, va_arg(ap, Node*));
+  }
+  va_end(ap);
+  node_add_child(rv, expr_list);
+  return rv;
+}
+
+Node* node_new_type(const char* type)
+{
+  Node* rv = node_new(TYPE);
+  node_set_string(rv, "name", mem_strdup(type));
+  return rv;
 }

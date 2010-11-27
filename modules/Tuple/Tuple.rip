@@ -1,7 +1,12 @@
+#$ rdoc-file Tuple
+
 class Tuple
   $
     Tuple t;
   $
+  get_iter()
+    return TupleIterator.new(self)
+
   to_string()
     $
       char buf[1024];
@@ -18,3 +23,27 @@ class Tuple
 
   index(i)
     return $ tuple_index(&(@t), val_to_int64(__i)) $
+
+  virtual_get size()
+    return $ int64_to_val(@t.size) $
+
+#$ rdoc-name TupleIterator
+#$ rdoc-header TupleIterator
+#$ Iterator object over a Tuple (returns elements of the Tuple
+#$ sequentially).
+class TupleIterator
+  private t
+  private idx
+  private sz
+
+  constructor new(t)
+    @t = t
+    @idx = 1
+    @sz = t.size
+
+  iter()
+    if @idx > @sz
+      return eof
+    val = @t[@idx]
+    @idx = @idx + 1
+    return val

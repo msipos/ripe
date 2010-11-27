@@ -79,6 +79,9 @@ for                             { return K_FOR; }
 in                              { return K_IN; }
 pass                            { return K_PASS; }
 class                           { return K_CLASS; }
+constructor                     { return K_CONSTRUCTOR; }
+virtual_get                     { return K_VIRTUAL_GET; }
+virtual_set                     { return K_VIRTUAL_SET; }
 [A-Za-z_][A-Za-z0-9_?]*\!?      { return ID; }
 \&[A-Za-z_][A-Za-z0-9_?]*       { return SYMBOL; }
 .                               { return UNKNOWN; }

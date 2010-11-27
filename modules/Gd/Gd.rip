@@ -50,6 +50,15 @@ module Gd
       blue = $ int64_to_val(gdImageBlue(@image, color)) $
       return tuple(red, green, blue)
 
+    get_pixel_bw(x, y)
+      $
+        int color = gdImageGetPixel(@image, val_to_int64(__x)-1,
+                                            val_to_int64(__y)-1);
+        int bw = (gdImageRed(@image, color) + gdImageGreen(@image, color)
+               + gdImageBlue(@image, color))/3;
+      $
+      return $ int64_to_val(bw) $
+
     filled_rectangle_rgb(x1, y1, x2, y2, r, g, b)
       $
         int color = gdImageColorAllocate(@image,
@@ -89,6 +98,9 @@ module Gd
 
     virtual_get size_y()
       return $ int64_to_val(gdImageSY(@image)) $
+
+    destroy()
+      $ gdImageDestroy(@image); $
 
   color(image, r, g, b)
     $

@@ -60,6 +60,7 @@ void  node_add_child(Node* parent, Node* child);
 void node_prepend_child(Node* parent, Node* child);
 uint  node_num_children(Node* parent);
 Node* node_get_child(Node* parent, uint i);
+void node_extend_children(Node* new_parent, Node* old_parent);
 
 // Properties
 void node_set_string(Node* n, const char* key, const char* value);
@@ -67,6 +68,13 @@ char* node_get_string(Node* n, const char* key);
 bool node_has_string(Node* n, const char* key);
 
 void node_draw(Node* ast);
+
+Node* node_new_id(const char* id);
+Node* node_new_int(int64 i);
+Node* node_new_expr_index1(Node* left, Node* index);
+Node* node_new_expr_list();
+Node* node_new_field_call(Node* callee, char* field_name, int64 num, ...);
+Node* node_new_type(const char* type);
 
 //////////////////////////////////////////////////////////////////////////////
 // ripe/ast.c
@@ -138,6 +146,7 @@ TyperRecord* typer_query(const char* name);
 void typer_ast(Node* ast);
 void typer_dump(FILE* f);
 void typer_load(FILE* f);
+const char* typer_infer(Node* expr);
 bool typer_needs_check(const char* destination, const char* source);
 
 //////////////////////////////////////////////////////////////////////////////
@@ -210,5 +219,36 @@ int rc_lex();
 
 #include "ripe/parser.h"
 #include "ripe/scanner.h"
+
+//////////////////////////////////////////////////////////////////////////////
+// ripe/util.c
+//////////////////////////////////////////////////////////////////////////////
+
+// Remove first and last character of input.
+const char* util_trim_ends(const char* input);
+// In str, replace each character c by string replace
+const char* util_replace(const char* str, const char c, const char* replace);
+// Replace all occurences of '?', '!' and '.' with '_'
+const char* util_escape(const char* input);
+// Escape and prepend "__".
+const char* util_make_c_name(const char* ripe_name);
+
+//////////////////////////////////////////////////////////////////////////////
+// ripe/vars.c
+//////////////////////////////////////////////////////////////////////////////
+
+typedef struct {
+  const char* c_name;
+  const char* ripe_name;
+  const char* type;
+} Variable;
+
+void push_locals();
+void pop_locals();
+// TODO: Clear up confusion between set_local and register_local
+void set_local(const char* ripe_name, const char* c_name, const char* type);
+const char* register_local(const char* ripe_name, const char* type);
+Variable* query_local_full(const char* ripe_name);
+const char* query_local(const char* ripe_name);
 
 #endif

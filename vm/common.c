@@ -19,9 +19,8 @@ int sys_argc;
 char** sys_argv;
 
 Klass* klass_Nil;
-Klass* klass_False;
-Klass* klass_True;
 Klass* klass_Eof;
+Klass* klass_Bool;
 Klass* klass_Integer;
 Klass* klass_Double;
 Klass* klass_Array1;
@@ -36,9 +35,8 @@ Value dsym_to_string;
 void common_init_phase15()
 {
   klass_Nil = klass_get(dsym_get("Nil"));
-  klass_False = klass_get(dsym_get("False"));
-  klass_True = klass_get(dsym_get("True"));
   klass_Eof = klass_get(dsym_get("Eof"));
+  klass_Bool = klass_get(dsym_get("Bool"));
   klass_Integer = klass_get(dsym_get("Integer"));
   klass_Double = klass_get(dsym_get("Double"));
   klass_Array1 = klass_get(dsym_get("Array1"));
