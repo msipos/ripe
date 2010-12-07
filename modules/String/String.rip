@@ -45,22 +45,11 @@ class String
   #$ rdoc-header String.find(String substring)
   #$ Finds the index of the first occurence of substring in self.
   #$ If no occurence is found, it returns nil.
-  find(substring)
+  find(String substring)
     $
-      const char* substring = val_to_string(__substring);
-      const int64 sz = strlen(@s.str);
-      const char* str  = @s.str;
-      const int64 subsz = strlen(substring);
-      for (int64 i = 0; i < sz - subsz + 1; i++){
-        for (int64 j = 0; j < subsz; j++){
-          if (str[i+j] != substring[j]){
-            goto next;
-          }
-        }
-        return int64_to_val(i + 1);
-      next:
-        continue;
-      }
+      char* s = strstr(@s.str,
+                       val_to_string(__substring));
+      if (s) return int64_to_val(s - @s.str + 1);
       return VALUE_NIL;
     $
 

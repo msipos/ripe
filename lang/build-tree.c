@@ -13,8 +13,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "ripe/ripe.h"
+#include "lang/lang.h"
 #include "clib/stringbuf.h"
+#include <setjmp.h>
+
+jmp_buf jb;
 
 // Helper buffer for start conditions.
 StringBuf buf_sb;
@@ -33,7 +36,8 @@ int current_line;
 // This gets called from bison.
 void rc_error(const char*s)
 {
-   err("line %d: %s", current_line - 1, s);
+  build_tree_error = mem_asprintf("line %d: %s", current_line - 1, s);
+  longjmp(jb, 2);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -61,7 +65,9 @@ static Node* lex_read()
   int tok = yylex();
   current_line = yylineno;
   if (tok == UNKNOWN){
-    err("line %d: invalid characters '%s'", current_line, yytext);
+    build_tree_error = mem_asprintf("line %d: invalid characters '%s'",
+                                    current_line, yytext);
+    longjmp(jb, 1);
   }
   const char* token_text = yytext;
   if (tok == STRING) token_text = buf_sb.str;
@@ -162,7 +168,10 @@ int rc_lex()
             break;
           }
           if (pop_indentation < indentation) {
-            err("line %d: invalid indentation level", first->line);
+            build_tree_error = mem_asprintf(
+                                "line %d: invalid indentation level",
+                                first->line);
+            longjmp(jb, 1);
           }
         }
       }
@@ -190,42 +199,27 @@ int rc_lex()
 
 Node* rc_result;
 #include <errno.h>
+const char* build_tree_error;
 
 Node* build_tree(const char* filename)
 {
-  err_filename = filename;
   FILE* f = fopen(filename, "r");
-  if (f == NULL)
-    err("cannot open '%s' for reading: %s", filename, strerror(errno));
-
-  lex_init();
-  yyin = f;
-  rc_parse();
-  fclose(f);
-
-  return rc_result;
-}
-
-void dump_tokens(const char* filename)
-{
-  FILE* f = fopen(filename, "r");
-  lex_init();
-  yyin = f;
-
-  int cur = 2;
-  for (int i = 0; i < cur; i++) printf(" ");
-  printf("start\n");
-  for (int tok = rc_lex(); tok != 0; tok = rc_lex()){
-    if (tok == START)
-      cur += 2;
-    else if (tok == END)
-      cur -= 2;
-    else {
-      for (int i = 0; i < cur; i++) printf(" ");
-      printf("token: %4d line: %3d text: %s\n", tok, current_line, rc_lval->text);
-    }
+  if (f == NULL){
+    build_tree_error = mem_asprintf("cannot open '%s' for reading: %s",
+                                    filename, strerror(errno));
+    return NULL;
   }
-  for (int i = 0; i < cur; i++) printf(" ");
-  printf("end\n");
+  lex_init();
+  yyin = f;
+
+  if (!setjmp(jb)){
+    rc_parse();
+  } else {
+    // Came back via error
+    fclose(f);
+    return NULL;
+  }
+
   fclose(f);
+  return rc_result;
 }

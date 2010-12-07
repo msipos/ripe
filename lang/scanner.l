@@ -1,7 +1,7 @@
 /* Definitions */
 
 %{
-  #include "ripe/parser.h"
+  #include "lang/parser.h"
   // Some docs:
   // For the rules:
   //   - Rule that matches more text wins.
@@ -13,7 +13,7 @@
   void buf_cat(const char* text);
 %}
 
-%option outfile="ripe/scanner.c" header-file="ripe/scanner.h"
+%option outfile="lang/scanner.c" header-file="lang/scanner.h"
 %option noyywrap
 %option yylineno
 %option nounput

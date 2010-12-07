@@ -1,0 +1,11 @@
+$
+  #include "lang/lang.h"
+$
+
+module Ast
+  class Node
+    new_from_file(String filename)
+      pass
+
+  parse_file(String filename)
+    pass

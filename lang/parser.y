@@ -14,13 +14,13 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // Options:
-%defines "ripe/parser.h" // Write out definitions of the terminal symbols
-%output  "ripe/parser.c" // Location of parser output file
+%defines "lang/parser.h" // Write out definitions of the terminal symbols
+%output  "lang/parser.c" // Location of parser output file
 %name-prefix "rc_" // Define the prefix for all symbols
 %error-verbose  // Verbose errors
 
 %{
-  #include "ripe/ripe.h"
+  #include "lang/lang.h"
 
   Node* operator(Node* a, Node* op, Node* b)
   {

@@ -2,12 +2,11 @@
 
 # Possible build flags are "force", "quiet", "nodebug", "nogc", "profile"
 
-
 DATA_TYPES = ['Array1', 'Array2', 'Array3', 'Double', 'Flags', 'Integer', 'Map',
               'Range', 'Set', 'String', 'Tuple']
 STDLIB = ['Character', 'Err', 'Iterable', 'Math', 'Os', 'Out', 'Path',
           'Std', 'Stream', 'Test', 'Template', 'TextFile', 'Time']
-OPTIONAL_MODULES = ['Bio', 'Curl', 'Gd', 'Gsl', 'Json', 'MainLoop',
+OPTIONAL_MODULES = ['Ast', 'Bio', 'Curl', 'Gd', 'Gsl', 'Json', 'MainLoop',
                     'Povray', 'Pthread', 'Sci', 'Sdl', 'Speech', 'Xml']
 MODULES = DATA_TYPES + STDLIB
 DEF_MODULES = DATA_TYPES + STDLIB
@@ -48,7 +47,7 @@ if "nostack" in sys.argv:
 # Construct required directories
 required_dirs = ['bin', 'product', 'product/include', 'product/include/clib',
                  'product/include/vm', 'product/include/modules',
-                 'product/modules']
+                 'product/include/lang', 'product/modules']
 for d in required_dirs:
     tools.mkdir_safe(d)
 
@@ -73,36 +72,50 @@ clib_srcs = [
 clib_objs = tools.cons_objs(clib_srcs, clib_hs)
 
 ###############################################################################
+# LANG
+###############################################################################
+
+tools.cons_yacc('lang/parser.c', 'lang/parser.y',
+          ['lang/lang.h'] + clib_hs)
+tools.cons_flex('lang/scanner.c', 'lang/scanner.l',
+          ['lang/parser.h', 'lang/lang.h'] + clib_hs)
+
+lang_hs = [
+            'lang/lang.h',
+            'lang/parser.h',
+            'lang/scanner.h',
+          ]
+lang_srcs = [
+              'lang/astnode.c',
+              'lang/build-tree.c',
+              'lang/scanner.c',
+              'lang/parser.c',
+            ]
+lang_objs = tools.cons_objs(lang_srcs, lang_hs + clib_hs)
+# Construct VM object
+tools.link_objs(lang_objs, "lang/lang.o")
+
+###############################################################################
 # RIPE TOOLS
 ###############################################################################
 
-tools.cons_yacc('ripe/parser.c', 'ripe/parser.y',
-          ['ripe/ripe.h'] + clib_hs)
-tools.cons_flex('ripe/scanner.c', 'ripe/scanner.l',
-          ['ripe/parser.h'] + clib_hs)
 ripe_hs = [
             'ripe/ripe.h',
-            'ripe/parser.h',
-            'ripe/scanner.h'
           ]
 ripe_srcs = [
                'ripe/ast.c',
-               'ripe/astnode.c',
-               'ripe/build-tree.c',
                'ripe/cli.c',
                'ripe/dump.c',
                'ripe/error.c',
                'ripe/generator.c',
                'ripe/operator.c',
-               'ripe/parser.c',
                'ripe/ripe.c',
-               'ripe/scanner.c',
                'ripe/typer.c',
                'ripe/util.c',
                'ripe/vars.c'
              ]
-ripe_objs = tools.cons_objs(ripe_srcs, ripe_hs + clib_hs)
-tools.cons_bin('product/ripe', ripe_objs + clib_objs, [])
+ripe_objs = tools.cons_objs(ripe_srcs, ripe_hs + clib_hs + lang_hs)
+tools.cons_bin('product/ripe', ripe_objs + clib_objs + lang_objs, [])
 conf['RIPE'] = 'product/ripe'
 
 ###############################################################################
@@ -154,7 +167,7 @@ vm_objs = tools.cons_objs(vm_srcs, vm_hs + clib_hs)
 # Construct VM object
 tools.link_objs(vm_objs + clib_objs, "product/vm.o")
 
-include_headers = clib_hs + vm_hs + ['modules/modules.h']
+include_headers = clib_hs + vm_hs + ['modules/modules.h', 'lang/lang.h']
 for header in include_headers:
     tools.copy_file('product/include/' + header, header)
 f = open('product/ripe.conf', 'w')
@@ -184,10 +197,10 @@ for module in MODULES + OPTIONAL_MODULES:
 module_deps = vm_hs + clib_hs + ['modules/modules.h', 'product/ripe'] + type_infos
 failed_modules = []
 
-def cons_module(src, dest, module, required, extra_CFLAGS=''):
+def cons_module(src, dest, module, required, extra_CFLAGS='', extra_objs=''):
     if tools.depends(dest, module_deps + [src]):
         tools.pprint('MOD', src, dest)
-        args = ['product/ripe', '-n', module, '-c', src, '-o', dest,
+        args = ['product/ripe', '-n', module, '-c', src, extra_objs, '-o', dest,
                         '-f', '"%s"' % extra_CFLAGS]
         if conf["VERBOSITY"] > 1:
             args.append('-v')
@@ -208,21 +221,24 @@ def build_module(module, required):
         tools.copy_file('product/modules/%s/%s.meta' % (module, module), metafile)
     meta = tools.load_meta(metafile)
     extra_CFLAGS = ''
+    extra_objs = ''
     if meta.has_key('includes'):
-        extra_CFLAGS = meta['includes']
-
+        extra_CFLAGS = extra_CFLAGS + meta['includes']
+    if meta.has_key('objs'):
+        extra_objs = meta['objs']
     if meta.has_key('builder'):
         builder = meta['builder']
         tools.call([builder], conf)
     else:
         path = 'modules/%s/%s.rip' % (module, module)
         if os.path.exists(path):
-            cons_module(path, out, module, required, extra_CFLAGS)
+            cons_module(path, out, module, required, extra_CFLAGS, extra_objs)
             return
         else:
             path = 'modules/%s/%s.c' % (module, module)
             if os.path.exists(path):
-                cons_module(path, out, module, required, extra_CFLAGS)
+                cons_module(path, out, module, required, extra_CFLAGS,
+                            extra_objs)
                 return
             else:
                 failed_modules.append(module)

@@ -16,3 +16,7 @@ test/suite/textfile
 *.exe
 doc/*.html
 ripedoc/ripedoc
+lang/parser.c
+lang/parser.h
+lang/scanner.c
+lang/scanner.h

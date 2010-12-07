@@ -200,6 +200,7 @@ void type_info_from_modules(const char* ignore)
 void type_info(const char* in_filename)
 {
   Node* ast = build_tree(in_filename);
+  if (ast == NULL) err("%s", build_tree_error);
   typer_init();
   typer_ast(ast);
   typer_dump(stdout);
@@ -216,6 +217,7 @@ int compile_to_c(int num_files, const char** in_filenames,
     logging("compiling '%s' to '%s'", in_filename, out_filename);
 
     Node* ast = build_tree(in_filename);
+    if (ast == NULL) err("%s", build_tree_error);
     generate(ast, module_name, in_filename);
   }
 
@@ -230,8 +232,9 @@ int compile_to_c(int num_files, const char** in_filenames,
   return 0;
 }
 
-int compile_rip(int num_files, const char** in_filenames, const char* module_name,
-                const char* out_filename)
+int compile_rip(int num_files, const char** in_filenames,
+                int num_o_files, const char** in_o_filenames,
+                const char* module_name, const char* out_filename)
 {
   const char* tmp = tempnam(NULL, "ripe");
   const char* c_filename = mem_asprintf("%s.c", tmp);
@@ -240,17 +243,30 @@ int compile_rip(int num_files, const char** in_filenames, const char* module_nam
   for (int i = 0; i < num_files; i++){
     const char* in_path = in_filenames[i];
     Node* ast = build_tree(in_path);
+    if (ast == NULL) err("%s", build_tree_error);
     typer_ast(ast);
   }
 
-  if (compile_to_c(num_files, in_filenames, module_name, c_filename)){
-    remove(c_filename);
-    exit(1);
+  compile_to_c(num_files, in_filenames, module_name, c_filename);
+  if (num_o_files == 0){
+    compile_c(c_filename, out_filename);
+  } else {
+    tmp = tempnam(NULL, "ripe");
+    const char* o_filename = mem_asprintf("%s.o", tmp);
+    compile_c(c_filename, o_filename);
+    char* objs = mem_asprintf("%s", in_o_filenames[0]);
+    for (int i = 1; i < num_o_files; i++){
+      objs = mem_asprintf("%s %s", objs, in_o_filenames[i]);
+    }
+    char* cmd_line = mem_asprintf("ld -r %s %s -o %s",
+                                  objs, o_filename, out_filename);
+    logging(cmd_line);
+    if (system(cmd_line)){
+      err("while building module with objects");
+    }
+    remove(o_filename);
   }
-  if (compile_c(c_filename, out_filename)){
-    remove(c_filename);
-    exit(1);
-  }
+
   remove(c_filename);
   return 0;
 }
@@ -268,7 +284,7 @@ void add_ripe_source(const char* in_filename)
   counter++;
   const char* module_name = mem_asprintf("_User%d", counter);
 
-  compile_rip(1, &in_filename, module_name, o_filename);
+  compile_rip(1, &in_filename, 0, NULL, module_name, o_filename);
   module_add(module_name, o_filename, NULL, FLAG_CLEANUP);
 }
 
@@ -292,6 +308,7 @@ int build(const char* out_filename)
 int dump_c(const char* in_filename, const char* module_name)
 {
   Node* ast = build_tree(in_filename);
+  if (ast == NULL) err("%s", build_tree_error);
   typer_ast(ast);
 
   const char* tmp = tempnam(NULL, "ripe");
@@ -441,19 +458,24 @@ int main(int argc, char* const* argv)
       if (out_filename == NULL) out_filename = "out.o";
       if (module_name == NULL) module_name = "Module";
 
-      Array rip_files;
+      Array rip_files, o_files;
       array_init(&rip_files, const char*);
+      array_init(&o_files, const char*);
+
       for (int arg = optind; arg < argc; arg++){
         in_filename = argv[arg];
         const char* input_extension = path_get_extension(in_filename);
-        if (strcmp(input_extension, ".rip") == 0){
+        if (strequal(input_extension, ".rip")){
           array_append(&rip_files, in_filename);
+        } else if (strequal(input_extension, ".o")){
+          array_append(&o_files, in_filename);
         } else {
           err("unknown extension: '%s'", input_extension);
         }
       }
-      compile_rip(rip_files.size, (const char**) (rip_files.data), module_name,
-                  out_filename);
+      compile_rip(rip_files.size, (const char**) (rip_files.data),
+                  o_files.size, (const char**) (o_files.data),
+                  module_name, out_filename);
       return 0;
     case MODE_BUILD:
       if (module_name != NULL) warn("module name ignored in build mode");
@@ -481,6 +503,7 @@ int main(int argc, char* const* argv)
       if (module_name != NULL) warn("module name ignored in dump ast mode");
 
       Node* ast = build_tree(argv[optind]);
+      if (ast == NULL) err("%s", build_tree_error);
       node_draw(ast);
       break;
     case MODE_RUN:
