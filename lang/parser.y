@@ -81,6 +81,7 @@
 %token   K_VIRTUAL_GET "virtual_get"
 %token   K_VIRTUAL_SET "virtual_set"
 %token   K_GLOBAL      "global"
+%token   K_CONST       "const"
 // Operator-like
 %token   OP_EQUAL     "=="
 %token   OP_NOT_EQUAL "!="
@@ -100,33 +101,37 @@
 
 %% ////////////////////////////////////////////////////////////// Grammar rules
 
-program:   START toplevel_list END
-                               { rc_result = $2; };
+program:   START top_decls END { rc_result = $2; };
 
-// "top" declarations can only appear at the top of the file
-toplevel_list:     toplevel_list SEP toplevel
-                               { $$ = $1;
-                                 node_add_child($$, $3); };
-toplevel_list:     toplevel    { $$ = node_new(TOPLEVEL_LIST);
-                                 node_add_child($$, $1); };
-toplevel_list:     /* empty */ { $$ = node_new(TOPLEVEL_LIST); };
-
-toplevel:  "module" ID START toplevel_list END
-                               { $$ = node_new(MODULE);
-                                 node_set_string($$, "name", $2->text);
-                                 node_add_child($$, $4); };
-toplevel:  C_CODE              { $$ = $1; };
-toplevel:  "class" ID START toplevel_list END
-                               { $$ = node_new(CLASS);
-                                 node_set_string($$, "name", $2->text);
-                                 node_add_child($$, $4); };
-toplevel:  ID optassign_plus   { $$ = node_new(TL_VAR);
-                                 node_set_string($$, "annotation", $1->text);
-                                 node_add_child($$, $2); };
-toplevel:  "global" optassign_plus
+// "top" declarations can appear at the top level.
+top_decl:  "global" optassign_plus
                                { $$ = node_new(GLOBAL_VAR);
                                  node_add_child($$, $2); };
-toplevel:  annotation ID '(' param_star ')' block
+top_decl:  C_CODE              { $$ = $1; };
+top_decl:  topmid_decl         { $$ = $1; };
+top_decl:  topmidbot_decl      { $$ = $1; };
+
+top_decls: top_decls SEP top_decl
+                               { $$ = $1;
+                                 node_add_child($$, $3); };
+top_decls: top_decl            { $$ = node_new(TOPLEVEL_LIST);
+                                 node_add_child($$, $1); };
+
+// "middle" declarations can appear within modules.
+mid_decl:  topmid_decl         { $$ = $1; };
+mid_decl:  topmidbot_decl      { $$ = $1; };
+
+mid_decls: mid_decls SEP mid_decl
+                               { $$ = $1;
+                                 node_add_child($$, $3); };
+mid_decls: mid_decl            { $$ = node_new(TOPLEVEL_LIST);
+                                 node_add_child($$, $1); };
+
+// "bottom" declarations can appear within classes"
+bot_decl: ID optassign_plus   { $$ = node_new(TL_VAR);
+                                 node_set_string($$, "annotation", $1->text);
+                                 node_add_child($$, $2); };
+bot_decl: annotation ID '(' param_star ')' block
                                { $$ = node_new(FUNCTION);
                                  node_set_string($$, "annotation",
                                                      $1->text);
@@ -134,7 +139,28 @@ toplevel:  annotation ID '(' param_star ')' block
                                  node_add_child($$, node_new_type(NULL));
                                  node_add_child($$, $4);
                                  node_add_child($$, $6); };
-toplevel:  ID '(' param_star ')' block
+bot_decl:  topmidbot_decl      { $$ = $1; };
+bot_decl:  C_CODE              { $$ = $1; };
+
+bot_decls: bot_decls SEP bot_decl
+                               { $$ = $1;
+                                 node_add_child($$, $3); };
+bot_decls: bot_decl            { $$ = node_new(TOPLEVEL_LIST);
+                                 node_add_child($$, $1); };
+
+// mixed declarations
+topmid_decl: "module" ID START mid_decls END
+                               { $$ = node_new(MODULE);
+                                 node_set_string($$, "name", $2->text);
+                                 node_add_child($$, $4); };
+topmid_decl: "class" ID START bot_decls END
+                               { $$ = node_new(CLASS);
+                                 node_set_string($$, "name", $2->text);
+                                 node_add_child($$, $4); };
+topmid_decl: "const" optassign_plus
+                               { $$ = node_new(CONST_VAR);
+                                 node_add_child($$, $2); };
+topmidbot_decl: ID '(' param_star ')' block
                                { $$ = node_new(FUNCTION);
                                  node_set_string($$, "name", $1->text);
                                  node_add_child($$, node_new_type(NULL));

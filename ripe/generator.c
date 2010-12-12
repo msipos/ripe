@@ -1089,53 +1089,54 @@ static void gen_globals(Node* ast)
   for (int i = 0; i < ast->children.size; i++){
     Node* n = node_get_child(ast, i);
 
-    if (n->type == GLOBAL_VAR){
-      Node* optassign_list = node_get_child(n, 0);
-      for (int i = 0; i < node_num_children(optassign_list); i++){
-        Node* optassign = node_get_child(optassign_list, i);
-        const char* var_name = node_get_string(optassign, "name");
+    switch(n->type){
+      case GLOBAL_VAR:
+        {
+          Node* optassign_list = node_get_child(n, 0);
+          for (int i = 0; i < node_num_children(optassign_list); i++){
+            Node* optassign = node_get_child(optassign_list, i);
+            const char* var_name = node_get_string(optassign, "name");
 
-        static int counter = 0;
-        counter++;
-        const char* ripe_name = mem_asprintf("%s%s", module_get_prefix(), var_name);
-        const char* c_name = mem_asprintf("_glb%d_%s", counter,
-                                          util_escape(ripe_name));
+            static int counter = 0;
+            counter++;
+            const char* ripe_name = mem_asprintf("%s%s", module_get_prefix(), var_name);
+            const char* c_name = mem_asprintf("_glb%d_%s", counter,
+                                              util_escape(ripe_name));
 
-        set_local(ripe_name, c_name, NULL);
-        sbuf_printf(sb_header, "static Value %s;\n", c_name);
+            set_local(ripe_name, c_name, NULL);
+            sbuf_printf(sb_header, "static Value %s;\n", c_name);
 
-        Node* right = node_get_child(optassign, 0);
-        sbuf_printf(sb_init2, "  %s = %s;\n", c_name, eval_expr(right));
-      }
-    }
-
-    if (n->type == TL_VAR){
-      const char* annotation = node_get_string(n, "annotation");
-      if (strcmp(annotation, "const") == 0){
-        Node* optassign_list = node_get_child(n, 0);
-        for (int i = 0; i < node_num_children(optassign_list); i++){
-          Node* optassign = node_get_child(optassign_list, i);
-          const char* var_name = node_get_string(optassign, "name");
-
-          static int counter = 0;
-          counter++;
-          const char* ripe_name = mem_asprintf("%s%s", module_get_prefix(), var_name);
-          Node* right = node_get_child(optassign, 0);
-
-          sbuf_printf(sb_init1, "  ssym_set(\"%s\", %s);\n",
-                      ripe_name,
-                      eval_expr(right));
+            Node* right = node_get_child(optassign, 0);
+            sbuf_printf(sb_init2, "  %s = %s;\n", c_name, eval_expr(right));
+          }
         }
-      } else {
-        err_node(n, "invalid annotation '%s' at top level", annotation);
-      }
-    }
-    if (n->type == MODULE){
-      const char* name = node_get_string(n, "name");
-      module_push(name);
-      Node* toplevels = node_get_child(n, 0);
-      gen_globals(toplevels);
-      module_pop(name);
+        break;
+      case CONST_VAR:
+        {
+          Node* optassign_list = node_get_child(n, 0);
+          for (int i = 0; i < node_num_children(optassign_list); i++){
+            Node* optassign = node_get_child(optassign_list, i);
+            const char* var_name = node_get_string(optassign, "name");
+
+            static int counter = 0;
+            counter++;
+            const char* ripe_name = mem_asprintf("%s%s", module_get_prefix(), var_name);
+            Node* right = node_get_child(optassign, 0);
+
+            sbuf_printf(sb_init1, "  ssym_set(\"%s\", %s);\n",
+                        ripe_name,
+                        eval_expr(right));
+          }
+        }
+        break;
+      case MODULE:
+        {
+          const char* name = node_get_string(n, "name");
+          module_push(name);
+          Node* toplevels = node_get_child(n, 0);
+          gen_globals(toplevels);
+          module_pop(name);
+        }
     }
   }
 }
@@ -1169,6 +1170,7 @@ static void gen_toplevels(Node* ast)
         break;
       case GLOBAL_VAR:
       case TL_VAR:
+      case CONST_VAR:
         // Ignore.
         break;
       case CLASS:

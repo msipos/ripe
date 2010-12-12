@@ -85,6 +85,7 @@ constructor                     { return K_CONSTRUCTOR; }
 virtual_get                     { return K_VIRTUAL_GET; }
 virtual_set                     { return K_VIRTUAL_SET; }
 global                          { return K_GLOBAL; }
+const                           { return K_CONST; }
 [A-Za-z_][A-Za-z0-9_?]*\!?      { return ID; }
 \&[A-Za-z_][A-Za-z0-9_?]*       { return SYMBOL; }
 .                               { return UNKNOWN; }
