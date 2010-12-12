@@ -75,6 +75,8 @@ Node* node_get_child(Node* parent, uint i)
 
 void node_set_string(Node* n, const char* key, const char* value)
 {
+  assert(n != NULL);
+  assert(key != NULL);
   dict_set( &(n->props_strings), &key, &value);
 }
 

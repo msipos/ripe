@@ -3,9 +3,111 @@ $
 $
 
 module Ast
-  class Node
-    new_from_file(String filename)
-      pass
+  const TOPLEVEL_LIST             = $ int64_to_val(TOPLEVEL_LIST) $
+  const MODULE                    = $ int64_to_val(MODULE) $
+  const FUNCTION                  = $ int64_to_val(FUNCTION) $
+  const STMT_LIST                 = $ int64_to_val(STMT_LIST) $
+  const CLASS                     = $ int64_to_val(CLASS) $
+  const PARAM                     = $ int64_to_val(PARAM) $
+  const TL_VAR                    = $ int64_to_val(TL_VAR) $
+  const STMT_EXPR                 = $ int64_to_val(STMT_EXPR) $
+  const STMT_RETURN               = $ int64_to_val(STMT_RETURN) $
+  const STMT_IF                   = $ int64_to_val(STMT_IF) $
+  const STMT_ELIF                 = $ int64_to_val(STMT_ELIF) $
+  const STMT_ELSE                 = $ int64_to_val(STMT_ELSE) $
+  const STMT_PASS                 = $ int64_to_val(STMT_PASS) $
+  const STMT_ASSIGN               = $ int64_to_val(STMT_ASSIGN) $
+  const STMT_WHILE                = $ int64_to_val(STMT_WHILE) $
+  const STMT_BREAK                = $ int64_to_val(STMT_BREAK) $
+  const STMT_CONTINUE             = $ int64_to_val(STMT_CONTINUE) $
+  const STMT_FOR                  = $ int64_to_val(STMT_FOR) $
+  const STMT_LOOP                 = $ int64_to_val(STMT_LOOP) $
+  const STMT_TRY                  = $ int64_to_val(STMT_TRY) $
+  const STMT_CATCH_ALL            = $ int64_to_val(STMT_CATCH_ALL) $
+  const STMT_FINALLY              = $ int64_to_val(STMT_FINALLY) $
+  const STMT_RAISE                = $ int64_to_val(STMT_RAISE) $
+  const EXPR_ID_CALL              = $ int64_to_val(EXPR_ID_CALL) $
+  const EXPR_FIELD_CALL           = $ int64_to_val(EXPR_FIELD_CALL) $
+  const EXPR_INDEX                = $ int64_to_val(EXPR_INDEX) $
+  const EXPR_ARRAY                = $ int64_to_val(EXPR_ARRAY) $
+  const EXPR_FIELD                = $ int64_to_val(EXPR_FIELD) $
+  const EXPR_AT_VAR               = $ int64_to_val(EXPR_AT_VAR) $
+  const EXPR_RANGE_BOUNDED        = $ int64_to_val(EXPR_RANGE_BOUNDED) $
+  const EXPR_RANGE_BOUNDED_LEFT   = $ int64_to_val(EXPR_RANGE_BOUNDED_LEFT) $
+  const EXPR_RANGE_BOUNDED_RIGHT  = $ int64_to_val(EXPR_RANGE_BOUNDED_RIGHT) $
+  const EXPR_RANGE_UNBOUNDED      = $ int64_to_val(EXPR_RANGE_UNBOUNDED) $
+  const EXPR_IS_TYPE              = $ int64_to_val(EXPR_IS_TYPE) $
+  const EXPR_TYPED_ID             = $ int64_to_val(EXPR_TYPED_ID) $
+  const ID_LIST                   = $ int64_to_val( ID_LIST) $
+  const EXPR_LIST                 = $ int64_to_val(EXPR_LIST) $
+  const PARAM_LIST                = $ int64_to_val(PARAM_LIST) $
+  const OPTASSIGN_LIST            = $ int64_to_val(OPTASSIGN_LIST) $
+  const OPTASSIGN                 = $ int64_to_val(OPTASSIGN) $
+  const TYPE                      = $ int64_to_val(TYPE) $
 
-  parse_file(String filename)
-    pass
+  class Node
+    $ Node* n; $
+
+    constructor new_from_file(String filename)
+      $
+        @n = build_tree(val_to_string(__filename));
+        if (@n == NULL){
+      $
+      raise $ string_to_val(build_tree_error) $
+      $
+        }
+      $
+
+    constructor new()
+      $ @n = NULL; $
+
+    virtual_get type()
+      return $ int64_to_val(@n->type) $
+
+    virtual_get num_children()
+      return $ int64_to_val(node_num_children(@n)) $
+
+    virtual_get text()
+      $ if (@n->text == NULL) return VALUE_NIL; $
+      return $ string_to_val(@n->text) $
+
+    get_iter()
+      return Ast.NodeIterator.new(self)
+
+    has_string?(name)
+      return $ pack_bool(node_has_string(@n, val_to_string(__name))) $
+
+    get_string(name)
+      $ const char * s = node_get_string(@n, val_to_string(__name)); $
+      $ if (s == NULL) return VALUE_NIL; $
+      return $ string_to_val(s) $
+
+    index(i)
+      if i is Integer
+        n = Ast.Node.new()
+        $ *((Node**) obj_c_data(__n)) = node_get_child(@n,
+                                                       unpack_int64(__i)-1); $
+        return n
+
+  class NodeIterator
+    readable node
+    private idx
+
+    constructor new(node)
+      @node = node
+      @idx = 1
+
+    iter()
+      node = @node
+      idx = @idx
+      $ Node* parent = *((Node**) obj_c_data(__node)); $
+      $ int64 idx = unpack_int64(__idx); $
+      num_children = $ int64_to_val(node_num_children(parent)) $
+      if num_children < @idx
+        return eof
+      m = Ast.Node.new()
+      $
+        *((Node**) obj_c_data(__m)) = node_get_child(parent, idx - 1);
+      $
+      @idx = @idx + 1
+      return m

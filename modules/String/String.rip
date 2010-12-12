@@ -260,6 +260,18 @@ class String
     $
     return out
 
+  #$ rdoc-name String.f
+  #$ rdoc-header String.f(*args)
+  #$ Returns a string with given formatting.
+  f(*args)
+    $
+      Tuple* array = val_to_tuple(__args);
+      uint64 len = format(NULL, @s.str, array->size, array->data);
+      char out[len];
+      format(out, @s.str, array->size, array->data);
+      return string_to_val(out);
+    $
+
   #$ rdoc-name String.size
   #$ rdoc-header String.size
   #$ Returns the size (length) of the string.
@@ -268,4 +280,17 @@ class String
       char* s = @s.str;
 			int l = strlen(s);
 			return int64_to_val(l);
+    $
+
+  #$ rdoc-name String.print
+  #$ rdoc-header String.print(*args)
+  #$ Append to a string.
+  print(*args)
+    $
+      Tuple* array = val_to_tuple(__args);
+      uint64 len = format_simple(NULL, array->size, array->data);
+      char out[len];
+      format_simple(out, array->size, array->data);
+      @s.str = mem_realloc(@s.str, strlen(@s.str) + len);
+      strcat(@s.str, out);
     $

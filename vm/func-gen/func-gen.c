@@ -58,7 +58,7 @@ void gen_c()
     "              \" arguments\", num_reqs, num_args);\n"
     "  }\n"
     "  // Generate catch-all array\n"
-    "  Value array = array1_to_val(num_opt, args + num_reqs);\n"
+    "  Value array = tuple_to_val2(num_opt, args + num_reqs);\n"
     "  switch(num_params){\n"
   );
   for (int n = 1; n <= MAX_PARAMS; n++){

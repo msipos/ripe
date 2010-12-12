@@ -24,6 +24,7 @@ char* val_to_string(Value v)
 
 Value string_to_val(const char* str)
 {
+  assert(str != NULL);
   String* obj;
   Value v = obj_new(klass_String, (void**)&obj);
   obj->str = mem_strdup(str);
@@ -32,6 +33,7 @@ Value string_to_val(const char* str)
 
 Value stringn_to_val(const char* str, int n)
 {
+  assert(str != NULL);
   String* obj;
   Value v = obj_new(klass_String, (void**)&obj);
   obj->str = mem_malloc(n+1);

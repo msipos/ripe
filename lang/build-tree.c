@@ -58,6 +58,7 @@ static void lex_init()
   array_init(&indents, int);
   next_token = 0;
   prev_indentation = -1;
+  yylineno = 0;
 }
 
 static Node* lex_read()

@@ -271,23 +271,6 @@ int compile_rip(int num_files, const char** in_filenames,
   return 0;
 }
 
-void add_ripe_source(const char* in_filename)
-{
-  if (not path_exists(in_filename)) {
-    err("error: cannot open '%s' for reading\n", in_filename);
-  }
-
-  const char* tmp = tempnam(NULL, "ripe");
-  const char* o_filename = mem_asprintf("%s.o", tmp);
-
-  static int counter = 0;
-  counter++;
-  const char* module_name = mem_asprintf("_User%d", counter);
-
-  compile_rip(1, &in_filename, 0, NULL, module_name, o_filename);
-  module_add(module_name, o_filename, NULL, FLAG_CLEANUP);
-}
-
 int build(const char* out_filename)
 {
   // Module loader object
@@ -478,16 +461,21 @@ int main(int argc, char* const* argv)
                   module_name, out_filename);
       return 0;
     case MODE_BUILD:
-      if (module_name != NULL) warn("module name ignored in build mode");
-      if (out_filename == NULL){
-        out_filename = "ripe.out";
-      }
-      for (int i = optind; i < argc; i++){
-        in_filename = argv[i];
-        add_ripe_source(in_filename);
-      }
+      {
+        if (module_name != NULL) warn("module name ignored in build mode");
+        if (out_filename == NULL){
+          out_filename = "ripe.out";
+        }
 
-      return build(out_filename);
+        const char* tmp = tempnam(NULL, "ripe");
+        const char* o_filename = mem_asprintf("%s.o", tmp);
+        const char* module_name = "_User";
+        compile_rip(argc - optind, (const char **) argv + optind, 0, NULL,
+                    module_name, o_filename);
+        module_add(module_name, o_filename, NULL, FLAG_CLEANUP);
+
+        return build(out_filename);
+      }
     case MODE_DUMP_C:
       if (argc - optind > 1) err("only 1 Ripe file supported");
       if (out_filename != NULL) warn("output filename ignored in dump C mode");
@@ -507,12 +495,15 @@ int main(int argc, char* const* argv)
       node_draw(ast);
       break;
     case MODE_RUN:
-      if (out_filename != NULL) warn("output filename ignored in run mode");
-      if (module_name != NULL) warn("module name ignored in run mode");
+      {
+        if (out_filename != NULL) warn("output filename ignored in run mode");
+        if (module_name != NULL) warn("module name ignored in run mode");
 
-      for (int i = optind; i < argc; i++){
-        in_filename = argv[i];
-        add_ripe_source(in_filename);
+        const char* tmp = tempnam(NULL, "ripe");
+        const char* o_filename = mem_asprintf("%s.o", tmp);
+        const char* module_name = "_User";
+        compile_rip(argc - optind, (const char **) argv + optind, 0, NULL, module_name, o_filename);
+        module_add(module_name, o_filename, NULL, FLAG_CLEANUP);
       }
       return run();
     case MODE_TYPE:

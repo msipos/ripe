@@ -1,0 +1,55 @@
+# Copyright (C) 2010  Maksim Sipos <msipos@mailc.net>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+##############################################################################
+# Locals
+##############################################################################
+
+global locals
+
+locals_push()
+  locals.push(Map.new)
+
+locals_pop()
+  locals.pop()
+
+global header, code, init1, init2, init3
+
+check_for_globals(ast)
+  for node in ast
+    if node.type == Ast.TL_VAR
+      if node.get_string("annotation") == "global"
+        raise "global variable not allowed within a module"
+
+gen_globals(ast)
+  for node in ast
+    switch node.type
+      case Ast.MODULE
+        check_for_globals(node)
+      case Ast.TL_VAR
+        if node.get_string("annotation") == "global"
+          pass
+
+generate(ast, b_header, b_code, b_init1, b_init2, b_init3)
+  header = b_header
+  code = b_code
+  init1 = b_init1
+  init2 = b_init2
+  init3 = b_init3
+
+  # First layer of locals is for global variables
+  locals = []
+  locals_push()
+  gen_globals(ast)

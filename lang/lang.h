@@ -25,7 +25,7 @@
 typedef struct {
   int type;              // Node type.
   Array children;        // Array of Node*.
-  Dict props_strings;     // String properties.
+  Dict props_strings;    // String properties.
   Dict props_nodes;      // Node properties.
   // For token nodes:
   const char* text;      // Text of the token.
@@ -99,6 +99,7 @@ int rc_lex();
 #define STMT_CONTINUE     1112
 #define STMT_FOR          1113
 #define STMT_LOOP         1114
+#define STMT_SWITCH       1115
 
 #define STMT_TRY          1120
 #define STMT_CATCH_ALL    1121
@@ -126,6 +127,8 @@ int rc_lex();
 #define OPTASSIGN_LIST    1053
 #define OPTASSIGN         1054
 #define TYPE              1055
+#define CASE_LIST         1056
+#define CASE              1057
 
 #include "lang/parser.h"
 #include "lang/scanner.h"

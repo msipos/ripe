@@ -69,6 +69,8 @@ while                           { return K_WHILE; }
 break                           { return K_BREAK; }
 continue                        { return K_CONTINUE; }
 loop                            { return K_LOOP; }
+switch                          { return K_SWITCH; }
+case                            { return K_CASE; }
 is                              { return K_IS; }
 eof                             { return K_EOF; }
 try                             { return K_TRY; }

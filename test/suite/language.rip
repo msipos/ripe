@@ -124,12 +124,28 @@ types()
   Test.test(name, 1 is Double, false)
   Test.test(name, "max" is Double, false)
 
+switch_helper(x)
+  switch x
+    case 1
+      return 3
+    case 2
+      return 1
+    case 3
+      return 2
+
+switcher()
+  name = "switch/case"
+  Test.test(name, 3, switch_helper(1))
+  Test.test(name, 2, switch_helper(3))
+  Test.test(name, 1, switch_helper(2))
+
 main()
   Test.set_verbose(false)
   operators()
   vararg()
   parallel()
   types()
+  switcher()
 
   obj = Class.new("testfile")
   obj.test_filename("testfile")

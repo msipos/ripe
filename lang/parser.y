@@ -65,6 +65,8 @@
 %token   K_BREAK       "break"
 %token   K_CONTINUE    "continue"
 %token   K_LOOP        "loop"
+%token   K_SWITCH      "switch"
+%token   K_CASE        "case"
 %token   K_IS          "is"
 %token   K_EOF         "eof"
 %token   K_TRY         "try"
@@ -183,9 +185,20 @@ stmt:      "for" lvalue_plus "in" expr block
                                  node_add_child($$, $2);
                                  node_add_child($$, $4);
                                  node_add_child($$, $5); };
+stmt:      "switch" expr START case_list END
+                               { $$ = node_new(STMT_SWITCH);
+                                 node_add_child($$, $2);
+                                 node_add_child($$, $4); };
 stmt:      "break"             { $$ = node_new_inherit(STMT_BREAK, $1); };
 stmt:      "continue"          { $$ = node_new_inherit(STMT_CONTINUE, $1); };
 stmt:      "pass"              { $$ = node_new_inherit(STMT_PASS, $1); };
+
+case:      "case" expr block   { $$ = node_new(CASE);
+                                 node_add_child($$, $2);
+                                 node_add_child($$, $3); };
+case_list: case                { $$ = node_new(CASE_LIST);
+                                 node_add_child($$, $1); };
+case_list: case_list SEP case  { $$ = $1; node_add_child($$, $3); };
 
 // 4 types of expressions:
 //   those that are lvalues but are not rvalues l_expr

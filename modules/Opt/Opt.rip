@@ -1,0 +1,86 @@
+module Opt
+
+  find(needle, haystack, idx)
+    for option in haystack
+      long = option[idx]
+      if needle == long
+        return option
+    return nil
+
+  const ARG = 1
+  const HELP = 2
+
+  # Return 0 for nothing, 1 for short option and 2 for long option
+  inspect(arg)
+    if arg.size < 2
+      return 0
+    if arg[1] == '-'
+      if arg[2] == '-'
+        return 2
+      return 1
+    return 0
+
+  display_help(options)
+    Err.println("  available options:")
+    for option in options
+      if Math.bit_and(option[4], Opt.ARG) != 0
+        Err.println("    ", option[2], ", ", option[3], " ARG   ", option[5])
+      else
+        Err.println("    ", option[2], ", ", option[3], "       ", option[5])
+
+  # options should be of the form:
+  #  the 4th is optional
+  #  [
+  #    [&HELP, "-h", "--help", Opt.HELP, "display help"]
+  #  ]
+  # Returns tuple(parsed, leftover) where both are arrays. In parsed, each
+  # element is a 2-tuple (symbol, optarg). Leftover is a simple array of
+  # strings.
+  parse(args, options)
+    parsed = []
+    leftover = []
+    index = 1
+    loop
+      if index > args.size
+        break
+      arg = args[index]
+      index = index + 1
+
+      type = Opt.inspect(arg)
+      if type == 0
+        leftover.push(arg)
+        continue
+
+      option = nil
+      if type == 2
+        option = Opt.find(arg, options, 3)
+      else
+        option = Opt.find(arg, options, 2)
+
+      if option == nil
+        Err.printf("error: invalid option '%a'\n", arg)
+        Opt.display_help(options)
+        Os.exit(1)
+
+      flag = option[4]
+      if Math.bit_and(flag, Opt.HELP) != 0
+        Opt.display_help(options)
+        Os.exit(0)
+
+      # Obtain optarg
+      optarg = nil
+      if Math.bit_and(flag, Opt.ARG) != 0
+        if index > args.size
+          Err.printf("error: option '%a' requires an argument", arg)
+          Opt.display_help(options)
+          Os.exit(1)
+
+        optarg = args[index]
+        index = index + 1
+        type = Opt.inspect(optarg)
+        if type != 0
+          Err.printf("error: option '%a' requires an argument", arg)
+          Opt.display_help(options)
+          Os.exit(1)
+      parsed.push(tuple(option[1], optarg))
+    return tuple(parsed, leftover)

@@ -7,6 +7,14 @@ $
 $
 
 module Os
+  #$ rdoc-name Os.exit
+  #$ rdoc-header Os.exit(Integer i)
+  #$ Exit the program with return code i.
+  exit(Integer i)
+    $
+      exit(unpack_int64(__i));
+    $
+
   #$ rdoc-name Os.get_env
   #$ rdoc-header Os.get_env(String var)
   #$ Get the value of environment variable var, or nil if it is not set.

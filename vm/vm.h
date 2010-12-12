@@ -408,6 +408,7 @@ typedef struct {
 } Tuple;
 Tuple* val_to_tuple(Value v_tuple);
 Value tuple_to_val(uint16 num_args, ...);
+Value tuple_to_val2(uint16 num_args, Value* stuff);
 Value tuple_index(Tuple* tuple, int64 idx);
 void tuple_index_set(Tuple* tuple, int64 idx, Value val);
 

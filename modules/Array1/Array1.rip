@@ -83,6 +83,13 @@ class Array1
       }
     $
 
+  #$ rdoc-name Array1.append
+  #$ rdoc-header Array1.append(Array1 array)
+  #$ Appends array to the end of self.
+  append(Array1 array)
+    for el in array
+      self.push(el)
+
   #$ rdoc-name Array1.index
   #$ rdoc-header Array1.index(Integer or Range i)
   #$ If i is an Integer, this returns the i-th element of the Array1.
@@ -132,7 +139,7 @@ class Array1
   #$ rdoc-name Array1.insert
   #$ rdoc-header Array1.insert(Integer i, val)
   #$ Insert val into position i in the array.  Moves everything in position
-  #$ 1 and beyond one step.
+  #$ i and beyond one step.
   insert(Integer i, val)
     $
       const int64 size = @a.size;
@@ -312,7 +319,7 @@ class Array1Iterator
     return val
 
 module ArrayUtil
-  index(size, idx)
+  index(Integer size, Integer idx)
     if idx > size or idx == 0 or idx < -size
       pass
       # Raise error here
@@ -320,13 +327,13 @@ module ArrayUtil
       return idx
     return size + idx + 1
 
-  index_start(size, range)
+  index_start(Integer size, Range range)
     start = range.start
     if start == nil
       return 1
     return ArrayUtil.index(size, start)
 
-  index_finish(size, range)
+  index_finish(Integer size, Range range)
     finish = range.finish
     if finish == nil
       return size

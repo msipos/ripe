@@ -4,7 +4,7 @@
 
 DATA_TYPES = ['Array1', 'Array2', 'Array3', 'Double', 'Flags', 'Integer', 'Map',
               'Range', 'Set', 'String', 'Tuple']
-STDLIB = ['Character', 'Err', 'Iterable', 'Math', 'Os', 'Out', 'Path',
+STDLIB = ['Character', 'Err', 'Iterable', 'Math', 'Opt', 'Os', 'Out', 'Path',
           'Std', 'Stream', 'Test', 'Template', 'TextFile', 'Time']
 OPTIONAL_MODULES = ['Ast', 'Bio', 'Curl', 'Gd', 'Gsl', 'Json', 'MainLoop',
                     'Povray', 'Pthread', 'Sci', 'Sdl', 'Speech', 'Xml']
@@ -254,3 +254,19 @@ if "doc" in sys.argv:
   tools.call(["ripedoc/build.sh", "2>", "/dev/null"])
   tools.call(["ripedoc/ripedoc", "."])
   tools.call(["mv", "*.html", "doc/"])
+
+riperipesrcs = [
+                'riperipe/dump.rip',
+                'riperipe/eval.rip',
+                'riperipe/generator.rip',
+                'riperipe/main.rip',
+                'riperipe/module.rip',
+                'riperipe/typer.rip',
+               ]
+
+if tools.depends('product/riperipe',
+                 ['product/vm.o', 'product/ripe'] + riperipesrcs + module_deps):
+    tools.pprint('RIP', 'riperipe/main.rip', 'product/riperipe')
+    tools.call(
+      ['product/ripe', '-b', '-o', 'product/riperipe',
+                       '-m', 'Ast', '-m', 'Json'] + riperipesrcs)

@@ -648,6 +648,31 @@ static void gen_stmt(Node* stmt)
         pop_locals();
       }
       break;
+    case STMT_SWITCH:
+      {
+        static int switch_counter = 0;
+        const char* c_expr_value = mem_asprintf("_switch_expr%d", switch_counter);
+        Node* expr = node_get_child(stmt, 0);
+        Node* case_list = node_get_child(stmt, 1);
+
+        sbuf_printf(sb_contents, "  {\n");
+        sbuf_printf(sb_contents, "  Value %s = %s;\n", c_expr_value,
+                                                       eval_expr(expr));
+        int num_cases = node_num_children(case_list);
+        for (int i = 0; i < num_cases; i++){
+          Node* node_case = node_get_child(case_list, i);
+          Node* node_case_expr = node_get_child(node_case, 0);
+          Node* block = node_get_child(node_case, 1);
+          const char* word = "else if";
+          if (i == 0) word = "if";
+          sbuf_printf(sb_contents, "  %s (op_equal(%s, %s) == VALUE_TRUE) {\n",
+                      word, c_expr_value, eval_expr(node_case_expr));
+          gen_stmtlist(block);
+          sbuf_printf(sb_contents, "  }");
+        }
+        sbuf_printf(sb_contents, "  }\n");
+      }
+      break;
     case STMT_PASS:
       break;
     case STMT_RAISE:

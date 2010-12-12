@@ -8,3 +8,39 @@ module Json
     $
       return json_parse(val_to_string(__s), 0);
     $
+
+  encode(value)
+    output = ""
+    if value is Map
+      output = "{\n"
+      index = 1
+      for k, v in value
+        output = output + Json.encode(k) + " : " + Json.encode(v)
+        if index < value.size
+          output = output + ",\n"
+        else
+          output = output + "\n"
+        index = index + 1
+      output = output + "}"
+    if value is Array1
+      output = "["
+      index = 1
+      for v in value
+        output = output + Json.encode(v)
+        if index < value.size
+          output = output + ","
+        index = index + 1
+      output = output + "]"
+    if value is Integer
+      return value.to_string()
+    if value is Double
+      return value.to_string()
+    if value is String
+      return "\"" + value + "\""
+    if value == nil
+      return "null"
+    if value == true
+      return "true"
+    if value == false
+      return "false"
+    return output

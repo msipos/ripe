@@ -9,5 +9,5 @@ module Stream
     stream.write("\n")
 
   printf(stream, format, *args)
-    string = Std.sprintf_array(format, args)
+    string = Std.sprintf_tuple(format, args)
     stream.write(string)

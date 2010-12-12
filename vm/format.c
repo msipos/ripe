@@ -164,10 +164,13 @@ uint64 format_simple(char* out, uint64 num_values, Value* values)
   for (uint64 idx = 0; idx < num_values; idx++){
     Value v = values[idx];
 
-    char p[param(NULL, v)];
-    param(p, v);
-    if (out) strcpy(out + i, p);
-    i += strlen(p);
+    uint64 sz = param(NULL, v);
+    if (out) {
+      char p[sz];
+      param(p, v);
+      strcpy(out + i, p);
+    }
+    i += sz - 1;
   }
   if (out) out[i] = 0;
   i++;

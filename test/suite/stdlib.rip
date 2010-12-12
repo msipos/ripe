@@ -234,6 +234,10 @@ String()
   Test.test("String.find()", text.find("is"), 3)
   Test.test("String.find()", text.find("waldo"), nil)
 
+  text = "alpha"
+  text.print("bet")
+  Test.test("String.print()", "alphabet", text)
+
 Std()
   Test.test("Integer()", 123, Integer("123"))
   Test.test("Integer()", 123, Integer(123.0))

@@ -1,0 +1,90 @@
+# Copyright (C) 2010  Maksim Sipos <msipos@mailc.net>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Typedb stores type information during the course of the compilation.
+# It is of type Map and it maps string (name of the typed item) to an array.
+# The array contains information about each item that has that name.
+global typedb = nil
+
+module Typer
+  init_typedb()
+    if typedb == nil
+      typedb = Map.new()
+
+  add_method(class_name, method_name, return_type, param_types)
+    Typer.init_typedb()
+
+    typer_name = class_name + "#" + method_name
+    if not typedb.has_key?(typer_name)
+      typedb[typer_name] = []
+
+    # Prepend the class_name (for self)
+    new_param_types = [class_name]
+    new_param_types.append(param_types)
+
+    typedb[typer_name].push( [return_type, new_param_types] )
+
+  add_function(name, return_type, param_types)
+    Typer.init_typedb()
+
+    if typedb.has_key?(name)
+      arr = typedb[name]
+      arr.push([return_type, param_types])
+    else
+      typedb[name] = [ [return_type, param_types] ]
+
+  get_function(name)
+    return typedb[name]
+
+  absorb_param_info(param_list)
+    out = []
+    index = 1
+    for param in param_list
+      if param.has_string?("array")
+        if index != param_list.size
+          raise "array parameter is not last parameter"
+        out.push("*")
+      else
+        if param.num_children == 1
+          out.push(eval_type(param[1]))
+        else
+          out.push(nil)
+    return out
+
+  absorb_class(name, ast)
+    for node in ast
+      if node.type == Ast.FUNCTION
+        Typer.add_method(name,
+                         node.get_string("name"),
+                         eval_type(node[1]),
+                         Typer.absorb_param_info(node[2]))
+
+  absorb_info(ast)
+    for node in ast
+      switch node.type
+        case Ast.MODULE
+          Module.push(node.get_string("name"))
+          Typer.absorb_info(node[1])
+          Module.pop()
+        case Ast.FUNCTION
+          Typer.add_function(Module.prefix() + node.get_string("name"),
+                             eval_type(node[1]),
+                             Typer.absorb_param_info(node[2]))
+        case Ast.CLASS
+          Typer.absorb_class(Module.prefix() + node.get_string("name"),
+                             node[1])
+
+  dump()
+    Out.println(Json.encode(typedb))

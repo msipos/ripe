@@ -40,6 +40,8 @@
           <keyword>not</keyword>
           <keyword>while</keyword>
           <keyword>loop</keyword>
+          <keyword>switch</keyword>
+          <keyword>case</keyword>
           <keyword>for</keyword>
           <keyword>in</keyword>
           <keyword>break</keyword>
