@@ -14,16 +14,64 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ##############################################################################
+# Util
+##############################################################################
+module Util
+  to_c(ripe_name)
+    m = Map.new()
+    m["."] = "_"
+    m["?"] = "_Q"
+    m["!"] = "_E"
+    return ripe_name.replace(m)
+
+  counter()
+    counter = counter + 1
+    return counter
+
+global counter = 0
+
+##############################################################################
 # Locals
 ##############################################################################
 
 global locals
 
+class Variable
+  writable ripe_name
+  writable c_name
+  writable type
+
+  constructor new()
+    pass
+
 locals_push()
-  locals.push(Map.new)
+  locals.push(Map.new())
 
 locals_pop()
   locals.pop()
+
+locals_add(c_name, ripe_name, type)
+  if locals_query(ripe_name) != nil
+    raise "local variable '%a' already registered".f(ripe_name)
+  var = Variable.new()
+  var.c_name = c_name
+  var.ripe_name = ripe_name
+  var.type = type
+  locals[-1][ripe_name] = var
+
+locals_query(ripe_name)
+  if locals.size == 0
+    return nil
+
+  for i in (-1):(-(locals.size))
+    d = locals[i]
+    if d.has_key?(ripe_name)
+      return d[ripe_name]
+  return nil
+
+##############################################################################
+# Generator
+##############################################################################
 
 global header, code, init1, init2, init3
 
@@ -40,6 +88,22 @@ gen_globals(ast)
         check_for_globals(node)
       case Ast.TL_VAR
         if node.get_string("annotation") == "global"
+          optassign_list = node[1]
+          for optassign in optassign_list
+            name = optassign.get_string("name")
+            c_name = "_glb%a_%a".f(Util.counter(), Util.to_c(name))
+            locals_add(c_name, name, nil)
+            header.print("Value %a;\n".f(c_name))
+            init3.print("  %a = %a;\n".f(c_name,
+                                         eval_v_expr(optassign[1])))
+
+gen(ast)
+  for node in ast
+    switch node.type
+      case Ast.MODULE
+        gen(node)
+      case Ast.TL_VAR
+        if node.get_string("annotation") == "const"
           pass
 
 generate(ast, b_header, b_code, b_init1, b_init2, b_init3)
@@ -53,3 +117,5 @@ generate(ast, b_header, b_code, b_init1, b_init2, b_init3)
   locals = []
   locals_push()
   gen_globals(ast)
+  gen(ast)
+  locals_pop()

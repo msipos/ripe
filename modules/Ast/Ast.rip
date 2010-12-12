@@ -3,6 +3,16 @@ $
 $
 
 module Ast
+  const K_NIL                     = $ int64_to_val(K_NIL) $
+  const K_TRUE                    = $ int64_to_val(K_TRUE) $
+  const K_FALSE                   = $ int64_to_val(K_FALSE) $
+  const K_EOF                     = $ int64_to_val(K_EOF) $
+  const ID                        = $ int64_to_val(ID) $
+  const INT                       = $ int64_to_val(INT) $
+  const DOUBLE                    = $ int64_to_val(DOUBLE) $
+  const STRING                    = $ int64_to_val(STRING) $
+  const SYMBOL                    = $ int64_to_val(SYMBOL) $
+  const CHARACTER                 = $ int64_to_val(CHARACTER) $
   const TOPLEVEL_LIST             = $ int64_to_val(TOPLEVEL_LIST) $
   const MODULE                    = $ int64_to_val(MODULE) $
   const FUNCTION                  = $ int64_to_val(FUNCTION) $
@@ -78,6 +88,8 @@ module Ast
       return $ pack_bool(node_has_string(@n, val_to_string(__name))) $
 
     get_string(name)
+      if not self.has_string?(name)
+        raise "node does not have string '%a'".f(name)
       $ const char * s = node_get_string(@n, val_to_string(__name)); $
       $ if (s == NULL) return VALUE_NIL; $
       return $ string_to_val(s) $

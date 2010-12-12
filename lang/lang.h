@@ -84,6 +84,9 @@ int rc_lex();
 #define CLASS             1004
 #define PARAM             1006
 #define TL_VAR            1008  // Top-level variable (with annotation maybe)
+                                // Going to be deprecated
+#define GLOBAL_VAR        1007
+#define CONST_VAR         1009
 
 // Types of STMTs
 #define STMT_EXPR         1100

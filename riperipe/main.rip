@@ -14,10 +14,22 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 build_module(files)
+  header = ""
+  code = ""
+  init1 = ""
+  init2 = ""
+  init3 = ""
+
   for file in files
     ast = Ast.Node.new_from_file(file)
     Typer.absorb_info(ast)
-    Typer.dump()
+    generate(ast, header, code, init1, init2, init3)
+
+  Out.println(header)
+  Out.println(code)
+  Out.println(init1)
+  Out.println(init2)
+  Out.println(init3)
 
 main()
   options = [

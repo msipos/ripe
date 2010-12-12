@@ -13,8 +13,30 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+value_barrier(Tuple t)
+  switch t[1]
+    case "Value"
+      return t[2]
+    case "int64"
+      return "int64_to_val(%a)".f(t[2])
+    case "double"
+      return "double_to_val(%a)".f(t[2])
+  raise "invalid expression type"
+
 eval_type(node)
   if node.num_children == 1
     return node.get_string("name") + "." + eval_type(node[1])
   else
     return node.get_string("name")
+
+eval_v_expr(node)
+  return value_barrier(eval_expr(node))
+
+eval_expr(node)
+  switch node.type
+    case Ast.INT
+      return tuple("int64", node.text)
+    case Ast.DOUBLE
+      return tuple("double", node.text)
+    case Ast.K_NIL
+      return tuple("Value", "VALUE_NIL")

@@ -80,6 +80,7 @@
 %token   K_CONSTRUCTOR "constructor"
 %token   K_VIRTUAL_GET "virtual_get"
 %token   K_VIRTUAL_SET "virtual_set"
+%token   K_GLOBAL      "global"
 // Operator-like
 %token   OP_EQUAL     "=="
 %token   OP_NOT_EQUAL "!="
@@ -102,6 +103,7 @@
 program:   START toplevel_list END
                                { rc_result = $2; };
 
+// "top" declarations can only appear at the top of the file
 toplevel_list:     toplevel_list SEP toplevel
                                { $$ = $1;
                                  node_add_child($$, $3); };
@@ -120,6 +122,9 @@ toplevel:  "class" ID START toplevel_list END
                                  node_add_child($$, $4); };
 toplevel:  ID optassign_plus   { $$ = node_new(TL_VAR);
                                  node_set_string($$, "annotation", $1->text);
+                                 node_add_child($$, $2); };
+toplevel:  "global" optassign_plus
+                               { $$ = node_new(GLOBAL_VAR);
                                  node_add_child($$, $2); };
 toplevel:  annotation ID '(' param_star ')' block
                                { $$ = node_new(FUNCTION);

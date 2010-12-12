@@ -859,8 +859,8 @@ static void gen_constructor(Node* constructor)
   // Get basic stuff.
   static int counter = 0;
   counter++;
-  const char* r_constructor_name = mem_asprintf("%s%s.%s",
-    module_get_prefix(), context_class_name, node_get_string(constructor, "name"));
+  const char* r_constructor_name = mem_asprintf("%s.%s",
+             context_class_name, node_get_string(constructor, "name"));
   const char* c_constructor_name = mem_asprintf("_cons%d_%s", counter,
                                         util_escape(r_constructor_name));
 
@@ -899,8 +899,8 @@ static void gen_method(const char* method_name, Node* rv_type,
 
   static int counter = 0;
   counter++;
-  const char* r_method_name = mem_asprintf("%s%s.%s",
-    module_get_prefix(), context_class_name, method_name);
+  const char* r_method_name = mem_asprintf("%s.%s",
+                                           context_class_name, method_name);
   const char* c_method_name = mem_asprintf("_met%d_%s", counter,
                                 util_escape(r_method_name));
 
@@ -944,7 +944,9 @@ static void gen_class(Node* klass)
   static int counter = 0;
   counter++;
   context = CONTEXT_CLASS;
-  context_class_name = node_get_string(klass, "name");
+  context_class_name = mem_asprintf("%s%s",
+                                    module_get_prefix(),
+                                    node_get_string(klass, "name"));
   context_class_c_name = mem_asprintf("klass%d", counter);
   context_class_dict = dict_new(sizeof(char*), sizeof(char*),
                                 dict_hash_string, dict_equal_string);
@@ -1086,28 +1088,30 @@ static void gen_globals(Node* ast)
 {
   for (int i = 0; i < ast->children.size; i++){
     Node* n = node_get_child(ast, i);
+
+    if (n->type == GLOBAL_VAR){
+      Node* optassign_list = node_get_child(n, 0);
+      for (int i = 0; i < node_num_children(optassign_list); i++){
+        Node* optassign = node_get_child(optassign_list, i);
+        const char* var_name = node_get_string(optassign, "name");
+
+        static int counter = 0;
+        counter++;
+        const char* ripe_name = mem_asprintf("%s%s", module_get_prefix(), var_name);
+        const char* c_name = mem_asprintf("_glb%d_%s", counter,
+                                          util_escape(ripe_name));
+
+        set_local(ripe_name, c_name, NULL);
+        sbuf_printf(sb_header, "static Value %s;\n", c_name);
+
+        Node* right = node_get_child(optassign, 0);
+        sbuf_printf(sb_init2, "  %s = %s;\n", c_name, eval_expr(right));
+      }
+    }
+
     if (n->type == TL_VAR){
       const char* annotation = node_get_string(n, "annotation");
-
-      if (strcmp(annotation, "global") == 0){
-        Node* optassign_list = node_get_child(n, 0);
-        for (int i = 0; i < node_num_children(optassign_list); i++){
-          Node* optassign = node_get_child(optassign_list, i);
-          const char* var_name = node_get_string(optassign, "name");
-
-          static int counter = 0;
-          counter++;
-          const char* ripe_name = mem_asprintf("%s%s", module_get_prefix(), var_name);
-          const char* c_name = mem_asprintf("_glb%d_%s", counter,
-                                            util_escape(ripe_name));
-
-          set_local(ripe_name, c_name, NULL);
-          sbuf_printf(sb_header, "static Value %s;\n", c_name);
-
-          Node* right = node_get_child(optassign, 0);
-          sbuf_printf(sb_init2, "  %s = %s;\n", c_name, eval_expr(right));
-        }
-      } else if (strcmp(annotation, "const") == 0){
+      if (strcmp(annotation, "const") == 0){
         Node* optassign_list = node_get_child(n, 0);
         for (int i = 0; i < node_num_children(optassign_list); i++){
           Node* optassign = node_get_child(optassign_list, i);
@@ -1163,6 +1167,7 @@ static void gen_toplevels(Node* ast)
           sbuf_printf(sb_header, "%s\n", util_trim_ends(n->text));
         }
         break;
+      case GLOBAL_VAR:
       case TL_VAR:
         // Ignore.
         break;
