@@ -12,6 +12,7 @@ module Ast
   const DOUBLE                    = $ int64_to_val(DOUBLE) $
   const STRING                    = $ int64_to_val(STRING) $
   const SYMBOL                    = $ int64_to_val(SYMBOL) $
+  const C_CODE                    = $ int64_to_val(C_CODE) $
   const CHARACTER                 = $ int64_to_val(CHARACTER) $
   const TOPLEVEL_LIST             = $ int64_to_val(TOPLEVEL_LIST) $
   const MODULE                    = $ int64_to_val(MODULE) $
@@ -20,6 +21,8 @@ module Ast
   const CLASS                     = $ int64_to_val(CLASS) $
   const PARAM                     = $ int64_to_val(PARAM) $
   const TL_VAR                    = $ int64_to_val(TL_VAR) $
+  const GLOBAL_VAR                = $ int64_to_val(GLOBAL_VAR) $
+  const CONST_VAR                 = $ int64_to_val(CONST_VAR) $
   const STMT_EXPR                 = $ int64_to_val(STMT_EXPR) $
   const STMT_RETURN               = $ int64_to_val(STMT_RETURN) $
   const STMT_IF                   = $ int64_to_val(STMT_IF) $
@@ -97,8 +100,10 @@ module Ast
     index(i)
       if i is Integer
         n = Ast.Node.new()
-        $ *((Node**) obj_c_data(__n)) = node_get_child(@n,
-                                                       unpack_int64(__i)-1); $
+        $
+          int64 i = util_index("Ast.Node", unpack_int64(__i), @n->children.size);
+
+          *((Node**) obj_c_data(__n)) = node_get_child(@n, i); $
         return n
 
   class NodeIterator

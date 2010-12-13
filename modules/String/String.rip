@@ -175,6 +175,20 @@ class String
     $
     return arr
 
+  clone()
+    $
+      return string_to_val(@s.str);
+    $
+
+  substitute_character!(Integer c, Integer d)
+    $
+      int c = unpack_int64(__c);
+      int d = unpack_int64(__d);
+      for (char* s = @s.str; *s != 0; s++){
+        if (*s == c) *s = d;
+      }
+    $
+
   #$ rdoc-name String.split_whitespace
   #$ rdoc-header String.split_whitespace()
   #$ Just like String.split(" \n\t")

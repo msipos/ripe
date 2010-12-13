@@ -21,6 +21,8 @@ value_barrier(Tuple t)
       return "int64_to_val(%a)".f(t[2])
     case "double"
       return "double_to_val(%a)".f(t[2])
+    case "bool"
+      return "pack_bool(%a)".f(t[2])
   raise "invalid expression type"
 
 eval_type(node)
@@ -32,11 +34,45 @@ eval_type(node)
 eval_v_expr(node)
   return value_barrier(eval_expr(node))
 
-eval_expr(node)
-  switch node.type
+eval_expr_list(expr_list, first_comma)
+  txt = ""
+  index = 1
+  for expr in expr_list
+    if index == 1
+      if first_comma
+        txt = ", "
+    index = index + 1
+    txt = txt + eval_v_expr(expr)
+
+eval_expr(expr)
+  switch expr.type
     case Ast.INT
-      return tuple("int64", node.text)
+      return tuple("int64", expr.text)
     case Ast.DOUBLE
-      return tuple("double", node.text)
+      return tuple("double", expr.text)
     case Ast.K_NIL
       return tuple("Value", "VALUE_NIL")
+    case Ast.K_EOF
+      return tuple("Value", "VALUE_EOF")
+    case Ast.K_TRUE
+      return tuple("bool", "true")
+    case Ast.K_FALSE
+      return tuple("bool", "false")
+    case Ast.ID
+      local_var = locals_query(expr.text)
+      if local_var == nil
+        return tuple("Value", Ssym.get(expr.text))
+      else
+        return tuple("Value", local_var.c_name)
+    case Ast.SYMBOL
+      return Dsym.get(expr.text[2:])
+    case Ast.C_CODE
+      return tuple("Value", expr.text[2:-2])
+    case Ast.CHARACTER
+      return tuple("int64", expr.text[2])
+    case Ast.EXPR_ARRAY
+      expr_list = expr[1]
+      return tuple("Value",
+                   "array1_to_val2(%a %a)".f(expr_list.num_children,
+                                             eval_expr_list(expr_list, true)))
+  return tuple("Value", "")

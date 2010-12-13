@@ -13,6 +13,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+dump(header, code, init1, init2, init3, module_name)
+  Out.println(header)
+  Out.println(code)
+  Out.println("void init1_%a(){".f(module_name))
+  Out.println(init1)
+  Out.println("}")
+  Out.println("void init2_%a(){\n".f(module_name))
+  Out.println(init2)
+  Out.println("}\n")
+  Out.println("void init3_%a(){\n".f(module_name))
+  Out.println(init3)
+  Out.println("}\n")
+
 build_module(files)
   header = ""
   code = ""
@@ -24,12 +37,7 @@ build_module(files)
     ast = Ast.Node.new_from_file(file)
     Typer.absorb_info(ast)
     generate(ast, header, code, init1, init2, init3)
-
-  Out.println(header)
-  Out.println(code)
-  Out.println(init1)
-  Out.println(init2)
-  Out.println(init3)
+  dump(header, code, init1, init2, init3, "User")
 
 main()
   options = [

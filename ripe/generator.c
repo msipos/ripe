@@ -1147,11 +1147,6 @@ static void gen_toplevels(Node* ast)
     Node* n = node_get_child(ast, i);
     switch(n->type){
       case FUNCTION:
-        if (node_has_string(n, "annotation")){
-          err_node(n, "annotated functions (with annotation '%s') "
-                         "not allowed outside of a class",
-                         node_get_string(n, "annotation"));
-        }
         gen_function(n);
         break;
       case MODULE:

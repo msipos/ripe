@@ -14,21 +14,88 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 ##############################################################################
+# Context
+##############################################################################
+
+global ctx, ctx_name, ctx2, ctx_name2
+
+module Ctx
+  in_function(function_name)
+    ctx2 = &FUNCTION
+    ctx_name2 = function_name
+
+  out_function()
+    ctx2 = nil
+
+  in_class(class_name)
+    ctx = &CLASS
+    ctx_name = class_name
+
+  out_class()
+    ctx = nil
+
+  in_method(name)
+    if ctx != &CLASS
+      raise "called in_method() but not in a class"
+    ctx2 = &METHOD
+    ctx_name2 = name
+
+  out_method()
+    ctx2 = nil
+
+  function_name()
+    if ctx2 != &FUNCTION
+      raise "not in a function"
+    return ctx_name2
+
+##############################################################################
+# Symbol tables
+##############################################################################
+
+global ssym_table, dsym_table
+
+module Ssym
+  get(name)
+    if ssym_table == nil
+      ssym_table = Map.new()
+
+    if ssym_table.has_key?(name)
+      return ssym_table[name]
+    c_name = "_ssym%a_%a".f(counter(), Util.to_c(name))
+    header.print("static Value %a;\n".f(c_name))
+    init2.print("  %a = ssym_get(\"%a\");\n".f(c_name, name))
+    ssym_table[name] = c_name
+    return c_name
+
+module Dsym
+  get(name)
+    if dsym_table == nil
+      dsym_table = Map.new()
+
+    if dsym_table.has_key?(name)
+      return dsym_table[name]
+    c_name = "_dsym%a_%a".f(counter(), Util.to_c(name))
+    header.print("static Value %a;\n".f(c_name))
+    init2.print("  %a = dsym_get(\"%a\");\n".f(c_name, name))
+    dsym_table[name] = c_name
+    return c_name
+
+##############################################################################
 # Util
 ##############################################################################
 module Util
   to_c(ripe_name)
-    m = Map.new()
-    m["."] = "_"
-    m["?"] = "_Q"
-    m["!"] = "_E"
-    return ripe_name.replace(m)
+    c_name = ripe_name.clone()
+    c_name.substitute_character!('!', '_')
+    c_name.substitute_character!('?', '_')
+    c_name.substitute_character!('.', '_')
+    return c_name
 
-  counter()
-    counter = counter + 1
-    return counter
+counter()
+  cnt = cnt + 1
+  return cnt
 
-global counter = 0
+global cnt = 0
 
 ##############################################################################
 # Locals
@@ -75,36 +142,106 @@ locals_query(ripe_name)
 
 global header, code, init1, init2, init3
 
-check_for_globals(ast)
-  for node in ast
-    if node.type == Ast.TL_VAR
-      if node.get_string("annotation") == "global"
-        raise "global variable not allowed within a module"
+is_vararg?(param_list)
+  for param in param_list
+    if param.has_string?("array")
+      return true
+  return false
 
-gen_globals(ast)
-  for node in ast
-    switch node.type
-      case Ast.MODULE
-        check_for_globals(node)
-      case Ast.TL_VAR
-        if node.get_string("annotation") == "global"
-          optassign_list = node[1]
-          for optassign in optassign_list
-            name = optassign.get_string("name")
-            c_name = "_glb%a_%a".f(Util.counter(), Util.to_c(name))
-            locals_add(c_name, name, nil)
-            header.print("Value %a;\n".f(c_name))
-            init3.print("  %a = %a;\n".f(c_name,
-                                         eval_v_expr(optassign[1])))
+gen_params(param_list)
+  index = 1
+  for param in param_list
+    type = nil
+    if param.has_string?("array")
+      type = "Tuple"
+    if param.num_children == 1
+      type = eval_type(param[1])
+
+    name = param.get_string("name")
+    c_name = "__" + Util.to_c(name)
+    locals_add(c_name, name, type)
+    if index == 1
+      code.print("Value " + c_name)
+    else
+      code.print(", Value " + c_name)
+    index = index + 1
+
+gen_stmt(stmt)
+  switch stmt.type
+    case Ast.STMT_EXPR
+      expr = stmt[1]
+      if (expr.type == Ast.EXPR_ID_CALL
+       or expr.type == Ast.EXPR_FIELD_CALL
+       or expr.type == Ast.C_CODE)
+        code.print("  %a;\n".f(eval_expr(expr)[2]))
+      else
+        raise("invalid expression in an expression statement")
+    case Ast.STMT_RETURN
+      code.print("  return %a;\n".f(eval_v_expr(stmt[1])))
+
+gen_code(stmt_list)
+  for stmt in stmt_list
+    gen_stmt(stmt)
+  if stmt_list[-1].type != Ast.STMT_RETURN
+    code.print("  return VALUE_NIL;\n")
+
+gen_function(ast)
+  name = Module.prefix() + ast.get_string("name")
+  Ctx.in_function(name)
+
+  #rv_type = ast[1]
+  param_list = ast[2]
+  stmt_list = ast[3]
+
+  locals_push()
+  c_name = "_func%a_%a".f(counter(), Util.to_c(name))
+
+  # symbol creator
+  value_name = "__" + c_name
+  init1.print("  Value %a = func%a_to_val(%a);\n".f(value_name,
+                                                    param_list.num_children,
+                                                    c_name))
+  init1.print("  ssym_set(\"%a\", %a);\n".f(name, value_name))
+  if is_vararg?(param_list)
+    init1.print("  func_set_vararg(%a);\n".f(value_name))
+
+  # generate code
+  code.print("static Value %a(".f(c_name))
+  gen_params(param_list)
+  code.print("){\n")
+  gen_code(stmt_list)
+  code.print("}\n")
+  locals_pop()
+  Ctx.out_function()
 
 gen(ast)
   for node in ast
     switch node.type
       case Ast.MODULE
-        gen(node)
-      case Ast.TL_VAR
-        if node.get_string("annotation") == "const"
-          pass
+        Module.push(node.get_string("name"))
+        gen(node[1])
+        Module.pop()
+      case Ast.C_CODE
+        header.print(node.text[2:(-2)])
+      case Ast.FUNCTION
+        gen_function(node)
+      case Ast.CONST_VAR
+        for optassign in node[1]
+          name = Module.prefix() + optassign.get_string("name")
+          expr = optassign[1]
+          init1.print("  ssym_set(\"%a\", %a);\n".f(name, eval_v_expr(expr)))
+
+gen_globals(ast)
+  for node in ast
+    if node.type == Ast.GLOBAL_VAR
+      optassign_list = node[1]
+      for optassign in optassign_list
+        name = optassign.get_string("name")
+        c_name = "_glb%a_%a".f(counter(), Util.to_c(name))
+        locals_add(c_name, name, nil)
+        header.print("Value %a;\n".f(c_name))
+        init3.print("  %a = %a;\n".f(c_name,
+                                     eval_v_expr(optassign[1])))
 
 generate(ast, b_header, b_code, b_init1, b_init2, b_init3)
   header = b_header

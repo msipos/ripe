@@ -53,7 +53,7 @@ module Typer
     index = 1
     for param in param_list
       if param.has_string?("array")
-        if index != param_list.size
+        if index != param_list.num_children
           raise "array parameter is not last parameter"
         out.push("*")
       else
