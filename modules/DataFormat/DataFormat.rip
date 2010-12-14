@@ -1,0 +1,27 @@
+module DataFormat
+  load(filename)
+    tf = TextFile.new(filename, TextFile.Read)
+
+    map = Map.new()
+    loop
+      line = tf.read_line()
+      if line == eof
+        return map
+      name = line.strip()
+
+      line = tf.read_line()
+      classname = line.strip()
+      switch classname
+        case "Array2"
+          nx = Integer(tf.read_line().strip())
+          ny = Integer(tf.read_line().strip())
+
+          arr = Array2.new_const(nx, ny, 0)
+          for x in 1:nx
+            for y in 1:ny
+              text = tf.read_line().strip()
+              if text.find(".")
+                arr[x,y] = Double(text)
+              else
+                arr[x,y] = Integer(text)
+          map[name] = arr

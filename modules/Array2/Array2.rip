@@ -47,3 +47,9 @@ class Array2
       int64 y = val_to_int64(__y);
       @a.data[array2_index(&(@a), x, y)] = __v;
     $
+
+  virtual_get size_x()
+    return $ int64_to_val(@a.size_x) $
+
+  virtual_get size_y()
+    return $ int64_to_val(@a.size_y) $

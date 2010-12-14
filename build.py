@@ -4,8 +4,9 @@
 
 DATA_TYPES = ['Array1', 'Array2', 'Array3', 'Double', 'Flags', 'Integer', 'Map',
               'Range', 'Set', 'String', 'Tuple']
-STDLIB = ['Character', 'Err', 'Iterable', 'Math', 'Opt', 'Os', 'Out', 'Path',
-          'Std', 'Stream', 'Test', 'Template', 'TextFile', 'Time']
+STDLIB = ['Character', 'DataFormat', 'Err', 'Iterable', 'Math', 'Opt',
+          'Os', 'Out', 'Path', 'Std', 'Stream', 'Test', 'Template',
+          'TextFile', 'Time']
 OPTIONAL_MODULES = ['Ast', 'Bio', 'Curl', 'Gd', 'Gsl', 'Json', 'MainLoop',
                     'Povray', 'Pthread', 'Sci', 'Sdl', 'Speech', 'Xml']
 MODULES = DATA_TYPES + STDLIB
