@@ -342,13 +342,6 @@ static const char* eval_expr(Node* expr)
                    eval_expr_list(arg_list, true)
                  );
         }
-        // TODO: Deprecate call_func and allow variables to be called as
-        // functions.
-        if (strequal(left->text, "call_func")){
-          return mem_asprintf("func_call%u(%s)",
-                               node_num_children(arg_list) - 1,
-                               eval_expr_list(arg_list, false));
-        }
 
         // At this point it must be a static call.
         return eval_static_call(left->text, arg_list);

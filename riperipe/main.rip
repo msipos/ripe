@@ -33,10 +33,16 @@ build_module(files)
   init2 = ""
   init3 = ""
 
+  asts = []
+
   for file in files
     ast = Ast.Node.new_from_file(file)
+    asts.push(ast)
     Typer.absorb_info(ast)
+
+  for ast in asts
     generate(ast, header, code, init1, init2, init3)
+
   dump(header, code, init1, init2, init3, "User")
 
 main()
