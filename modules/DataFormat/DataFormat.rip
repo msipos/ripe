@@ -25,3 +25,20 @@ module DataFormat
               else
                 arr[x,y] = Integer(text)
           map[name] = arr
+
+  save(filename, map)
+    tf = TextFile.new(filename, TextFile.Write)
+    for k, v in map
+      tf.println(k)
+      if v is Array2
+        tf.println("Array2")
+
+        nx = v.size_x
+        ny = v.size_y
+
+        tf.println(nx.to_string())
+        tf.println(ny.to_string())
+
+        for x in 1:nx
+          for y in 1:ny
+            tf.println(v[x,y].to_string())
