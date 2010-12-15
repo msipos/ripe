@@ -73,6 +73,9 @@ void array1_index_set(Array1* array1, int64 idx, Value val)
 
 Value array1_pop(Array1* a)
 {
+  if (a->size == 0)
+    exc_raise("pop() from an empty array");
+
   int64 size = a->size - 1;
   Value rv = a->data[size];
   if (size*4 < a->alloc_size){
