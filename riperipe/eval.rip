@@ -13,6 +13,28 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+global unary_ops, binary_ops
+
+init_ops()
+  if unary_ops == nil
+    unary_ops = Map.new()
+    unary_ops['-'] = "op_unary_minus"
+    unary_ops[Ast.K_NOT] = "op_unary_not"
+  if binary_ops == nil
+    binary_ops = Map.new()
+    binary_ops['+'] = "op_plus"
+    binary_ops['-'] = "op_minus"
+    binary_ops['*'] = "op_star"
+    binary_ops['/'] = "op_slash"
+    binary_ops[Ast.K_AND] = "op_and"
+    binary_ops[Ast.K_OR] = "op_or"
+    binary_ops[Ast.OP_EQUAL] = "op_equal"
+    binary_ops[Ast.OP_NOT_EQUAL] = "op_not_equal"
+    binary_ops['>'] = "op_gt"
+    binary_ops['<'] = "op_lt"
+    binary_ops[Ast.OP_LTE] = "op_lte"
+    binary_ops[Ast.OP_GTE] = "op_gte"
+
 value_barrier(Tuple t)
   switch t[1]
     case "Value"
@@ -41,23 +63,52 @@ eval_expr_list(expr_list, first_comma)
     if index == 1
       if first_comma
         txt = ", "
+    else
+      txt = txt + ", "
     index = index + 1
     txt = txt + eval_v_expr(expr)
+  return txt
+
+eval_static_call(ssym, arg_list)
+  tr = Typer.get_function(ssym)[1]
+  #rv_type = tr[1]
+  param_types = tr[2]
+
+  num_args = arg_list.num_children
+  num_params = param_types.size
+
+  if num_args != num_params
+    raise "'%a' called with %a arguments but expect %a".f(ssym,
+                                                          num_args,
+                                                          num_params)
+  txt = "func_call%a(%a".f(num_args, Ssym.get(ssym))
+  for arg in arg_list
+    txt = txt + ", %a".f(eval_v_expr(arg))
+  return txt + ")"
 
 eval_expr(expr)
+  init_ops()
+  if unary_ops.has_key?(expr.type)
+    return tuple("Value", "%a(%a)".f(
+                                      unary_ops[expr.type],
+                                      eval_v_expr(expr[1])
+                                    ))
+  if binary_ops.has_key?(expr.type)
+    return tuple("Value", "%a(%a,%a)".f(
+                                        binary_ops[expr.type],
+                                        eval_v_expr(expr[1]),
+                                        eval_v_expr(expr[2])
+                                       ))
+
   switch expr.type
-    case Ast.INT
-      return tuple("int64", expr.text)
-    case Ast.DOUBLE
-      return tuple("double", expr.text)
-    case Ast.K_NIL
-      return tuple("Value", "VALUE_NIL")
-    case Ast.K_EOF
-      return tuple("Value", "VALUE_EOF")
     case Ast.K_TRUE
       return tuple("bool", "true")
     case Ast.K_FALSE
       return tuple("bool", "false")
+    case Ast.K_NIL
+      return tuple("Value", "VALUE_NIL")
+    case Ast.K_EOF
+      return tuple("Value", "VALUE_EOF")
     case Ast.ID
       local_var = locals_query(expr.text)
       if local_var == nil
@@ -65,14 +116,35 @@ eval_expr(expr)
       else
         return tuple("Value", local_var.c_name)
     case Ast.SYMBOL
-      return Dsym.get(expr.text[2:])
-    case Ast.C_CODE
-      return tuple("Value", expr.text[2:-2])
+      return tuple("Value", Dsym.get(expr.text[2:]))
+    case Ast.INT
+      return tuple("int64", expr.text)
+    case Ast.DOUBLE
+      return tuple("double", expr.text)
+    case Ast.STRING
+      return tuple("Value", "string_to_val(\"%a\")".f(expr.text))
     case Ast.CHARACTER
       return tuple("int64", expr.text[2])
     case Ast.EXPR_ARRAY
       expr_list = expr[1]
       return tuple("Value",
-                   "array1_to_val2(%a %a)".f(expr_list.num_children,
+                   "array1_to_val2(%a%a)".f(expr_list.num_children,
                                              eval_expr_list(expr_list, true)))
+    case Ast.EXPR_ID_CALL
+      left_id = expr[1].text
+      arg_list = expr[2]
+      if locals_query(left_id) != nil
+        raise "variable '%a' called like a function".f(left_id)
+      if left_id == "tuple"
+        return tuple("Value",
+                     "tuple_to_val(%a%a)".f(arg_list.num_children,
+                                             eval_expr_list(arg_list, true)))
+      return tuple("Value", eval_static_call(left_id, arg_list))
+    case Ast.C_CODE
+      return tuple("Value", expr.text[2:-2])
+    case Ast.EXPR_IS_TYPE
+      return tuple("Value",
+                   "pack_bool(obj_klass(%a) == %a)".f(eval_v_expr(expr[1]),
+                                                Type.get(eval_type(expr[2])) )
+                  )
   return tuple("Value", "")

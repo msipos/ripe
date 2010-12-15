@@ -7,6 +7,13 @@ module Ast
   const K_TRUE                    = $ int64_to_val(K_TRUE) $
   const K_FALSE                   = $ int64_to_val(K_FALSE) $
   const K_EOF                     = $ int64_to_val(K_EOF) $
+  const K_AND                     = $ int64_to_val(K_AND) $
+  const K_OR                      = $ int64_to_val(K_OR) $
+  const K_NOT                     = $ int64_to_val(K_NOT) $
+  const OP_EQUAL                  = $ int64_to_val(OP_EQUAL) $
+  const OP_NOT_EQUAL              = $ int64_to_val(OP_NOT_EQUAL) $
+  const OP_LTE                    = $ int64_to_val(OP_LTE) $
+  const OP_GTE                    = $ int64_to_val(OP_GTE) $
   const ID                        = $ int64_to_val(ID) $
   const INT                       = $ int64_to_val(INT) $
   const DOUBLE                    = $ int64_to_val(DOUBLE) $
