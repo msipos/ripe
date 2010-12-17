@@ -163,6 +163,8 @@ main()
 
   Test.test("c-expr", $ int64_to_val(1) $, 1)
 
+  Test.test("strings concat", "alpha " "omega", "alpha omega")
+
   # Tally results
   arr = Test.get_results()
   correct = arr[1] - arr[2]

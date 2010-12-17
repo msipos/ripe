@@ -56,6 +56,20 @@ eval_type(node)
 eval_v_expr(node)
   return value_barrier(eval_expr(node))
 
+eval_expr_as_id(Ast.Node expr)
+  switch expr.type
+    case Ast.ID
+      return expr.text
+    case Ast.EXPR_FIELD
+      parent = expr[1]
+      field = expr[2]
+      s = eval_expr_as_id(parent)
+      if s != nil
+        return "%a.%a".f(s, field.text)
+      else
+        return nil
+  return nil
+
 eval_expr_list(expr_list, first_comma)
   txt = ""
   index = 1
@@ -68,6 +82,23 @@ eval_expr_list(expr_list, first_comma)
     index = index + 1
     txt = txt + eval_v_expr(expr)
   return txt
+
+eval_obj_call(Ast.Node obj, String method_name, args)
+  return "method_call%a(%a, %a %a)".f(
+                      args.num_children,
+                      eval_v_expr(obj),
+                      Dsym.get(method_name),
+                      eval_expr_list(args, true) )
+
+eval_index_set(Ast.Node node_self, index_args, Ast.Node assign)
+  args = []
+  for arg in index_args
+    args.push(arg)
+  args.push(assign)
+  return eval_obj_call(node_self, "index_set", args)
+
+eval_index(Ast.Node node_self, index_args)
+  return eval_obj_call(node_self, "index", index_args)
 
 eval_static_call(ssym, arg_list)
   tr = Typer.get_function(ssym)[1]
@@ -85,6 +116,90 @@ eval_static_call(ssym, arg_list)
   for arg in arg_list
     txt = txt + ", %a".f(eval_v_expr(arg))
   return txt + ")"
+
+# All expression evaluators that return a Value.
+eval_expr_Value(expr)
+  switch expr.type
+    case Ast.K_NIL
+      return "VALUE_NIL"
+    case Ast.K_EOF
+      return "VALUE_EOF"
+    case Ast.ID
+      local_var = locals_query(expr.text)
+      if local_var == nil
+        return Ssym.get(expr.text)
+      else
+        return local_var.c_name
+    case Ast.SYMBOL
+      return Dsym.get(expr.text[2:])
+    case Ast.STRING
+      return "string_to_val(\"%a\")".f(expr.text)
+    case Ast.EXPR_ARRAY
+      expr_list = expr[1]
+      return "array1_to_val2(%a%a)".f(expr_list.num_children,
+                                      eval_expr_list(expr_list, true))
+    case Ast.EXPR_INDEX
+      return eval_index(expr[1], expr[2])
+    case Ast.EXPR_FIELD_CALL
+      parent = expr[1]
+      field = expr.get_string("name")
+      arg_list = expr[2]
+
+      s = eval_expr_as_id(parent)
+      if s == nil
+        return eval_obj_call(parent, field, arg_list)
+      elif locals_query(s) != nil
+        return eval_obj_call(parent, field, arg_list)
+
+      return eval_static_call("%a.%a".f(s, field), arg_list)
+    case Ast.EXPR_ID_CALL
+      left_id = expr[1].text
+      arg_list = expr[2]
+      if locals_query(left_id) != nil
+        raise "variable '%a' called like a function".f(left_id)
+      if left_id == "tuple"
+        return "tuple_to_val(%a%a)".f(arg_list.num_children,
+                                      eval_expr_list(arg_list, true))
+      return eval_static_call(left_id, arg_list)
+    case Ast.EXPR_RANGE_BOUNDED
+      left = expr[1]
+      right = expr[2]
+      return ("range_to_val(RANGE_BOUNDED, "
+              "val_to_int64(%a), val_to_int64(%a))".f(
+                                          eval_v_expr(left),
+                                          eval_v_expr(right)
+                                                     ) )
+    case Ast.EXPR_RANGE_BOUNDED_LEFT
+      left = expr[1]
+      return ("range_to_val(RANGE_BOUNDED_LEFT, "
+              "val_to_int64(%a), 0)".f(eval_v_expr(left)))
+    case Ast.EXPR_RANGE_BOUNDED_RIGHT
+      right = expr[1]
+      return ("range_to_val(RANGE_BOUNDED_RIGHT, "
+              "0, val_to_int64(%a))".f(eval_v_expr(right)))
+    case Ast.EXPR_RANGE_UNBOUNDED
+      return "range_to_val(RANGE_UNBOUNDED, 0, 0)"
+    case Ast.EXPR_FIELD
+      left = expr[1]
+      field = expr[2]
+      s = eval_expr_as_id(left)
+
+      # Is it a dynamic field?
+      dynamic_field = false
+      if s == nil
+        dynamic_field = true
+      elif locals_query(s) != nil
+        dynamic_field = true
+      if dynamic_field
+        return "field_get(%a, %a)".f(eval_v_expr(left),
+                                     Dsym.get(field.text))
+
+      # For sure it is a static symbol
+      return Ssym.get(eval_expr_as_id(expr))
+
+    case Ast.C_CODE
+      return expr.text[2:-2]
+  return ""
 
 eval_expr(expr)
   init_ops()
@@ -105,46 +220,16 @@ eval_expr(expr)
       return tuple("bool", "true")
     case Ast.K_FALSE
       return tuple("bool", "false")
-    case Ast.K_NIL
-      return tuple("Value", "VALUE_NIL")
-    case Ast.K_EOF
-      return tuple("Value", "VALUE_EOF")
-    case Ast.ID
-      local_var = locals_query(expr.text)
-      if local_var == nil
-        return tuple("Value", Ssym.get(expr.text))
-      else
-        return tuple("Value", local_var.c_name)
-    case Ast.SYMBOL
-      return tuple("Value", Dsym.get(expr.text[2:]))
     case Ast.INT
       return tuple("int64", expr.text)
     case Ast.DOUBLE
       return tuple("double", expr.text)
-    case Ast.STRING
-      return tuple("Value", "string_to_val(\"%a\")".f(expr.text))
     case Ast.CHARACTER
       return tuple("int64", expr.text[2])
-    case Ast.EXPR_ARRAY
-      expr_list = expr[1]
-      return tuple("Value",
-                   "array1_to_val2(%a%a)".f(expr_list.num_children,
-                                             eval_expr_list(expr_list, true)))
-    case Ast.EXPR_ID_CALL
-      left_id = expr[1].text
-      arg_list = expr[2]
-      if locals_query(left_id) != nil
-        raise "variable '%a' called like a function".f(left_id)
-      if left_id == "tuple"
-        return tuple("Value",
-                     "tuple_to_val(%a%a)".f(arg_list.num_children,
-                                             eval_expr_list(arg_list, true)))
-      return tuple("Value", eval_static_call(left_id, arg_list))
-    case Ast.C_CODE
-      return tuple("Value", expr.text[2:-2])
     case Ast.EXPR_IS_TYPE
-      return tuple("Value",
-                   "pack_bool(obj_klass(%a) == %a)".f(eval_v_expr(expr[1]),
-                                                Type.get(eval_type(expr[2])) )
-                  )
-  return tuple("Value", "")
+      return tuple("bool", "(obj_klass(%a) == %a)".f(
+                                  eval_v_expr(expr[1]),
+                                  Type.get(eval_type(expr[2]))
+                                      ))
+
+  return tuple("Value", eval_expr_Value(expr))

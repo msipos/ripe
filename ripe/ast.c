@@ -61,5 +61,5 @@ const char* eval_type(Node* type_node)
   const char* type = node_get_string(type_node, "name");
   if (node_num_children(type_node) == 0) return type;
   return mem_asprintf("%s.%s", type,
-                      node_get_child(type_node, 0));
+                      eval_type(node_get_child(type_node, 0)));
 }

@@ -42,6 +42,7 @@ module Ast
   const STMT_CONTINUE             = $ int64_to_val(STMT_CONTINUE) $
   const STMT_FOR                  = $ int64_to_val(STMT_FOR) $
   const STMT_LOOP                 = $ int64_to_val(STMT_LOOP) $
+  const STMT_SWITCH               = $ int64_to_val(STMT_SWITCH) $
   const STMT_TRY                  = $ int64_to_val(STMT_TRY) $
   const STMT_CATCH_ALL            = $ int64_to_val(STMT_CATCH_ALL) $
   const STMT_FINALLY              = $ int64_to_val(STMT_FINALLY) $

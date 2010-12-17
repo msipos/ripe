@@ -21,6 +21,7 @@
 
 %{
   #include "lang/lang.h"
+  #include "clib/stringbuf.h"
 
   Node* operator(Node* a, Node* op, Node* b)
   {
@@ -305,7 +306,7 @@ r_expr:    d_expr              { $$ = $1; };
 d_expr:    C_CODE              { $$ = $1; };
 d_expr:    INT                 { $$ = $1; };
 d_expr:    DOUBLE              { $$ = $1; };
-d_expr:    STRING              { $$ = $1; };
+d_expr:    string              { $$ = $1; };
 d_expr:    CHARACTER           { $$ = $1; };
 d_expr:    "nil"               { $$ = $1; };
 d_expr:    "true"              { $$ = $1; };
@@ -313,7 +314,15 @@ d_expr:    "false"             { $$ = $1; };
 d_expr:    "eof"               { $$ = $1; };
 d_expr:    SYMBOL              { $$ = $1; };
 
-type:      type '.' ID         { $$ = $1;
+string:    STRING              { $$ = $1; };
+string:    string STRING       { $$ = node_new(STRING);
+                                 StringBuf sb_temp;
+                                 sbuf_init(&sb_temp, $1->text);
+                                 sbuf_cat(&sb_temp, $2->text);
+                                 $$->text = mem_strdup(sb_temp.str);
+                                 sbuf_deinit(&sb_temp); }
+
+type:      type '.' type       { $$ = $1;
                                  node_add_child($$, $3); };
 type:      ID                  { $$ = node_new_inherit(TYPE, $1);
                                  node_set_string($$, "name", $1->text); };

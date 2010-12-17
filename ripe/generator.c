@@ -365,8 +365,7 @@ static const char* eval_expr(Node* expr)
                           "0, val_to_int64(%s))",
                           eval_expr(node_get_child(expr, 0)));
     case EXPR_RANGE_UNBOUNDED:
-      return mem_strdup("range_to_val(RANGE_UNBOUNDED, 0, 0)");
-
+      return "range_to_val(RANGE_UNBOUNDED, 0, 0)";
     case EXPR_FIELD:
       {
         // Attempt to evaluate this field as a static symbol.
@@ -374,11 +373,10 @@ static const char* eval_expr(Node* expr)
         const char* s = eval_expr_as_id(left);
         if (s == NULL or query_local(s) != NULL){
           // Dynamic field.
-          Node* parent = node_get_child(expr, 0);
           Node* field = node_get_child(expr, 1);
 
           return mem_asprintf("field_get(%s, %s)",
-                              eval_expr(parent),
+                              eval_expr(left),
                               tbl_get_dsym(field->text));
         } else {
           // Could be a global variable.

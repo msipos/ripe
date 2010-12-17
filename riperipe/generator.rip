@@ -203,6 +203,14 @@ gen_stmt_assign2(lvalue, rvalue)
         locals_add(c_name, ripe_name, type)
       else
         code.print("  %a = %a;\n".f(var.c_name, right))
+    case Ast.EXPR_INDEX
+      code.print("  %a;\n".f(eval_index_set(lvalue[1],
+                                            lvalue[2],
+                                            rvalue)))
+    case Ast.EXPR_FIELD
+      code.print("  field_set(%a, %a, %a);\n".f(eval_v_expr(lvalue[1]),
+                                                Dsym.get(lvalue[2].text),
+                                                right))
 
 gen_stmt_assign(left, right)
   if left.num_children == 1
@@ -215,18 +223,20 @@ gen_stmt(stmt)
       if (expr.type == Ast.EXPR_ID_CALL
        or expr.type == Ast.EXPR_FIELD_CALL
        or expr.type == Ast.C_CODE)
-        code.print("  %a;\n".f(eval_expr(expr)[2]))
+        code.print("  %a;\n".f(eval_v_expr(expr)))
       else
         raise("invalid expression in an expression statement")
     case Ast.STMT_RETURN
       code.print("  return %a;\n".f(eval_v_expr(stmt[1])))
     case Ast.STMT_LOOP
       break_label = "_brk_lbl%a".f(counter())
-      code.print("  for(;;){\n")
-      stack.push(break_label)
+      continue_label = "_cnt_lbl%a".f(counter())
+      code.print("  for(;;){\n  %a:\n".f(continue_label))
+      stack.push(tuple(break_label, continue_label))
       gen_block(stmt[1])
       stack.pop()
       code.print("  }\n")
+      code.print("  %a:\n".f(break_label))
     case Ast.STMT_IF
       code.print("  if (%a == VALUE_TRUE) {\n".f(eval_v_expr(stmt[1])))
       gen_block(stmt[2])
@@ -239,8 +249,44 @@ gen_stmt(stmt)
       code.print("  else {\n")
       gen_block(stmt[1])
       code.print("  }\n")
+    case Ast.STMT_BREAK
+      if stack.size == 0
+        raise "break outside of loop"
+      stc = stack.pop()
+      code.print("  goto %a;\n".f(stc[1]))
+    case Ast.STMT_CONTINUE
+      if stack.size == 0
+        raise "continue outside of a loop"
+      stc = stack.pop()
+      code.print("  goto %a;\n".f(stc[2]))
     case Ast.STMT_ASSIGN
       gen_stmt_assign(stmt[1], stmt[2])
+    case Ast.STMT_PASS
+      return
+    case Ast.STMT_RAISE
+      code.print("  exc_raise(val_to_string(%a));".f(
+                   eval_v_expr(stmt[1])))
+    case Ast.STMT_SWITCH
+      c_expr = "_switch_expr%a".f(counter())
+      expr = stmt[1]
+      case_list = stmt[2]
+      code.print("  {\n")
+      code.print("  Value %a = %a;\n".f(c_expr, eval_v_expr(expr)))
+      index = 1
+      for node_case in case_list
+        expr = node_case[1]
+        block = node_case[2]
+
+        word = "else if"
+        if index == 1
+          word = "if"
+        code.print("  %a (op_equal(%a, %a) == VALUE_TRUE) {\n".f(
+                      word,
+                      c_expr,
+                      eval_v_expr(expr)))
+        gen_block(block)
+        code.print("  }\n")
+      code.print("  }\n")
 
 gen_block(stmt_list)
   locals_push()
