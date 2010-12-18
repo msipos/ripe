@@ -1,3 +1,2 @@
-includes=`pkg-config --cflags gsl`
-links=`pkg-config --libs gsl`
-
+cflags=`pkg-config --cflags gsl`
+lflags=`pkg-config --libs gsl`

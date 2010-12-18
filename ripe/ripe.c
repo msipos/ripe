@@ -79,8 +79,8 @@ void module_add(const char* module_name, const char* obj_filename,
     fclose(f);
     Conf conf;
     conf_load(&conf, meta_filename);
-    cflags = mem_asprintf("%s %s", cflags, conf_query(&conf, "includes"));
-    lflags = mem_asprintf("%s %s", lflags, conf_query(&conf, "links"));
+    cflags = mem_asprintf("%s %s", cflags, conf_query(&conf, "cflags"));
+    lflags = mem_asprintf("%s %s", lflags, conf_query(&conf, "lflags"));
   }
 
   array_append(&modules, module);
@@ -330,7 +330,7 @@ int main(int argc, char* const* argv)
   app_dir = path_get_app_dir();
 
   Conf conf;
-  const char* conf_file = path_join(2, app_dir, "ripe.conf");
+  const char* conf_file = path_join(2, app_dir, "ripe.meta");
   conf_load(&conf, conf_file);
   cflags = conf_query(&conf, "cflags");
   lflags = conf_query(&conf, "lflags");

@@ -1,1 +1,1 @@
-links=-lgd
+lflags=-lgd

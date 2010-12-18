@@ -1,2 +1,1 @@
-includes=
-links=-pthread
+lflags=-pthread

@@ -1,2 +1,2 @@
-includes=`xml2-config --cflags`
-links=`xml2-config --libs`
+cflags=`xml2-config --cflags`
+lflags=`xml2-config --libs`

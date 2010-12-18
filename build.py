@@ -7,8 +7,8 @@ DATA_TYPES = ['Array1', 'Array2', 'Array3', 'Double', 'Flags', 'Integer', 'Map',
 STDLIB = ['Character', 'DataFormat', 'Err', 'Iterable', 'Math', 'Opt',
           'Os', 'Out', 'Path', 'Std', 'Stream', 'Test', 'Template',
           'TextFile', 'Time']
-OPTIONAL_MODULES = ['Ast', 'Bio', 'Curl', 'Gd', 'Gsl', 'Json', 'MainLoop',
-                    'Povray', 'Pthread', 'Sci', 'Sdl', 'Speech', 'Xml']
+OPTIONAL_MODULES = ['Ast', 'Bio', 'Curl', 'Gd', 'Gsl', 'Json',
+                    'Povray', 'Pthread', 'Sci', 'Speech', 'Xml']
 MODULES = DATA_TYPES + STDLIB
 DEF_MODULES = DATA_TYPES + STDLIB
 
@@ -171,7 +171,7 @@ tools.link_objs(vm_objs + clib_objs, "product/vm.o")
 include_headers = clib_hs + vm_hs + ['modules/modules.h', 'lang/lang.h']
 for header in include_headers:
     tools.copy_file('product/include/' + header, header)
-f = open('product/ripe.conf', 'w')
+f = open('product/ripe.meta', 'w')
 f.write('cflags=%s\n' % " ".join(conf["CFLAGS"]))
 f.write('lflags=%s\n' % " ".join(conf["LFLAGS"]))
 f.write('modules=%s\n' % (" ".join(DEF_MODULES)))
@@ -223,8 +223,8 @@ def build_module(module, required):
     meta = tools.load_meta(metafile)
     extra_CFLAGS = ''
     extra_objs = ''
-    if meta.has_key('includes'):
-        extra_CFLAGS = extra_CFLAGS + meta['includes']
+    if meta.has_key('cflags'):
+        extra_CFLAGS = extra_CFLAGS + meta['cflags']
     if meta.has_key('objs'):
         extra_objs = meta['objs']
     if meta.has_key('builder'):

@@ -13,6 +13,54 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+global verbose = false
+
+sys(args)
+  txt = String.join(args, " ")
+  if verbose
+    Out.println(txt)
+  if Os.system(args) != 0
+    raise "Os.system(%a) failed".f(txt)
+
+load_meta(filename)
+  map = Map.new()
+  tf = TextFile.new(filename, TextFile.Read)
+  for line in tf
+    line = line.strip()
+    n = line.find("=")
+    left = line[:(n-1)].strip()
+    right = line[(n+1):].strip()
+    map[left] = right
+  return map
+  tf.close()
+
+# Returns filename of the module loader object. Should be removed by the callee.
+# module_names is an array of modules that should be loaded
+make_module_loader(module_names, cflags)
+  out_file = Os.temp_name("ripe", ".o")
+
+  tmp_c_file = Os.temp_name("ripe", ".c")
+  tf = TextFile.new(tmp_c_file, TextFile.Write)
+  for m in module_names
+    tf.println("void init1_%a();".f(m))
+    tf.println("void init2_%a();".f(m))
+    tf.println("void init3_%a();".f(m))
+  tf.println("void ripe_module1(){")
+  for m in module_names
+    tf.println("  init1_%a();".f(m))
+  tf.println("}")
+  tf.println("void ripe_module2(){")
+  for m in module_names
+    tf.println("  init2_%a();".f(m))
+  tf.println("}")
+  tf.println("void ripe_module3(){")
+  for m in module_names
+    tf.println("  init3_%a();".f(m))
+  tf.println("}")
+  tf.close()
+  sys(["gcc", cflags, "-c", tmp_c_file, "-o", out_file])
+  return out_file
+
 dump(header, code, init1, init2, init3, module_name, outfile)
   outfile.println(header)
   outfile.println(code)
@@ -26,42 +74,72 @@ dump(header, code, init1, init2, init3, module_name, outfile)
   outfile.println(init3)
   outfile.println("}\n")
 
-go_bootstrap(files)
+go_bootstrap(files, outfile)
   header = ""
   code = ""
   init1 = ""
   init2 = ""
   init3 = ""
 
-  asts = []
+  cflags = ""
+  lflags = ""
 
+  asts = []
+  objs = []
   for file in files
-    ast = Ast.Node.new_from_file(file)
-    asts.push(ast)
-    Typer.absorb_info(ast)
+    root, ext = Path.split_extension(file)
+    switch ext
+      case ".rip"
+        ast = Ast.Node.new_from_file(file)
+        asts.push(ast)
+        Typer.absorb_info(ast)
+      case ".o"
+        objs.push(file)
+      case ".meta"
+        meta = load_meta(file)
+        if meta.has_key?("cflags")
+          cflags = cflags + " " + meta["cflags"]
+        if meta.has_key?("lflags")
+          lflags = lflags + " " + meta["lflags"]
+  objs.push(make_module_loader(["User"], cflags))
 
   for ast in asts
     generate(ast, header, code, init1, init2, init3)
 
-  tmp_c_file = TextFile.new(Os.temp_name("ripe", ".c"), TextFile.Write)
-  dump(header, code, init1, init2, init3, "User", tmp_c_file)
-  tmp_c_file.close()
+  tmp_c_file = Os.temp_name("ripe", ".c")
+  tf = TextFile.new(tmp_c_file, TextFile.Write)
+  dump(header, code, init1, init2, init3, "User", tf)
+  tf.close()
+
+  tmp_o_file = Os.temp_name("ripe", ".o")
+  sys(["gcc", cflags, tmp_c_file, "-c", "-o", tmp_o_file])
+
+  objs_txt = String.join(objs, " ")
+  sys(["gcc", lflags, objs_txt, tmp_o_file, "-o", outfile])
 
 main()
   options = [
     [&BOOTSTRAP, "-s", "--bootstrap", 0  , "bootstrap build"],
+    [&OUTFILE,   "-o", "--outfile", Opt.ARG, "set output filename"],
     [&HELP,      "-h", "--help", Opt.HELP, "display help"]
   ]
 
   args = Os.get_args()
   parsed, leftover = Opt.parse(args, options)
 
+  outfile = "r.out"
   mode = nil
+  verbose = true
   for opt in parsed
     switch opt[1]
       case &BOOTSTRAP
         mode = &BOOTSTRAP
+      case &OUTFILE
+        outfile = opt[2]
 
   switch mode
     case &BOOTSTRAP
-      go_bootstrap(leftover)
+      go_bootstrap(leftover, outfile)
+    case nil
+      Err.println("error: no mode specified (use -h for help)")
+      return 1
