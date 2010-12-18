@@ -3,7 +3,7 @@ $
   #include <unistd.h>
 $
 
-module Time
+namespace Time
   get_current()
     $
       time_t t = time(NULL);

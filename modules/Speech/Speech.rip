@@ -8,7 +8,7 @@ $
   }
 $
 
-module Speech
+namespace Speech
   const MALE1 = $ int64_to_val(SPD_MALE1) $
   const FEMALE1 = $ int64_to_val(SPD_FEMALE1) $
   const FEMALE2 = $ int64_to_val(SPD_FEMALE2) $

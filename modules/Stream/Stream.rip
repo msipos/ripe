@@ -1,4 +1,4 @@
-module Stream
+namespace Stream
   print(stream, *args)
     for arg in args
       stream.write(arg)

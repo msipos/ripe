@@ -38,7 +38,7 @@ $
   } ProbRecord;
 $
 
-module Bio
+namespace Bio
   dist_ss(seq1, seq2)
     s1 = seq1.seq
     s2 = seq2.seq

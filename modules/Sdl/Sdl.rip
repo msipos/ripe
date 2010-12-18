@@ -8,8 +8,8 @@ $
   #define BLUE(x)  ((x & 0x0000FF00) >> 8)
 $
 
-module Sdl
-  module Ttf
+namespace Sdl
+  namespace Ttf
     init()
       $
         TTF_Init();

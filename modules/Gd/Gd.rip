@@ -8,7 +8,7 @@ $
   } Color;
 $
 
-module Gd
+namespace Gd
   class Image
     $ gdImagePtr image; $
     constructor new(x, y)

@@ -2,7 +2,7 @@ $
   #include "lang/lang.h"
 $
 
-module Ast
+namespace Ast
   const K_NIL                     = $ int64_to_val(K_NIL) $
   const K_TRUE                    = $ int64_to_val(K_TRUE) $
   const K_FALSE                   = $ int64_to_val(K_FALSE) $
@@ -22,7 +22,7 @@ module Ast
   const C_CODE                    = $ int64_to_val(C_CODE) $
   const CHARACTER                 = $ int64_to_val(CHARACTER) $
   const TOPLEVEL_LIST             = $ int64_to_val(TOPLEVEL_LIST) $
-  const MODULE                    = $ int64_to_val(MODULE) $
+  const NAMESPACE                 = $ int64_to_val(NAMESPACE) $
   const FUNCTION                  = $ int64_to_val(FUNCTION) $
   const STMT_LIST                 = $ int64_to_val(STMT_LIST) $
   const CLASS                     = $ int64_to_val(CLASS) $

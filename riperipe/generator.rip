@@ -19,7 +19,7 @@
 
 global ctx, ctx_name, ctx2, ctx_name2
 
-module Ctx
+namespace Ctx
   in_function(function_name)
     ctx2 = &FUNCTION
     ctx_name2 = function_name
@@ -54,7 +54,7 @@ module Ctx
 
 global ssym_table, dsym_table, type_table
 
-module Ssym
+namespace Ssym
   get(name)
     if ssym_table == nil
       ssym_table = Map.new()
@@ -67,7 +67,7 @@ module Ssym
     ssym_table[name] = c_name
     return c_name
 
-module Dsym
+namespace Dsym
   get(name)
     if dsym_table == nil
       dsym_table = Map.new()
@@ -80,7 +80,7 @@ module Dsym
     dsym_table[name] = c_name
     return c_name
 
-module Type
+namespace Type
   get(name)
     if type_table == nil
       type_table = Map.new()
@@ -96,7 +96,7 @@ module Type
 ##############################################################################
 # Util
 ##############################################################################
-module Util
+namespace Util
   to_c(ripe_name)
     c_name = ripe_name.clone()
     c_name.substitute_character!('!', '_')

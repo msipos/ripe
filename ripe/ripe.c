@@ -362,7 +362,7 @@ int main(int argc, char* const* argv)
   cflags = mem_asprintf("%s -I%s/include", cflags, app_dir);
 
   // Mode of operation
-  #define MODE_MODULE 1
+  #define MODE_NAMESPACE 1
   #define MODE_BUILD  2
   #define MODE_RUN    3
   #define MODE_DUMP_C 4
@@ -382,7 +382,7 @@ int main(int argc, char* const* argv)
         mode = MODE_BUILD;
         break;
       case 'c':
-        mode = MODE_MODULE;
+        mode = MODE_NAMESPACE;
         break;
       case 'd':
         mode = MODE_DUMP_C;
@@ -429,7 +429,7 @@ int main(int argc, char* const* argv)
   if (optind == argc) err("no source file given");
 
   // Time to load typer info. Only for particular modes that require it.
-  if (mode == MODE_MODULE or mode == MODE_BUILD or mode == MODE_RUN
+  if (mode == MODE_NAMESPACE or mode == MODE_BUILD or mode == MODE_RUN
       or mode == MODE_DUMP_C){
     typer_init();
     type_info_from_modules(module_name);
@@ -437,7 +437,7 @@ int main(int argc, char* const* argv)
 
   char* in_filename;
   switch(mode){
-    case MODE_MODULE:
+    case MODE_NAMESPACE:
       if (out_filename == NULL) out_filename = "out.o";
       if (module_name == NULL) module_name = "Module";
 

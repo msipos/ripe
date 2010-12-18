@@ -15,7 +15,7 @@
 
 global c_total = 0, c_false = 0, verbose = true
 
-module Test
+namespace Test
   set_verbose(v)
     verbose = v
 

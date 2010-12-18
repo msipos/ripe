@@ -13,8 +13,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef MODULES_H
-#define MODULES_H
+#ifndef NAMESPACES_H
+#define NAMESPACES_H
 
 #include "vm/vm.h"
 

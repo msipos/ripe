@@ -1,4 +1,4 @@
-module Opt
+namespace Opt
 
   find(needle, haystack, idx)
     for option in haystack

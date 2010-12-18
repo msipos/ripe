@@ -40,9 +40,9 @@ const char* conf_query(Conf* conf, const char* key);
 // ripe/ast.c
 //////////////////////////////////////////////////////////////////////////////
 
-const char* module_get_prefix();
-void module_pop();
-void module_push(const char* name);
+const char* namespace_get_prefix();
+void namespace_pop();
+void namespace_push(const char* name);
 const char* eval_type(Node* type_node);
 
 //////////////////////////////////////////////////////////////////////////////

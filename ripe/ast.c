@@ -15,45 +15,45 @@
 
 #include "ripe/ripe.h"
 
-static bool is_module_init = false;
-static Array module_stack;
+static bool is_namespace_init = false;
+static Array namespace_stack;
 
-static void module_init()
+static void namespace_init()
 {
-  if (not is_module_init){
-    is_module_init = true;
-    array_init(&module_stack, const char*);
+  if (not is_namespace_init){
+    is_namespace_init = true;
+    array_init(&namespace_stack, const char*);
   }
 }
 
-const char* module_get_prefix()
+const char* namespace_get_prefix()
 {
-  module_init();
-  const char* module_prefix;
-  if (module_stack.size > 0){
-    module_prefix = array_get(&module_stack, char*, 0);
-    for (int i = 1; i < module_stack.size; i++){
-      module_prefix = mem_asprintf("%s.%s", module_prefix,
-                                   array_get(&module_stack, char*, i));
+  namespace_init();
+  const char* namespace_prefix;
+  if (namespace_stack.size > 0){
+    namespace_prefix = array_get(&namespace_stack, char*, 0);
+    for (int i = 1; i < namespace_stack.size; i++){
+      namespace_prefix = mem_asprintf("%s.%s", namespace_prefix,
+                                   array_get(&namespace_stack, char*, i));
     }
-    module_prefix = mem_asprintf("%s.", module_prefix);
+    namespace_prefix = mem_asprintf("%s.", namespace_prefix);
   } else {
-    module_prefix = "";
+    namespace_prefix = "";
   }
-  return module_prefix;
+  return namespace_prefix;
 }
 
-void module_push(const char* name)
+void namespace_push(const char* name)
 {
-  module_init();
-  array_append(&module_stack, mem_strdup(name));
+  namespace_init();
+  array_append(&namespace_stack, mem_strdup(name));
 }
 
-void module_pop()
+void namespace_pop()
 {
-  module_init();
-  assert(module_stack.size > 0);
-  array_pop(&module_stack, const char*);
+  namespace_init();
+  assert(namespace_stack.size > 0);
+  array_pop(&namespace_stack, const char*);
 }
 
 const char* eval_type(Node* type_node)

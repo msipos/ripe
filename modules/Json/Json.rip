@@ -3,7 +3,7 @@ $
   #include "modules/Json/json.c"
 $
 
-module Json
+namespace Json
   parse(s)
     $
       return json_parse(val_to_string(__s), 0);

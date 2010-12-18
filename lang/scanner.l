@@ -55,7 +55,7 @@
 ","                             { return ','; }
 \@                              { return '@'; }
 return                          { return K_RETURN; }
-module                          { return K_MODULE; }
+namespace                          { return K_NAMESPACE; }
 true                            { return K_TRUE; }
 false                           { return K_FALSE; }
 nil                             { return K_NIL; }

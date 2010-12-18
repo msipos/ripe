@@ -1,6 +1,6 @@
 $ #include <math.h> $
 
-module Math
+namespace Math
   bit_or(a, b)
     return $ int64_to_val(val_to_int64(__a) | val_to_int64(__b)) $
 

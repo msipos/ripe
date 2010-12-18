@@ -34,7 +34,7 @@ load_meta(filename)
   return map
   tf.close()
 
-# Returns filename of the module loader object. Should be removed by the callee.
+# Returns filename of the namespace loader object. Should be removed by the callee.
 # module_names is an array of modules that should be loaded
 make_module_loader(module_names, cflags)
   out_file = Os.temp_name("ripe", ".o")
@@ -45,15 +45,15 @@ make_module_loader(module_names, cflags)
     tf.println("void init1_%a();".f(m))
     tf.println("void init2_%a();".f(m))
     tf.println("void init3_%a();".f(m))
-  tf.println("void ripe_module1(){")
+  tf.println("void ripe_namespace1(){")
   for m in module_names
     tf.println("  init1_%a();".f(m))
   tf.println("}")
-  tf.println("void ripe_module2(){")
+  tf.println("void ripe_namespace2(){")
   for m in module_names
     tf.println("  init2_%a();".f(m))
   tf.println("}")
-  tf.println("void ripe_module3(){")
+  tf.println("void ripe_namespace3(){")
   for m in module_names
     tf.println("  init3_%a();".f(m))
   tf.println("}")

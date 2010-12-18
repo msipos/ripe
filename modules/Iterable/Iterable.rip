@@ -1,4 +1,4 @@
-module Iterable
+namespace Iterable
   collect(iterable)
     arr = []
     for x in iterable

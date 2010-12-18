@@ -15,7 +15,7 @@
 
 global mod_array
 
-module Module
+namespace Module
   init()
     if mod_array == nil
       mod_array = []

@@ -51,7 +51,7 @@
 %token   C_CODE
 // Keywords are labeled with K_ prefix. All keywords should appear in lex_get2()
 // in addition to here.
-%token   K_MODULE      "module"
+%token   K_NAMESPACE      "namespace"
 %token   K_RETURN      "return"
 %token   K_TRUE        "true"
 %token   K_FALSE       "false"
@@ -118,7 +118,7 @@ top_decls: top_decls SEP top_decl
 top_decls: top_decl            { $$ = node_new(TOPLEVEL_LIST);
                                  node_add_child($$, $1); };
 
-// "middle" declarations can appear within modules.
+// "middle" declarations can appear within namespaces.
 mid_decl:  topmid_decl         { $$ = $1; };
 mid_decl:  topmidbot_decl      { $$ = $1; };
 
@@ -150,8 +150,8 @@ bot_decls: bot_decl            { $$ = node_new(TOPLEVEL_LIST);
                                  node_add_child($$, $1); };
 
 // mixed declarations
-topmid_decl: "module" ID START mid_decls END
-                               { $$ = node_new(MODULE);
+topmid_decl: "namespace" ID START mid_decls END
+                               { $$ = node_new(NAMESPACE);
                                  node_set_string($$, "name", $2->text);
                                  node_add_child($$, $4); };
 topmid_decl: "class" ID START bot_decls END

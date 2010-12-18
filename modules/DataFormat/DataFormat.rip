@@ -1,4 +1,4 @@
-module DataFormat
+namespace DataFormat
   load(filename)
     tf = TextFile.new(filename, TextFile.Read)
 

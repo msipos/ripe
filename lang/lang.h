@@ -78,7 +78,7 @@ int rc_lex();
 
 // Types of AST nonterminal nodes:
 #define TOPLEVEL_LIST     1000
-#define MODULE            1001
+#define NAMESPACE         1001
 #define FUNCTION          1002
 #define STMT_LIST         1003
 #define CLASS             1004

@@ -4,7 +4,7 @@ $
   #include <libxml/xpath.h>
 $
 
-module Xml
+namespace Xml
   class Document
     $
       xmlDoc *doc;
@@ -57,7 +57,7 @@ module Xml
       $
 
 
-  module Node
+  namespace Node
     const Element = $ int64_to_val(XML_ELEMENT_NODE) $
     const Text = $ int64_to_val(XML_TEXT_NODE) $
 

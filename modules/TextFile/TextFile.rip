@@ -5,7 +5,7 @@ $
   #define TEXTFILE_WRITE 2
 $
 
-module TextFile
+namespace TextFile
   const Read = $ int64_to_val(TEXTFILE_READ) $
   const Write = $ int64_to_val(TEXTFILE_WRITE) $
 

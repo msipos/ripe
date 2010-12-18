@@ -15,7 +15,7 @@ $
   }
 $
 
-module Pthread
+namespace Pthread
   class Mutex
     $
       pthread_mutex_t mutex;

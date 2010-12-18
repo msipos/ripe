@@ -1,5 +1,5 @@
-module Sci
-  module Bin
+namespace Sci
+  namespace Bin
     histogram(A, num_bins)
       min = Iterable.min(A)
       max = Iterable.max(A)

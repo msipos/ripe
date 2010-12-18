@@ -10,7 +10,7 @@ $
   }
 $
 
-module Curl
+namespace Curl
   unescape(str)
     $
       CURL* handle = curl_easy_init();

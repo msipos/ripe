@@ -816,7 +816,7 @@ static void gen_function(Node* function)
   // Deal with counter
   static uint counter = 0;
   counter++;
-  const char* name = mem_asprintf("%s%s", module_get_prefix(),
+  const char* name = mem_asprintf("%s%s", namespace_get_prefix(),
                                   node_get_string(function, "name"));
   Node* rv_type = node_get_child(function, 0);
   Node* param_list = node_get_child(function, 1);
@@ -935,7 +935,7 @@ static void gen_class(Node* klass)
   counter++;
   context = CONTEXT_CLASS;
   context_class_name = mem_asprintf("%s%s",
-                                    module_get_prefix(),
+                                    namespace_get_prefix(),
                                     node_get_string(klass, "name"));
   context_class_c_name = mem_asprintf("klass%d", counter);
   context_class_dict = dict_new(sizeof(char*), sizeof(char*),
@@ -1089,7 +1089,7 @@ static void gen_globals(Node* ast)
 
             static int counter = 0;
             counter++;
-            const char* ripe_name = mem_asprintf("%s%s", module_get_prefix(), var_name);
+            const char* ripe_name = mem_asprintf("%s%s", namespace_get_prefix(), var_name);
             const char* c_name = mem_asprintf("_glb%d_%s", counter,
                                               util_escape(ripe_name));
 
@@ -1110,7 +1110,7 @@ static void gen_globals(Node* ast)
 
             static int counter = 0;
             counter++;
-            const char* ripe_name = mem_asprintf("%s%s", module_get_prefix(), var_name);
+            const char* ripe_name = mem_asprintf("%s%s", namespace_get_prefix(), var_name);
             Node* right = node_get_child(optassign, 0);
 
             sbuf_printf(sb_init1, "  ssym_set(\"%s\", %s);\n",
@@ -1119,13 +1119,13 @@ static void gen_globals(Node* ast)
           }
         }
         break;
-      case MODULE:
+      case NAMESPACE:
         {
           const char* name = node_get_string(n, "name");
-          module_push(name);
+          namespace_push(name);
           Node* toplevels = node_get_child(n, 0);
           gen_globals(toplevels);
-          module_pop(name);
+          namespace_pop(name);
         }
     }
   }
@@ -1139,13 +1139,13 @@ static void gen_toplevels(Node* ast)
       case FUNCTION:
         gen_function(n);
         break;
-      case MODULE:
+      case NAMESPACE:
         {
           const char* name = node_get_string(n, "name");
-          module_push(name);
+          namespace_push(name);
           Node* toplevels = node_get_child(n, 0);
           gen_toplevels(toplevels);
-          module_pop(name);
+          namespace_pop(name);
         }
         break;
       case C_CODE:

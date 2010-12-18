@@ -6,7 +6,7 @@ $
   #include "clib/stringbuf.h"
 $
 
-module Os
+namespace Os
   #$ rdoc-name Os.exit
   #$ rdoc-header Os.exit(Integer i)
   #$ Exit the program with return code i.

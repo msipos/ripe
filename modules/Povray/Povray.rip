@@ -1,4 +1,4 @@
-module Povray
+namespace Povray
   header(f)
     f.println("#include \"colors.inc\"")
     f.println("background { color Cyan }")

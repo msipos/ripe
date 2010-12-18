@@ -4,7 +4,7 @@ $
   #include "clib/stringbuf.h"
 $
 
-module String
+namespace String
 
   #$ rdoc-name String.join
   #$ rdoc-header String.join(Array1 array, String between)

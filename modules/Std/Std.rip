@@ -4,7 +4,7 @@ $
 $
 
 
-module Std
+namespace Std
   sprintln(*args)
     return Std.sprintln_tuple(args)
 

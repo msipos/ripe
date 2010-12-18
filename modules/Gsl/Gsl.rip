@@ -3,7 +3,7 @@ $
   #include <gsl/gsl_randist.h>
 $
 
-module Gsl
+namespace Gsl
   class Rng
     $
       gsl_rng* rng;

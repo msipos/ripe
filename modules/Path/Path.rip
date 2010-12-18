@@ -3,7 +3,7 @@ $
   #include <dirent.h>
 $
 
-module Path
+namespace Path
   const REGULAR = $ int64_to_val(DT_REG) $
   const DIRECTORY = $ int64_to_val(DT_DIR) $
   const SEPARATOR = '/'

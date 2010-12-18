@@ -175,24 +175,24 @@ void typer_ast(Node* ast)
     switch(n->type){
       case FUNCTION:
         {
-          const char* name = mem_asprintf("%s%s", module_get_prefix(),
+          const char* name = mem_asprintf("%s%s", namespace_get_prefix(),
                                                   node_get_string(n, "name"));
           const char* rv = eval_type(node_get_child(n, 0));
           Node* param_list = node_get_child(n, 1);
           typer_add3(name, rv, param_list, NULL);
         }
         break;
-      case MODULE:
+      case NAMESPACE:
         {
           const char* name = node_get_string(n, "name");
-          module_push(name);
+          namespace_push(name);
           typer_ast(node_get_child(n, 0));
-          module_pop(name);
+          namespace_pop(name);
         }
         break;
       case CLASS:
         {
-          const char* class_name = mem_asprintf("%s%s", module_get_prefix(),
+          const char* class_name = mem_asprintf("%s%s", namespace_get_prefix(),
                                                 node_get_string(n, "name"));
           typer_ast_class(class_name, node_get_child(n, 0));
         }

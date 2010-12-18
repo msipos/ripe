@@ -318,7 +318,7 @@ class Array1Iterator
     @idx = @idx + 1
     return val
 
-module ArrayUtil
+namespace ArrayUtil
   index(Integer size, Integer idx)
     if idx > size or idx == 0 or idx < -size
       pass
