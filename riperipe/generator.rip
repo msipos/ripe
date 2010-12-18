@@ -208,9 +208,10 @@ gen_stmt_assign2(lvalue, rvalue)
                                             lvalue[2],
                                             rvalue)))
     case Ast.EXPR_FIELD
-      code.print("  field_set(%a, %a, %a);\n".f(eval_v_expr(lvalue[1]),
-                                                Dsym.get(lvalue[2].text),
-                                                right))
+      code.print("  field_set(%a, %a, %a);\n".f(
+                                        eval_v_expr(lvalue[1]),
+                                        lvalue.get_string("name"),
+                                        right) )
 
 gen_stmt_assign(left, right)
   if left.num_children == 1

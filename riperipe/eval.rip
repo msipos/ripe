@@ -181,7 +181,7 @@ eval_expr_Value(expr)
       return "range_to_val(RANGE_UNBOUNDED, 0, 0)"
     case Ast.EXPR_FIELD
       left = expr[1]
-      field = expr[2]
+      field = expr.get_string("name")
       s = eval_expr_as_id(left)
 
       # Is it a dynamic field?
@@ -192,7 +192,7 @@ eval_expr_Value(expr)
         dynamic_field = true
       if dynamic_field
         return "field_get(%a, %a)".f(eval_v_expr(left),
-                                     Dsym.get(field.text))
+                                     Dsym.get(field))
 
       # For sure it is a static symbol
       return Ssym.get(eval_expr_as_id(expr))

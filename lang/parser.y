@@ -256,7 +256,7 @@ lr_expr:   '@' ID              { $$ = node_new_inherit(EXPR_AT_VAR, $2);
                                  node_set_string($$, "name", $2->text); };
 lr_expr:   rvalue '.' ID       { $$ = node_new(EXPR_FIELD);
                                  node_add_child($$, $1);
-                                 node_add_child($$, $3); };
+                                 node_set_string($$, "name", $3->text); };
 lr_expr:   rvalue '[' rvalue_plus ']'
                                { $$ = node_new(EXPR_INDEX);
                                  node_add_child($$, $1);

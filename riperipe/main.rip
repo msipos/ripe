@@ -13,20 +13,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-dump(header, code, init1, init2, init3, module_name)
-  Out.println(header)
-  Out.println(code)
-  Out.println("void init1_%a(){".f(module_name))
-  Out.println(init1)
-  Out.println("}")
-  Out.println("void init2_%a(){\n".f(module_name))
-  Out.println(init2)
-  Out.println("}\n")
-  Out.println("void init3_%a(){\n".f(module_name))
-  Out.println(init3)
-  Out.println("}\n")
+dump(header, code, init1, init2, init3, module_name, outfile)
+  outfile.println(header)
+  outfile.println(code)
+  outfile.println("void init1_%a(){".f(module_name))
+  outfile.println(init1)
+  outfile.println("}")
+  outfile.println("void init2_%a(){\n".f(module_name))
+  outfile.println(init2)
+  outfile.println("}\n")
+  outfile.println("void init3_%a(){\n".f(module_name))
+  outfile.println(init3)
+  outfile.println("}\n")
 
-build_module(files)
+go_bootstrap(files)
   header = ""
   code = ""
   init1 = ""
@@ -43,14 +43,25 @@ build_module(files)
   for ast in asts
     generate(ast, header, code, init1, init2, init3)
 
-  dump(header, code, init1, init2, init3, "User")
+  tmp_c_file = TextFile.new(Os.temp_name("ripe", ".c"), TextFile.Write)
+  dump(header, code, init1, init2, init3, "User", tmp_c_file)
+  tmp_c_file.close()
 
 main()
   options = [
-    [&HELP, "-h", "--help", Opt.HELP, "display help"]
+    [&BOOTSTRAP, "-s", "--bootstrap", 0  , "bootstrap build"],
+    [&HELP,      "-h", "--help", Opt.HELP, "display help"]
   ]
 
   args = Os.get_args()
   parsed, leftover = Opt.parse(args, options)
 
-  build_module(leftover)
+  mode = nil
+  for opt in parsed
+    switch opt[1]
+      case &BOOTSTRAP
+        mode = &BOOTSTRAP
+
+  switch mode
+    case &BOOTSTRAP
+      go_bootstrap(leftover)

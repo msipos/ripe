@@ -62,3 +62,16 @@ module Os
       }
       return array1_to_val(sys_argc - 1, args);
     $
+
+  #$ rdoc-name Os.temp_name
+  #$ rdoc-header String Os.temp_name(String prefix, String suffix)
+  #$ Return a temporary filename with the given prefix and suffix.
+  temp_name(String prefix, String suffix)
+    $
+      char* s = tempnam("/tmp", val_to_string(__prefix));
+      char* s2 = mem_asprintf("%s%s", s, val_to_string(__suffix));
+      free(s);
+    $
+    rv = $ string_to_val(s2) $
+    $ mem_free(s2); $
+    return rv

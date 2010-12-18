@@ -246,10 +246,9 @@ static const char* eval_expr_as_id(Node* expr)
     case EXPR_FIELD:
       {
         Node* parent = node_get_child(expr, 0);
-        Node* field = node_get_child(expr, 1);
-        assert(field->type == ID);
+        const char* field = node_get_string(expr, "name");
         const char* s = eval_expr_as_id(parent);
-        if (s != NULL) return mem_asprintf("%s.%s", s, field->text);
+        if (s != NULL) return mem_asprintf("%s.%s", s, field);
         else return NULL;
       }
     default:
@@ -373,11 +372,11 @@ static const char* eval_expr(Node* expr)
         const char* s = eval_expr_as_id(left);
         if (s == NULL or query_local(s) != NULL){
           // Dynamic field.
-          Node* field = node_get_child(expr, 1);
+          const char* field = node_get_string(expr, "name");
 
           return mem_asprintf("field_get(%s, %s)",
                               eval_expr(left),
-                              tbl_get_dsym(field->text));
+                              tbl_get_dsym(field));
         } else {
           // Could be a global variable.
           s = eval_expr_as_id(expr);
@@ -502,7 +501,7 @@ static void gen_stmt_assign2(Node* lvalue, Node* rvalue)
     case EXPR_FIELD:
       sbuf_printf(sb_contents, "  field_set(%s, %s, %s);\n",
                   eval_expr(node_get_child(lvalue, 0)),
-                  tbl_get_dsym(node_get_child(lvalue, 1)->text),
+                  tbl_get_dsym(node_get_string(lvalue, "name")),
                   right);
       break;
     case EXPR_AT_VAR:

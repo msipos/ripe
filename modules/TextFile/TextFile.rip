@@ -64,7 +64,9 @@ class TextFile
     $
       const char* text = val_to_string(__text);
       assert(@f != NULL);
-      if (fwrite(text, strlen(text), 1, @f) != 1){
+      uint64 len = strlen(text);
+      if (len == 0) return VALUE_NIL;
+      if (fwrite(text, len, 1, @f) != 1){
         exc_raise("failed to write '%s' to text file: %s", text, strerror(errno));
       }
     $
@@ -80,6 +82,7 @@ class TextFile
       uint64 len = format(NULL, f, array->size, array->data);
       char out[len];
       format(out, f, array->size, array->data);
+      if (len == 0) return VALUE_NIL;
       if (fwrite(out, len-1, 1, @f) != 1){
         exc_raise("failed to write '%s' to text file: %s", out, strerror(errno));
       }
