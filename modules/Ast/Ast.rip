@@ -82,8 +82,35 @@ namespace Ast
     constructor new()
       $ @n = NULL; $
 
+    constructor new_id(text)
+      $ @n = node_new(ID); $
+      self.text = text
+
+    constructor new_int(int)
+      $ @n = node_new(INT); $
+      self.text = int.to_string()
+
+    constructor new_field_call(Ast.Node node, String field)
+      $ @n = node_new(EXPR_FIELD_CALL); $
+      self.add_child(node)
+      self.set_string("name", field)
+      self.add_child(Ast.Node.new_expr_list([]))
+
+    constructor new_expr_index(Ast.Node left, Array1 indices)
+      $ @n = node_new(EXPR_INDEX); $
+      self.add_child(left)
+      self.add_child(Ast.Node.new_expr_list(indices))
+
+    constructor new_expr_list(Array1 exprs)
+      $ @n = node_new(EXPR_LIST); $
+      for expr in exprs
+        self.add_child(expr)
+
     virtual_get type()
       return $ int64_to_val(@n->type) $
+
+    virtual_set type(t)
+      $ @n->type = val_to_int64(__t); $
 
     virtual_get num_children()
       return $ int64_to_val(node_num_children(@n)) $
@@ -91,6 +118,13 @@ namespace Ast
     virtual_get text()
       $ if (@n->text == NULL) return VALUE_NIL; $
       return $ string_to_val(@n->text) $
+
+    virtual_set text(t)
+      $ @n->text = mem_strdup(val_to_string(__t)); $
+
+    add_child(Ast.Node n)
+      $ Node* other = *((Node**) obj_c_data(__n));
+        node_add_child(@n, other); $
 
     get_iter()
       return Ast.NodeIterator.new(self)
@@ -104,6 +138,9 @@ namespace Ast
       $ const char * s = node_get_string(@n, val_to_string(__name)); $
       $ if (s == NULL) return VALUE_NIL; $
       return $ string_to_val(s) $
+
+    set_string(name, val)
+      $ node_set_string(@n, val_to_string(__name), val_to_string(__val)); $
 
     index(i)
       if i is Integer

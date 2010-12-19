@@ -261,7 +261,7 @@ riperipesrcs = [
                 'riperipe/eval.rip',
                 'riperipe/generator.rip',
                 'riperipe/main.rip',
-                'riperipe/module.rip',
+                'riperipe/namespace.rip',
                 'riperipe/typer.rip',
                ]
 

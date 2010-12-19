@@ -45,15 +45,15 @@ make_module_loader(module_names, cflags)
     tf.println("void init1_%a();".f(m))
     tf.println("void init2_%a();".f(m))
     tf.println("void init3_%a();".f(m))
-  tf.println("void ripe_namespace1(){")
+  tf.println("void ripe_module1(){")
   for m in module_names
     tf.println("  init1_%a();".f(m))
   tf.println("}")
-  tf.println("void ripe_namespace2(){")
+  tf.println("void ripe_module2(){")
   for m in module_names
     tf.println("  init2_%a();".f(m))
   tf.println("}")
-  tf.println("void ripe_namespace3(){")
+  tf.println("void ripe_module3(){")
   for m in module_names
     tf.println("  init3_%a();".f(m))
   tf.println("}")
@@ -62,6 +62,7 @@ make_module_loader(module_names, cflags)
   return out_file
 
 dump(header, code, init1, init2, init3, module_name, outfile)
+  outfile.println("#include \"modules/modules.h\"")
   outfile.println(header)
   outfile.println(code)
   outfile.println("void init1_%a(){".f(module_name))
@@ -73,6 +74,33 @@ dump(header, code, init1, init2, init3, module_name, outfile)
   outfile.println("void init3_%a(){\n".f(module_name))
   outfile.println(init3)
   outfile.println("}\n")
+
+go_dump(files)
+  header = ""
+  code = ""
+  init1 = ""
+  init2 = ""
+  init3 = ""
+
+  asts = []
+  for file in files
+    ast = Ast.Node.new_from_file(file)
+    asts.push(ast)
+    Typer.absorb_info(ast)
+  for ast in asts
+    generate(ast, header, code, init1, init2, init3)
+
+  Out.println(header)
+  Out.println(code)
+  Out.println("void init1_User(){")
+  Out.println(init1)
+  Out.println("}")
+  Out.println("void init2_User(){\n")
+  Out.println(init2)
+  Out.println("}\n")
+  Out.println("void init3_User(){\n")
+  Out.println(init3)
+  Out.println("}\n")
 
 go_bootstrap(files, outfile)
   header = ""
@@ -120,6 +148,7 @@ go_bootstrap(files, outfile)
 main()
   options = [
     [&BOOTSTRAP, "-s", "--bootstrap", 0  , "bootstrap build"],
+    [&DUMP,      "-d", "--dump", 0, "dump C code"],
     [&OUTFILE,   "-o", "--outfile", Opt.ARG, "set output filename"],
     [&HELP,      "-h", "--help", Opt.HELP, "display help"]
   ]
@@ -134,12 +163,16 @@ main()
     switch opt[1]
       case &BOOTSTRAP
         mode = &BOOTSTRAP
+      case &DUMP
+        mode = &DUMP
       case &OUTFILE
         outfile = opt[2]
 
   switch mode
     case &BOOTSTRAP
       go_bootstrap(leftover, outfile)
+    case &DUMP
+      go_dump(leftover)
     case nil
       Err.println("error: no mode specified (use -h for help)")
       return 1

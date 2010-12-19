@@ -624,12 +624,7 @@ static void gen_stmt(Node* stmt)
                                               iterator_counter));
         gen_stmt_assign2(id_temp, iterator_call);
         sbuf_printf(sb_contents, "  if (%s == VALUE_EOF) break;\n", eval_expr(id_temp));
-
-        if (node_num_children(lvalue_list) == 1){
-          gen_stmt_assign2(node_get_child(lvalue_list, 0), id_temp);
-        } else {
-          gen_stmt_assign(lvalue_list, id_temp);
-        }
+        gen_stmt_assign(lvalue_list, id_temp);
 
         dowhile_semaphore++;
         gen_stmtlist_no_locals(node_get_child(stmt, 2));
@@ -818,7 +813,7 @@ static void gen_function(Node* function)
   counter++;
   const char* name = mem_asprintf("%s%s", namespace_get_prefix(),
                                   node_get_string(function, "name"));
-  Node* rv_type = node_get_child(function, 0);
+  //Node* rv_type = node_get_child(function, 0);
   Node* param_list = node_get_child(function, 1);
   Node* stmt_list = node_get_child(function, 2);
   uint num_params = param_list->children.size;
@@ -854,7 +849,7 @@ static void gen_constructor(Node* constructor)
   const char* c_constructor_name = mem_asprintf("_cons%d_%s", counter,
                                         util_escape(r_constructor_name));
 
-  Node* rv_type = node_get_child(constructor, 0);
+  //Node* rv_type = node_get_child(constructor, 0);
   Node* param_list = node_get_child(constructor, 1);
   Node* stmt_list = node_get_child(constructor, 2);
   int num_params = param_list->children.size;

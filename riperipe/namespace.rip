@@ -13,23 +13,23 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-global mod_array
+global ns_array
 
-namespace Module
+namespace Namespace
   init()
-    if mod_array == nil
-      mod_array = []
+    if ns_array == nil
+      ns_array = []
 
   push(String name)
-    Module.init()
-    mod_array.push(name)
+    Namespace.init()
+    ns_array.push(name)
 
   pop()
-    Module.init()
-    return mod_array.pop()
+    Namespace.init()
+    return ns_array.pop()
 
   prefix()
-    Module.init()
-    if mod_array.size == 0
+    Namespace.init()
+    if ns_array.size == 0
       return ""
-    return String.join(mod_array, ".") + "."
+    return String.join(ns_array, ".") + "."

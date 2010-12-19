@@ -74,16 +74,16 @@ namespace Typer
   absorb_info(ast)
     for node in ast
       switch node.type
-        case Ast.MODULE
-          Module.push(node.get_string("name"))
+        case Ast.NAMESPACE
+          Namespace.push(node.get_string("name"))
           Typer.absorb_info(node[1])
-          Module.pop()
+          Namespace.pop()
         case Ast.FUNCTION
-          Typer.add_function(Module.prefix() + node.get_string("name"),
+          Typer.add_function(Namespace.prefix() + node.get_string("name"),
                              eval_type(node[1]),
                              Typer.absorb_param_info(node[2]))
         case Ast.CLASS
-          Typer.absorb_class(Module.prefix() + node.get_string("name"),
+          Typer.absorb_class(Namespace.prefix() + node.get_string("name"),
                              node[1])
 
   dump()
