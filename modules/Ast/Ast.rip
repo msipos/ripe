@@ -115,6 +115,9 @@ namespace Ast
     virtual_get num_children()
       return $ int64_to_val(node_num_children(@n)) $
 
+    virtual_get size()
+      return $ int64_to_val(node_num_children(@n)) $
+
     virtual_get text()
       $ if (@n->text == NULL) return VALUE_NIL; $
       return $ string_to_val(@n->text) $
@@ -150,6 +153,7 @@ namespace Ast
 
           *((Node**) obj_c_data(__n)) = node_get_child(@n, i); $
         return n
+      raise "Ast.Node.index() supports only Integer indices"
 
   class NodeIterator
     readable node

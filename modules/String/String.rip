@@ -189,6 +189,28 @@ class String
       }
     $
 
+  substitute(String s1, String s2)
+    text = self
+    len = s1.size
+    loop
+      n = text.find(s1)
+      if n == nil
+        break
+      before = n - 1
+      after = n + len
+      prefix = nil
+      suffix = nil
+      if before < 1
+        prefix = ""
+      else
+        prefix = text[:before]
+      if after > text.size
+        suffix = ""
+      else
+        suffix = text[after:]
+      text = prefix + s2 + suffix
+    return text
+
   #$ rdoc-name String.split_whitespace
   #$ rdoc-header String.split_whitespace()
   #$ Just like String.split(" \n\t")

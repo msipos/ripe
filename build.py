@@ -265,9 +265,34 @@ riperipesrcs = [
                 'riperipe/typer.rip',
                ]
 
+bootstrap_srcs = ['product/vm.o', 'lang/lang.o', 'product/ripe.meta']
+for module in DEF_MODULES:
+    name = 'modules/%s/%s.meta' % (module, module)
+    if os.path.exists(name):
+        bootstrap_srcs.append(name)
+    name = 'modules/%s/%s.rip' % (module, module)
+    bootstrap_srcs.append(name)
+bootstrap_srcs.extend(riperipesrcs)
+bootstrap_srcs.append('modules/Ast/Ast.rip')
+bootstrap_srcs.append('modules/Json/Json.rip')
+
 if tools.depends('product/riperipe',
                  ['product/vm.o', 'product/ripe'] + riperipesrcs + module_deps):
     tools.pprint('RIP', 'riperipe/main.rip', 'product/riperipe')
     tools.call(
       ['product/ripe', '-b', '-o', 'product/riperipe',
                        '-m', 'Ast', '-m', 'Json'] + riperipesrcs)
+
+# Bootstrap step 2
+if tools.depends('product/riperipe2', ['product/riperipe']):
+    tools.pprint('RIP', 'riperipe/main.rip', 'product/riperipe2')
+    tools.call(
+      ['product/riperipe', '-s', '-o', 'product/riperipe2'] + bootstrap_srcs
+    )
+
+# Bootstrap step 3
+if tools.depends('product/riperipe3', ['product/riperipe2']):
+    tools.pprint('RIP', 'riperipe/main.rip', 'product/riperipe3')
+    tools.call(
+      ['product/riperipe2', '-s', '-o', 'product/riperipe3'] + bootstrap_srcs
+    )

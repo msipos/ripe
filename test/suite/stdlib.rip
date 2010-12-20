@@ -238,6 +238,8 @@ String()
   text.print("bet")
   Test.test("String.print()", "alphabet", text)
 
+  Test.test("String.substitute()", "bababa".substitute("ba", "lai"), "lailailai")
+
 Std()
   Test.test("Integer()", 123, Integer("123"))
   Test.test("Integer()", 123, Integer(123.0))

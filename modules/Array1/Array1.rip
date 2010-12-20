@@ -141,6 +141,9 @@ class Array1
   #$ Insert val into position i in the array.  Moves everything in position
   #$ i and beyond one step.
   insert(Integer i, val)
+    if i == self.size + 1
+      self.push(val)
+      return
     $
       const int64 size = @a.size;
       array1_push(&(@a), __val);

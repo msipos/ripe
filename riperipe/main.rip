@@ -18,7 +18,8 @@ global verbose = false
 sys(args)
   txt = String.join(args, " ")
   if verbose
-    Out.println(txt)
+    Err.println(args)
+    Err.println(txt)
   if Os.system(args) != 0
     raise "Os.system(%a) failed".f(txt)
 
@@ -113,11 +114,14 @@ go_bootstrap(files, outfile)
   lflags = ""
 
   asts = []
+  rips = []
   objs = []
   for file in files
     root, ext = Path.split_extension(file)
     switch ext
       case ".rip"
+        rips.push(file)
+
         ast = Ast.Node.new_from_file(file)
         asts.push(ast)
         Typer.absorb_info(ast)
@@ -131,8 +135,15 @@ go_bootstrap(files, outfile)
           lflags = lflags + " " + meta["lflags"]
   objs.push(make_module_loader(["User"], cflags))
 
+  if verbose
+    Typer.dump()
+
+  index = 1
   for ast in asts
+    if verbose
+      Err.println("generating ", rips[index])
     generate(ast, header, code, init1, init2, init3)
+    index = index + 1
 
   tmp_c_file = Os.temp_name("ripe", ".c")
   tf = TextFile.new(tmp_c_file, TextFile.Write)

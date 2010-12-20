@@ -62,10 +62,10 @@ eval_expr_as_id(Ast.Node expr)
       return expr.text
     case Ast.EXPR_FIELD
       parent = expr[1]
-      field = expr[2]
+      field = expr.get_string("name")
       s = eval_expr_as_id(parent)
       if s != nil
-        return "%a.%a".f(s, field.text)
+        return "%a.%a".f(s, field)
       else
         return nil
   return nil
@@ -85,7 +85,7 @@ eval_expr_list(expr_list, first_comma)
 
 eval_obj_call(Ast.Node obj, String method_name, args)
   return "method_call%a(%a, %a %a)".f(
-                      args.num_children,
+                      args.size,
                       eval_v_expr(obj),
                       Dsym.get(method_name),
                       eval_expr_list(args, true) )
@@ -101,20 +101,45 @@ eval_index(Ast.Node node_self, index_args)
   return eval_obj_call(node_self, "index", index_args)
 
 eval_static_call(ssym, arg_list)
-  tr = Typer.get_function(ssym)[1]
+  tr = Typer.get(ssym, Typer.FUNCTION)[1]
   #rv_type = tr[1]
   param_types = tr[2]
 
   num_args = arg_list.num_children
   num_params = param_types.size
 
-  if num_args != num_params
-    raise "'%a' called with %a arguments but expect %a".f(ssym,
-                                                          num_args,
-                                                          num_params)
-  txt = "func_call%a(%a".f(num_args, Ssym.get(ssym))
-  for arg in arg_list
-    txt = txt + ", %a".f(eval_v_expr(arg))
+  # Check if this static call is to a vararg function.
+  is_vararg? = false
+  if num_params > 0
+    if param_types[-1] == "*"
+      is_vararg? = true
+
+  txt = "func_call%a(%a".f(num_params, Ssym.get(ssym))
+  # Now generate code.
+  if is_vararg?
+    min_args = param_types.size - 1
+    if num_args < min_args
+      raise "'%a' called with %a arguments but expect at least %a".f(
+                                                            ssym,
+                                                            num_args,
+                                                            min_args)
+    if min_args > 0
+      for index in 1:min_args
+        arg = arg_list[index]
+        txt = txt + ", %a".f(eval_v_expr(arg))
+    txt = txt + ", tuple_to_val(%a".f(num_args - min_args)
+    if num_args > min_args
+      for index in (min_args+1):num_args
+        arg = arg_list[index]
+        txt = txt + ", %a".f(eval_v_expr(arg))
+    txt = txt + ")"
+  else
+    if num_args != num_params
+      raise "'%a' called with %a arguments but expect %a".f(ssym,
+                                                            num_args,
+                                                            num_params)
+    for arg in arg_list
+      txt = txt + ", %a".f(eval_v_expr(arg))
   return txt + ")"
 
 # All expression evaluators that return a Value.
@@ -197,23 +222,34 @@ eval_expr_Value(expr)
       # For sure it is a static symbol
       return Ssym.get(eval_expr_as_id(expr))
 
+    case Ast.EXPR_AT_VAR
+      name = expr.get_string("name")
+      if Ctx.class_type_get() != &FIELD
+        raise "'@%a' in a class that's not a field class".f(name)
+      return "_c_data[%a]".f(Ctx.class_dict_get(name))
+
     case Ast.C_CODE
-      return expr.text[2:-2]
+      text = expr.text[2:-2]
+      text = text.substitute("@", "_c_data->")
+      return text
+
   return ""
 
 eval_expr(expr)
   init_ops()
-  if unary_ops.has_key?(expr.type)
-    return tuple("Value", "%a(%a)".f(
-                                      unary_ops[expr.type],
-                                      eval_v_expr(expr[1])
-                                    ))
-  if binary_ops.has_key?(expr.type)
-    return tuple("Value", "%a(%a,%a)".f(
-                                        binary_ops[expr.type],
-                                        eval_v_expr(expr[1]),
-                                        eval_v_expr(expr[2])
-                                       ))
+  if expr.size == 1
+    if unary_ops.has_key?(expr.type)
+      return tuple("Value", "%a(%a)".f(
+                                        unary_ops[expr.type],
+                                        eval_v_expr(expr[1])
+                                      ))
+  if expr.size == 2
+    if binary_ops.has_key?(expr.type)
+      return tuple("Value", "%a(%a,%a)".f(
+                                          binary_ops[expr.type],
+                                          eval_v_expr(expr[1]),
+                                          eval_v_expr(expr[2])
+                                         ))
 
   switch expr.type
     case Ast.K_TRUE

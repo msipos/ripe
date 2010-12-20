@@ -19,6 +19,26 @@
 
 global ctx_class_name, ctx_class_c_name, ctx_class_type, ctx_class_typedef
 
+global ctx_class_dict
+namespace Ctx
+  class_dict_init()
+    ctx_class_dict = Map.new()
+
+  class_dict_get(name)
+    if ctx_class_dict.has_key?(name)
+      return ctx_class_dict[name]
+    field_int_var = "_field_int%a_%a".f(counter(), Util.to_c(name))
+    header.print("static int %a;\n".f(field_int_var))
+    init2.print("  %a = klass_get_field_int(%a, %a);\n".f(
+                        field_int_var,
+                        ctx_class_c_name,
+                        Dsym.get(name)))
+    ctx_class_dict[name] = field_int_var
+    return field_int_var
+
+  class_type_get()
+    return ctx_class_type
+
 ##############################################################################
 # Symbol tables
 ##############################################################################
@@ -60,7 +80,7 @@ namespace Type
       return type_table[name]
     c_name = "_klass%a_%a".f(counter(), Util.to_c(name))
     header.print("static Klass* %a;\n".f(c_name))
-    init2.print("  %a = klass_get(dsym_get\"%a\");\n".f(c_name, name))
+    init2.print("  %a = klass_get(%a);\n".f(c_name, Dsym.get(name)))
     type_table[name] = c_name
     return c_name
 
@@ -184,8 +204,10 @@ gen_stmt_assign2(lvalue, rvalue)
     case Ast.EXPR_FIELD
       code.print("  field_set(%a, %a, %a);\n".f(
                                         eval_v_expr(lvalue[1]),
-                                        lvalue.get_string("name"),
+                                        Dsym.get(lvalue.get_string("name")),
                                         right) )
+    case Ast.EXPR_AT_VAR
+      code.print("  %a = %a;\n".f(eval_v_expr(lvalue), right))
 
 gen_stmt_assign(left, right)
   if left.num_children == 1
@@ -197,7 +219,7 @@ gen_stmt_assign(left, right)
     index = 1
     for l in left
       gen_stmt_assign2(l,
-                       Ast.Node.new_expr_index(id_tmp, Ast.Node.new_int(index)))
+                       Ast.Node.new_expr_index(id_tmp, [Ast.Node.new_int(index)]))
       index = index + 1
 
 gen_stmt(stmt)
@@ -215,12 +237,12 @@ gen_stmt(stmt)
     case Ast.STMT_LOOP
       break_label = "_brk_lbl%a".f(counter())
       continue_label = "_cnt_lbl%a".f(counter())
-      code.print("  for(;;){\n  %a:\n".f(continue_label))
+      code.print("  for(;;){\n  %a:;\n".f(continue_label))
       stack.push(tuple(break_label, continue_label))
       gen_block(stmt[1])
       stack.pop()
       code.print("  }\n")
-      code.print("  %a:\n".f(break_label))
+      code.print("  %a:;\n".f(break_label))
     case Ast.STMT_IF
       code.print("  if (%a == VALUE_TRUE) {\n".f(eval_v_expr(stmt[1])))
       gen_block(stmt[2])
@@ -263,18 +285,18 @@ gen_stmt(stmt)
 
       # Write out the loop
       code.print("  for(;;){\n")
-      code.print("%a:\n".f(continue_label))
+      code.print("%a:;\n".f(continue_label))
       id_temp = Ast.Node.new_id("_iterator_temp%a".f(counter()))
       locals_push()
       gen_stmt_assign2(id_temp, iter_call)
-      code.print("  if (%a == VALUE_EOF) break;\n", eval_v_expr(id_temp))
+      code.print("  if (%a == VALUE_EOF) break;\n".f(eval_v_expr(id_temp)))
       gen_stmt_assign(lvalue_list, id_temp)
       stack.push(tuple(break_label, continue_label))
       gen_block(block)
       stack.pop()
       locals_pop()
       code.print("  }\n")
-      code.print("%a:\n".f(break_label))
+      code.print("%a:;\n".f(break_label))
 
     case Ast.STMT_PASS
       return
@@ -367,13 +389,18 @@ gen_constructor(Ast.Node ast)
 
 # Returns v_name of the generated method.
 gen_method(String name, Ast.Node ast)
-  name = ctx_class_name + "." + name
+  full_name = ctx_class_name + "." + name
   param_list = ast[2]
   stmt_list = ast[3]
 
-  c_name, v_name = gen_function_common2(name,
+  c_name, v_name = gen_function_common2(full_name,
                                         param_list.num_children + 1,
                                         is_vararg?(param_list))
+  dsym_name = Dsym.get(name)
+  init1.print("  klass_new_method(%a, %a, %a);\n".f(
+                 ctx_class_c_name,
+                 dsym_name,
+                 v_name))
 
   # Generate method declaration:
   locals_push()
@@ -416,6 +443,7 @@ get_class_type(Ast.Node ast)
 gen_class(Ast.Node node)
   ctx_class_name = Namespace.prefix() + node.get_string("name")
   ctx_class_c_name = "_klass%a_".f(counter())+Util.to_c(ctx_class_name)
+  Ctx.class_dict_init()
   header.print("static Klass* %a;\n".f(ctx_class_c_name))
   ast = node[1]
   ctx_class_type = get_class_type(ast)
@@ -437,7 +465,7 @@ gen_class(Ast.Node node)
         if n.type == Ast.C_CODE
           header.print(n.text[2:(-2)])
       header.print("} %a;\n".f(ctx_class_typedef))
-      init1.print("  %a = klass_new(%a, %a, KLASS_CDATA_OBJECT(sizeof(%a)));\n".f(
+      init1.print("  %a = klass_new(%a, %a, KLASS_CDATA_OBJECT, sizeof(%a));\n".f(
                   ctx_class_c_name, dsym_class, dsym_parent, ctx_class_typedef))
     case &FIELD
       ctx_class_typedef = "Value"
@@ -472,16 +500,28 @@ gen_class(Ast.Node node)
       #param_list = node[2]
       #stmt_list = node[3]
 
+      name = n.get_string("name")
       if n.has_string?("annotation")
         switch n.get_string("annotation")
           case "constructor"
             gen_constructor(n)
           case "virtual_set"
-            pass
+            val = gen_method("set_" + name, n)
+            dsym = Dsym.get(name)
+            init1.print("  klass_new_virtual_writer(%a, %a, %a);\n".f(
+                           ctx_class_c_name, dsym, val))
           case "virtual_get"
-            pass
+            val = gen_method("get_" + name, n)
+            dsym = Dsym.get(name)
+            init1.print("  klass_new_virtual_reader(%a, %a, %a);\n".f(
+                           ctx_class_c_name, dsym, val))
       else
-        gen_method(n.get_string("name"), n)
+        gen_method(name, n)
+
+  ctx_class_typedef = nil
+  ctx_class_name = nil
+  ctx_class_c_name = nil
+  ctx_class_type = nil
 
 gen(ast)
   for node in ast
@@ -492,6 +532,7 @@ gen(ast)
         Namespace.pop()
       case Ast.C_CODE
         header.print(node.text[2:(-2)])
+        header.print("\n")
       case Ast.FUNCTION
         gen_function(node)
       case Ast.CONST_VAR
