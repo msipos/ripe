@@ -134,6 +134,7 @@ void module_build_loader(const char* loader_obj_filename)
     Module* module = array_get(&modules, Module*, i);
     fprintf(f, "void init1_%s();\n", module->module_name);
     fprintf(f, "void init2_%s();\n", module->module_name);
+    fprintf(f, "void init3_%s();\n", module->module_name);
   }
 
   fprintf(f, "void ripe_module1(){\n");
@@ -150,6 +151,15 @@ void module_build_loader(const char* loader_obj_filename)
     Module* module = array_get(&modules, Module*, i);
     fprintf(f, "  stack_push_annotation(\"init2_%s\");\n", module->module_name);
     fprintf(f, "    init2_%s();\n", module->module_name);
+    fprintf(f, "  stack_pop();\n");
+  }
+  fprintf(f, "}\n");
+
+  fprintf(f, "void ripe_module3(){\n");
+  for (int i = 0; i < modules.size; i++){
+    Module* module = array_get(&modules, Module*, i);
+    fprintf(f, "  stack_push_annotation(\"init3_%s\");\n", module->module_name);
+    fprintf(f, "    init3_%s();\n", module->module_name);
     fprintf(f, "  stack_pop();\n");
   }
   fprintf(f, "}\n");
@@ -292,7 +302,6 @@ int dump_c(const char* in_filename, const char* module_name)
 {
   Node* ast = build_tree(in_filename);
   if (ast == NULL) err("%s", build_tree_error);
-  typer_ast(ast);
 
   const char* tmp = tempnam(NULL, "ripe");
   const char* tmp_filename = mem_asprintf("%s.c", tmp);

@@ -1092,7 +1092,7 @@ static void gen_globals(Node* ast)
             sbuf_printf(sb_header, "static Value %s;\n", c_name);
 
             Node* right = node_get_child(optassign, 0);
-            sbuf_printf(sb_init2, "  %s = %s;\n", c_name, eval_expr(right));
+            sbuf_printf(sb_init3, "  %s = %s;\n", c_name, eval_expr(right));
           }
         }
         break;

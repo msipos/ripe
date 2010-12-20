@@ -18,6 +18,7 @@
 // Prototype for module initializers
 void ripe_module1();
 void ripe_module2();
+void ripe_module3();
 
 int main(int argc, char** argv)
 {
@@ -69,6 +70,7 @@ int main(int argc, char** argv)
   stack_pop();
 
   ripe_module2();
+  ripe_module3();
 
   // Lookup main symbol
   Value sym_main = ssym_get("main");

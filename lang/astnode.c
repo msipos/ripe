@@ -166,6 +166,8 @@ Node* node_new_field_call(Node* callee, char* field_name, int64 num, ...)
 Node* node_new_type(const char* type)
 {
   Node* rv = node_new(TYPE);
-  node_set_string(rv, "name", mem_strdup(type));
+  char* type2 = NULL;
+  if (type != NULL) type2 = mem_strdup(type);
+  node_set_string(rv, "name", type2);
   return rv;
 }

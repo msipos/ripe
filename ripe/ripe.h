@@ -64,6 +64,7 @@ extern StringBuf* sb_contents;
 extern StringBuf* sb_header;
 extern StringBuf* sb_init1;
 extern StringBuf* sb_init2;
+extern StringBuf* sb_init3;
 
 void dump_init();
 void dump_output(FILE* f, const char* module_name);
