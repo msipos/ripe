@@ -135,9 +135,6 @@ go_bootstrap(files, outfile)
           lflags = lflags + " " + meta["lflags"]
   objs.push(make_module_loader(["User"], cflags))
 
-  if verbose
-    Typer.dump()
-
   index = 1
   for ast in asts
     if verbose
@@ -156,10 +153,15 @@ go_bootstrap(files, outfile)
   objs_txt = String.join(objs, " ")
   sys(["gcc", lflags, objs_txt, tmp_o_file, "-o", outfile])
 
+go_module(files, module_name, outfile)
+  pass
+
 main()
   options = [
     [&BOOTSTRAP, "-s", "--bootstrap", 0  , "bootstrap build"],
+    [&MODULE,    "-c", "--build-module", 0, "module build"],
     [&DUMP,      "-d", "--dump", 0, "dump C code"],
+    [&NAME,      "-n", "--module-name", Opt.ARG, "set module name"],
     [&OUTFILE,   "-o", "--outfile", Opt.ARG, "set output filename"],
     [&HELP,      "-h", "--help", Opt.HELP, "display help"]
   ]
@@ -168,20 +170,27 @@ main()
   parsed, leftover = Opt.parse(args, options)
 
   outfile = "r.out"
+  module_name = "Module"
   mode = nil
   verbose = true
   for opt in parsed
     switch opt[1]
       case &BOOTSTRAP
         mode = &BOOTSTRAP
+      case &MODULE
+        mode = &MODULE
       case &DUMP
         mode = &DUMP
+      case &NAME
+        module_name = opt[2]
       case &OUTFILE
         outfile = opt[2]
 
   switch mode
     case &BOOTSTRAP
       go_bootstrap(leftover, outfile)
+    case &MODULE
+      go_module(leftover, module_name, outfile)
     case &DUMP
       go_dump(leftover)
     case nil

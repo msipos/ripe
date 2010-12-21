@@ -2,8 +2,8 @@ namespace Opt
 
   find(needle, haystack, idx)
     for option in haystack
-      long = option[idx]
-      if needle == long
+      attempt = option[idx]
+      if needle == attempt
         return option
     return nil
 
