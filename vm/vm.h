@@ -278,7 +278,7 @@ typedef struct {
 } Array1;
 Array1* val_to_array1(Value array1);
 Value array1_to_val(int64 num_elements, Value* data);
-Value array1_to_val2(uint16 num_args, ...);
+Value array1_to_val2(int num_args, ...);
 void array1_index_set(Array1* array1, int64 idx, Value val);
 Value array1_index(Array1* array1, int64 idx);
 Value array1_new(int64 num_elements);

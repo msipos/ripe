@@ -25,17 +25,22 @@ Array1* val_to_array1(Value v_array)
   return obj_c_data(v_array);
 }
 
-Value array1_to_val2(uint16 num_args, ...)
+Value array1_to_val2(int num_args, ...)
 {
   va_list ap;
   va_start(ap, num_args);
-  Value* args = alloca(sizeof(Value) * num_args);
-  for (uint16 i = 0; i < num_args; i++){
-    args[i] = va_arg(ap, Value);
+
+  Array1* array;
+  Value v = obj_new(klass_Array1, (void**) &array);
+  array->size = num_args;
+  array->alloc_size = num_args;
+  array->data = mem_malloc(sizeof(Value) * array->alloc_size);
+  for (int i = 0; i < num_args; i++){
+    array->data[i] = va_arg(ap, Value);
   }
   va_end(ap);
 
-  return array1_to_val(num_args, args);
+  return v;
 }
 
 Value array1_to_val(int64 num_elements, Value* data)

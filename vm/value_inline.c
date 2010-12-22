@@ -37,10 +37,10 @@
 //     xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx xxxxxx11
 
 // Specific values:
-#define VALUE_NIL   0b0000
-#define VALUE_FALSE 0b0100
-#define VALUE_TRUE  0b1000
-#define VALUE_EOF   0b1100
+#define VALUE_NIL   ((Value) 0b0000)
+#define VALUE_FALSE ((Value) 0b0100)
+#define VALUE_TRUE  ((Value) 0b1000)
+#define VALUE_EOF   ((Value) 0b1100)
 
 // Masks:
 #define MASK_TAIL     ((Value) 0b11)

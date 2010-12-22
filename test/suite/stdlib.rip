@@ -1,15 +1,3 @@
-Gsl()
-  rng = Gsl.Rng.new()
-  rng.seed_random()
-  d = 0.0
-  N = 1000000
-  for Integer i in 1:N
-    if rng.roll(0.5)
-      d = d + 1.0
-  avg = d / N
-  Test.test("Gsl.roll()", avg < 0.501, true)
-  Test.test("Gsl.roll()", avg > 0.499, true)
-
 Map()
   map = Map.new()
   map[1] = "one"
@@ -267,7 +255,6 @@ Time()
 
 main()
   Test.set_verbose(false)
-  Gsl()
   Map()
   Set()
   arrays()

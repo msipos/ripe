@@ -256,6 +256,9 @@ if "doc" in sys.argv:
   tools.call(["ripedoc/ripedoc", "."])
   tools.call(["mv", "*.html", "doc/"])
 
+# For now, until riperipe is complete.
+sys.exit(0)
+
 riperipesrcs = [
                 'riperipe/dump.rip',
                 'riperipe/eval.rip',

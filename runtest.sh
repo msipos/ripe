@@ -1,6 +1,6 @@
 #!/bin/bash
 
-FLAGS="-m Test -m Gsl"
+FLAGS="-m Test"
 BIN="product/ripe"
 
 TEST=language
