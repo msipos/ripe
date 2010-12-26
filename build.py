@@ -54,21 +54,16 @@ for d in required_dirs:
 
 # Clib
 clib_hs =   [
-              'clib/array.h',
-              'clib/clib.h',
-              'clib/dict.h',
-              'clib/hash.h',
-              'clib/mem.h',
-              'clib/stringbuf.h',
-              'clib/utf8.h'
+              'clib/clib.h'
             ]
 clib_srcs = [
               'clib/array.c',
               'clib/dict.c',
               'clib/hash.c',
               'clib/mem.c',
+              'clib/path.c',
+              'clib/stringbuf.c',
               'clib/utf8.c',
-              'clib/stringbuf.c'
             ]
 clib_objs = tools.cons_objs(clib_srcs, clib_hs)
 
@@ -186,14 +181,16 @@ def type_module(module):
     path = 'modules/%s/%s.rip' % (module, module)
     out = 'product/modules/%s/%s.typ' % (module, module)
     if tools.depends(out, type_deps + [path]):
-        tools.pprint('MOD', path, out)
+        sys.stdout.write(module + " ")
         tools.mkdir_safe('product/modules/%s' % module)
         tools.call(['product/ripe', '-t', path, '>', out])
     return out
 
+sys.stdout.write("Generating module types...")
 type_infos = []
 for module in MODULES + OPTIONAL_MODULES:
     type_infos.append(type_module(module))
+sys.stdout.write("\n")
 
 module_deps = vm_hs + clib_hs + ['modules/modules.h', 'product/ripe'] + type_infos
 failed_modules = []
@@ -223,11 +220,11 @@ def build_module(module, required):
     meta = tools.load_meta(metafile)
     extra_CFLAGS = ''
     extra_objs = ''
-    if meta.has_key('cflags'):
+    if 'cflags' in meta:
         extra_CFLAGS = extra_CFLAGS + meta['cflags']
-    if meta.has_key('objs'):
+    if 'objs' in meta:
         extra_objs = meta['objs']
-    if meta.has_key('builder'):
+    if 'builder' in meta:
         builder = meta['builder']
         tools.call([builder], conf)
     else:
@@ -246,10 +243,11 @@ def build_module(module, required):
 
 for module in MODULES:
     build_module(module, True)
-for module in OPTIONAL_MODULES:
-    build_module(module, False)
-if len(failed_modules) > 0:
-    print("WARNING: Failed building optional module(s): %s" % ", ".join(failed_modules))
+if "nomods" not in sys.argv:
+    for module in OPTIONAL_MODULES:
+        build_module(module, False)
+    if len(failed_modules) > 0:
+        print("WARNING: Failed building optional module(s): %s" % ", ".join(failed_modules))
 
 if "doc" in sys.argv:
   tools.call(["ripedoc/build.sh", "2>", "/dev/null"])
@@ -257,13 +255,14 @@ if "doc" in sys.argv:
   tools.call(["mv", "*.html", "doc/"])
 
 # For now, until riperipe is complete.
-sys.exit(0)
+#sys.exit(0)
 
 riperipesrcs = [
                 'riperipe/dump.rip',
                 'riperipe/eval.rip',
                 'riperipe/generator.rip',
                 'riperipe/main.rip',
+                'riperipe/module.rip',
                 'riperipe/namespace.rip',
                 'riperipe/typer.rip',
                ]
@@ -285,6 +284,8 @@ if tools.depends('product/riperipe',
     tools.call(
       ['product/ripe', '-b', '-o', 'product/riperipe',
                        '-m', 'Ast', '-m', 'Json'] + riperipesrcs)
+
+sys.exit(0)
 
 # Bootstrap step 2
 if tools.depends('product/riperipe2', ['product/riperipe']):

@@ -13,11 +13,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-global verbose = false
+#######################################################################
+# Utilties
 
 sys(args)
   txt = String.join(args, " ")
-  if verbose
+  if g_verbose
     Err.println(args)
     Err.println(txt)
   if Os.system(args) != 0
@@ -35,32 +36,11 @@ load_meta(filename)
   return map
   tf.close()
 
-# Returns filename of the namespace loader object. Should be removed by the callee.
-# module_names is an array of modules that should be loaded
-make_module_loader(module_names, cflags)
-  out_file = Os.temp_name("ripe", ".o")
+#######################################################################
+# Globals
 
-  tmp_c_file = Os.temp_name("ripe", ".c")
-  tf = TextFile.new(tmp_c_file, TextFile.Write)
-  for m in module_names
-    tf.println("void init1_%a();".f(m))
-    tf.println("void init2_%a();".f(m))
-    tf.println("void init3_%a();".f(m))
-  tf.println("void ripe_module1(){")
-  for m in module_names
-    tf.println("  init1_%a();".f(m))
-  tf.println("}")
-  tf.println("void ripe_module2(){")
-  for m in module_names
-    tf.println("  init2_%a();".f(m))
-  tf.println("}")
-  tf.println("void ripe_module3(){")
-  for m in module_names
-    tf.println("  init3_%a();".f(m))
-  tf.println("}")
-  tf.close()
-  sys(["gcc", cflags, "-c", tmp_c_file, "-o", out_file])
-  return out_file
+global g_verbose = false
+global g_cflags = "", g_lflags = "", g_omit_typing = false
 
 dump(header, code, init1, init2, init3, module_name, outfile)
   outfile.println("#include \"modules/modules.h\"")
@@ -133,21 +113,21 @@ go_bootstrap(files, outfile)
           cflags = cflags + " " + meta["cflags"]
         if meta.has_key?("lflags")
           lflags = lflags + " " + meta["lflags"]
-  objs.push(make_module_loader(["User"], cflags))
+  objs.push(Module.make_loader(["User"], cflags))
 
   index = 1
   for ast in asts
-    if verbose
+    if g_verbose
       Err.println("generating ", rips[index])
     generate(ast, header, code, init1, init2, init3)
     index = index + 1
 
-  tmp_c_file = Os.temp_name("ripe", ".c")
+  tmp_c_file = Path.temp_name("ripe", ".c")
   tf = TextFile.new(tmp_c_file, TextFile.Write)
   dump(header, code, init1, init2, init3, "User", tf)
   tf.close()
 
-  tmp_o_file = Os.temp_name("ripe", ".o")
+  tmp_o_file = Path.temp_name("ripe", ".o")
   sys(["gcc", cflags, tmp_c_file, "-c", "-o", tmp_o_file])
 
   objs_txt = String.join(objs, " ")
@@ -156,14 +136,35 @@ go_bootstrap(files, outfile)
 go_module(files, module_name, outfile)
   pass
 
+go_type(files)
+  for file in files
+    root, ext = Path.split_extension(file)
+    if ext == ".rip"
+      ast = Ast.Node.new_from_file(file)
+      Typer.absorb_info(ast)
+    else
+      raise "Can only read .rip files in typer mode"
+  Typer.dump()
+
+load_defaults()
+  meta = load_meta(Path.join(Path.get_program_dir(), "ripe.meta"))
+  g_cflags = meta["cflags"]
+  g_lflags = meta["lflags"]
+  modules = meta["modules"]
+  arr = modules.split_whitespace()
+  for module in modules
+    Module.add(module)
+
 main()
   options = [
-    [&BOOTSTRAP, "-s", "--bootstrap", 0  , "bootstrap build"],
-    [&MODULE,    "-c", "--build-module", 0, "module build"],
-    [&DUMP,      "-d", "--dump", 0, "dump C code"],
-    [&NAME,      "-n", "--module-name", Opt.ARG, "set module name"],
-    [&OUTFILE,   "-o", "--outfile", Opt.ARG, "set output filename"],
-    [&HELP,      "-h", "--help", Opt.HELP, "display help"]
+    [&BOOTSTRAP,   "-s", "--bootstrap", 0  , "bootstrap build"],
+    [&MODULE,      "-c", "--build-module", 0, "module build"],
+    [&DUMP,        "-d", "--dump", 0, "dump C code"],
+    [&NAME,        "-n", "--module-name", Opt.ARG, "set module name"],
+    [&OUTFILE,     "-o", "--outfile", Opt.ARG, "set output filename"],
+    [&TYPE,        "-t", "--typer", 0, "create typer output"],
+    [&OMIT_TYPING, nil,  "--omit-typing", 0, "omit typing"],
+    [&HELP,        "-h", "--help", Opt.HELP, "display help"]
   ]
 
   args = Os.get_args()
@@ -172,7 +173,6 @@ main()
   outfile = "r.out"
   module_name = "Module"
   mode = nil
-  verbose = true
   for opt in parsed
     switch opt[1]
       case &BOOTSTRAP
@@ -185,14 +185,23 @@ main()
         module_name = opt[2]
       case &OUTFILE
         outfile = opt[2]
+      case &OMIT_TYPING
+        g_omit_typing = true
+      case &TYPE
+        mode = &TYPE
 
+  if mode == &BOOTSTRAP
+    go_bootstrap(leftover, outfile)
+    return
+
+  load_defaults()
   switch mode
-    case &BOOTSTRAP
-      go_bootstrap(leftover, outfile)
     case &MODULE
       go_module(leftover, module_name, outfile)
     case &DUMP
       go_dump(leftover)
+    case &TYPE
+      go_type(leftover)
     case nil
       Err.println("error: no mode specified (use -h for help)")
       return 1

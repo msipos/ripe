@@ -1,9 +1,5 @@
 #$ rdoc-file String
 
-$
-  #include "clib/stringbuf.h"
-$
-
 namespace String
 
   #$ rdoc-name String.join

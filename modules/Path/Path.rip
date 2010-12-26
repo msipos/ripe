@@ -8,6 +8,22 @@ namespace Path
   const DIRECTORY = $ int64_to_val(DT_DIR) $
   const SEPARATOR = '/'
 
+  get_program_dir()
+    return $ string_to_val(path_get_app_dir()) $
+
+  #$ rdoc-name Path.exists?
+  #$ rdoc-header Bool Path.exists?(String path)
+  #$ Returns true if a given path exists.
+  exists?(String path)
+    return $ pack_bool(path_exists(val_to_string(__path))) $
+
+  #$ rdoc-name Path.temp_name
+  #$ rdoc-header String Path.temp_name(String prefix, String suffix)
+  #$ Return a temporary filename with the given prefix and suffix.
+  temp_name(String prefix, String suffix)
+    return $ string_to_val(path_temp_name(val_to_string(__prefix),
+                                          val_to_string(__suffix))) $
+
   join(*args)
     return Path.join_array(args)
 

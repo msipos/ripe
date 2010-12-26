@@ -1,0 +1,68 @@
+# Copyright (C) 2010  Maksim Sipos <msipos@mailc.net>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+global g_modules = Map.new()
+
+namespace Module
+  # Returns filename of the namespace loader object. Should be removed by the
+  # callee.  Module_names is an array of modules that should be loaded.
+  make_loader(module_names, cflags)
+    out_file = Path.temp_name("ripe", ".o")
+
+    tmp_c_file = Path.temp_name("ripe", ".c")
+    tf = TextFile.new(tmp_c_file, TextFile.Write)
+    for m in module_names
+      tf.println("void init1_%a();".f(m))
+      tf.println("void init2_%a();".f(m))
+      tf.println("void init3_%a();".f(m))
+    tf.println("void ripe_module1(){")
+    for m in module_names
+      tf.println("  init1_%a();".f(m))
+    tf.println("}")
+    tf.println("void ripe_module2(){")
+    for m in module_names
+      tf.println("  init2_%a();".f(m))
+    tf.println("}")
+    tf.println("void ripe_module3(){")
+    for m in module_names
+      tf.println("  init3_%a();".f(m))
+    tf.println("}")
+    tf.close()
+    sys(["gcc", cflags, "-c", tmp_c_file, "-o", out_file])
+    return out_file
+
+  add(name)
+    if g_modules.has_key?(name)
+      return
+    module = Map.new()
+    dir = Path.join(Path.get_program_dir(), modules, name)
+
+    if not Path.exists?(dir)
+      raise "error module '%a' does not exist (looked for '%a')".f(name, dir)
+
+    # Module object file
+    module[&OBJECT] = Path.join(dir, name + ".o")
+    if not Path.exists?(module[&OBJECT])
+      module[&OBJECT] = nil
+
+    # Check for a meta file
+    meta_path = Path.join(dir, name + ".meta")
+    if Path.exists?(meta_path)
+      module[&META] = load_meta(meta_path)
+
+    # Absorb type file
+    type_path = Path.join(dir, name + ".typ")
+    if Path.exists?(type_path)
+      Typer.load_from_file(type_path)

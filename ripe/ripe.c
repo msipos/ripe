@@ -14,7 +14,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "ripe/ripe.h"
-#include <unistd.h>
 
 // Prototypes
 int compile_c(const char* in_filename, const char* out_filename);
@@ -117,8 +116,7 @@ const char* module_gcc()
 void module_build_loader(const char* loader_obj_filename)
 {
   // First create C file
-  const char* tmp = tempnam(NULL, "ripe");
-  const char* loader_c_filename = mem_asprintf("%s.c", tmp);
+  const char* loader_c_filename = path_temp_name("ripe", ".c");
 
   logging("writing module loaders to '%s'", loader_c_filename);
 
@@ -246,8 +244,7 @@ int compile_rip(int num_files, const char** in_filenames,
                 int num_o_files, const char** in_o_filenames,
                 const char* module_name, const char* out_filename)
 {
-  const char* tmp = tempnam(NULL, "ripe");
-  const char* c_filename = mem_asprintf("%s.c", tmp);
+  const char* c_filename = path_temp_name("ripe", ".c");
 
   // First populate typer info
   for (int i = 0; i < num_files; i++){
@@ -261,8 +258,7 @@ int compile_rip(int num_files, const char** in_filenames,
   if (num_o_files == 0){
     compile_c(c_filename, out_filename);
   } else {
-    tmp = tempnam(NULL, "ripe");
-    const char* o_filename = mem_asprintf("%s.o", tmp);
+    const char* o_filename = path_temp_name("ripe", ".o");
     compile_c(c_filename, o_filename);
     char* objs = mem_asprintf("%s", in_o_filenames[0]);
     for (int i = 1; i < num_o_files; i++){
@@ -284,8 +280,7 @@ int compile_rip(int num_files, const char** in_filenames,
 int build(const char* out_filename)
 {
   // Module loader object
-  const char* tmp = tempnam(NULL, "ripe");
-  const char* loader_filename = mem_asprintf("%s.o", tmp);
+  const char* loader_filename = path_temp_name("ripe", ".o");
   module_build_loader(loader_filename);
 
   char* cmd_line = mem_asprintf("gcc %s %s %s %s/vm.o -o %s",
@@ -303,8 +298,7 @@ int dump_c(const char* in_filename, const char* module_name)
   Node* ast = build_tree(in_filename);
   if (ast == NULL) err("%s", build_tree_error);
 
-  const char* tmp = tempnam(NULL, "ripe");
-  const char* tmp_filename = mem_asprintf("%s.c", tmp);
+  const char* tmp_filename = path_temp_name("ripe", ".c");
   if (compile_to_c(1, &in_filename, module_name, tmp_filename))
     return 1;
   FILE* f = fopen(tmp_filename, "r");
@@ -319,8 +313,7 @@ int dump_c(const char* in_filename, const char* module_name)
 
 int run()
 {
-  const char* tmp = tempnam(NULL, "ripe");
-  const char* p_filename = tmp;
+  const char* p_filename = path_temp_name("ripe", ".out");
   if (build(p_filename)){
     remove(p_filename);
     return 1;
@@ -476,8 +469,7 @@ int main(int argc, char* const* argv)
           out_filename = "ripe.out";
         }
 
-        const char* tmp = tempnam(NULL, "ripe");
-        const char* o_filename = mem_asprintf("%s.o", tmp);
+        const char* o_filename = path_temp_name("ripe", ".o");
         const char* module_name = "_User";
         compile_rip(argc - optind, (const char **) argv + optind, 0, NULL,
                     module_name, o_filename);
@@ -508,8 +500,7 @@ int main(int argc, char* const* argv)
         if (out_filename != NULL) warn("output filename ignored in run mode");
         if (module_name != NULL) warn("module name ignored in run mode");
 
-        const char* tmp = tempnam(NULL, "ripe");
-        const char* o_filename = mem_asprintf("%s.o", tmp);
+        const char* o_filename = path_temp_name("ripe", ".o");
         const char* module_name = "_User";
         compile_rip(argc - optind, (const char **) argv + optind, 0, NULL, module_name, o_filename);
         module_add(module_name, o_filename, NULL, FLAG_CLEANUP);

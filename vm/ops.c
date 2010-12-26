@@ -23,9 +23,7 @@ int64 op_hash(Value v)
         Klass* k = obj_klass(v);
         if (k == klass_String) {
           String* string = obj_c_data(v);
-          return hash_bytes((uint8*)string->str,
-                            strlen(string->str)+1,
-                            43);
+          return hash_string(string->str);
         } else if (k == klass_Tuple) {
           uint64 h = 89;
           Tuple* tuple = obj_c_data(v);
@@ -35,7 +33,7 @@ int64 op_hash(Value v)
           }
           return h;
         }
-        return hash_bytes((uint8*) &v, sizeof(Value), 93);
+        return hash_value(v);
       }
     case 0b01:
     case 0b10:

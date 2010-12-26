@@ -208,6 +208,7 @@ bool typer_needs_check(const char* destination, const char* source)
   if (source == NULL) return true;
   if (strequal(destination, source)) return false;
   err("require type '%s' but got type '%s'", destination, source);
+  assert_never();
 }
 
 const char* typer_infer(Node* expr)
@@ -251,4 +252,5 @@ const char* typer_infer(Node* expr)
     default:
       return NULL;
   }
+  assert_never();
 }

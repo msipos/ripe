@@ -17,7 +17,6 @@
 #define RIPE_H
 
 #include "clib/clib.h"
-#include "clib/stringbuf.h"
 #include "lang/lang.h"
 
 //////////////////////////////////////////////////////////////////////////////
@@ -25,9 +24,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 const char* path_join(int num, ...);
-const char* path_get_app_dir();
 const char* path_get_extension(const char* path);
-bool path_exists(const char* filename);
 
 typedef struct {
   Array keys;

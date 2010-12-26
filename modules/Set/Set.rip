@@ -1,6 +1,3 @@
-$
-  #include "clib/stringbuf.h"
-$
 #$ rdoc-file Set
 
 #$ rdoc-name Set

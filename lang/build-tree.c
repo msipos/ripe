@@ -14,7 +14,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "lang/lang.h"
-#include "clib/stringbuf.h"
 #include <setjmp.h>
 
 jmp_buf jb;

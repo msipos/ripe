@@ -13,36 +13,65 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "hash.h"
+#include "clib/clib.h"
 
-uint64 hash_bytes(const uint8* bytes, uint64 size, uint64 hash)
-{
-  while (size > sizeof(uint64))
-  {
-    // Simple hash.
-    hash = *((const uint64*) bytes) + hash;
-    hash = (hash >> 5) ^ (*((const uint64*) bytes));
-    // Adapted from http://www.cris.com/~ttwang/tech/inthash.htm
-    hash = (~hash) + (hash << 21); // hash = (hash << 21) - hash - 1;
-    hash = hash ^ (hash >> 24);
-    hash = (hash + (hash << 3)) + (hash << 8); // hash * 265
-    hash = hash ^ (hash >> 14);
-    hash = (hash + (hash << 2)) + (hash << 4); // hash * 21
-    hash = hash ^ (hash >> 28);
-    hash = hash + (hash << 31);
-    bytes += sizeof(uint64);
-    size -= sizeof(uint64);
+// This hash is taken from the code written by Paul Hsieh, retrieved from
+//
+//   http://www.azillionmonkeys.com/qed/hash.html
+
+#include <stdint.h>
+#undef get16bits
+#if (defined(__GNUC__) && defined(__i386__)) || defined(__WATCOMC__) \
+  || defined(_MSC_VER) || defined (__BORLANDC__) || defined (__TURBOC__)
+#define get16bits(d) (*((const uint16_t *) (d)))
+#endif
+
+#if !defined (get16bits)
+#define get16bits(d) ((((uint32_t)(((const uint8_t *)(d))[1])) << 8)\
+                       +(uint32_t)(((const uint8_t *)(d))[0]) )
+#endif
+
+uint32 hash_bytes (const char * data, int len) {
+  uint32 hash = len, tmp;
+  int rem;
+
+  if (len <= 0 || data == NULL) return 0;
+
+  rem = len & 3;
+  len >>= 2;
+
+  /* Main loop */
+  for (;len > 0; len--) {
+    hash  += get16bits (data);
+    tmp    = (get16bits (data+2) << 11) ^ hash;
+    hash   = (hash << 16) ^ tmp;
+    data  += 2*sizeof (uint16_t);
+    hash  += hash >> 11;
   }
-  memcpy(&size, bytes, size);
-  hash = size + hash;
-  hash = (hash >> 7) ^ size;
-  hash = (~hash) + (hash << 21); // hash = (hash << 21) - hash - 1;
-  hash = hash ^ (hash >> 24);
-  hash = (hash + (hash << 3)) + (hash << 8); // hash * 265
-  hash = hash ^ (hash >> 14);
-  hash = (hash + (hash << 2)) + (hash << 4); // hash * 21
-  hash = hash ^ (hash >> 28);
-  hash = hash + (hash << 31);
-  return (hash << 31) + hash;
-}
 
+  /* Handle end cases */
+  switch (rem) {
+    case 3: hash += get16bits (data);
+            hash ^= hash << 16;
+            hash ^= data[sizeof (uint16_t)] << 18;
+            hash += hash >> 11;
+            break;
+    case 2: hash += get16bits (data);
+            hash ^= hash << 11;
+            hash += hash >> 17;
+            break;
+    case 1: hash += *data;
+            hash ^= hash << 10;
+            hash += hash >> 1;
+  }
+
+  /* Force "avalanching" of final 127 bits */
+  hash ^= hash << 3;
+  hash += hash >> 5;
+  hash ^= hash << 4;
+  hash += hash >> 17;
+  hash ^= hash << 25;
+  hash += hash >> 6;
+
+  return hash;
+}

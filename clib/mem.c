@@ -13,8 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "clib.h"
-#include "mem.h"
+#include "clib/clib.h"
 #include <string.h>
 #include <stdarg.h>
 
@@ -27,6 +26,13 @@ void* mem_calloc(size_t sz)
 }
 
 void* mem_malloc(size_t sz)
+{
+  void* p = malloc(sz);
+  if (p == NULL) abort();
+  return p;
+}
+
+void* mem_malloc_atomic(size_t sz)
 {
   void* p = malloc(sz);
   if (p == NULL) abort();
@@ -66,7 +72,7 @@ char* mem_asprintf(char* format, ...)
   tmpbuf[sz - 1] = 0;
   va_end(ap);
 
-  char* str = (char*) mem_malloc(strlen(tmpbuf) + 1);
+  char* str = (char*) mem_malloc_atomic(strlen(tmpbuf) + 1);
   strcpy(str, tmpbuf);
   return str;
   #else

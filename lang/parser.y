@@ -21,7 +21,6 @@
 
 %{
   #include "lang/lang.h"
-  #include "clib/stringbuf.h"
 
   Node* operator(Node* a, Node* op, Node* b)
   {
@@ -355,7 +354,7 @@ optassign_plus: optassign      { $$ = node_new(OPTASSIGN_LIST);
 optassign: ID                  { $$ = node_new_inherit(OPTASSIGN, $1);
                                  node_set_string($$, "name", $1->text);
                                  node_add_child($$, node_new(K_NIL)); };
-optassign: ID '=' d_expr       { $$ = node_new_inherit(OPTASSIGN, $1);
+optassign: ID '=' r_expr       { $$ = node_new_inherit(OPTASSIGN, $1);
                                  node_set_string($$, "name", $1->text);
                                  node_add_child($$, $3); };
 

@@ -22,7 +22,7 @@
 #                       [ token, type, [stuff] ],
 #                       ...
 #                     ]
-global typedb = nil
+global typedb = Map.new()
 
 global access_token = nil
 
@@ -30,22 +30,14 @@ namespace Typer
   set_access_token(token)
     access_token = token
 
-  init_typedb()
-    if typedb == nil
-      typedb = Map.new()
-
   const FUNCTION = 1
 
   add(name, token, type, item)
-    Typer.init_typedb()
-
     if not typedb.has_key?(name)
       typedb[name] = []
     typedb[name].push( [token, type, item] )
 
   get(name, type)
-    Typer.init_typedb()
-
     if not typedb.has_key?(name)
       raise "'%a' does not exist in type database".f(name)
     out = []
@@ -106,6 +98,14 @@ namespace Typer
         case Ast.CLASS
           Typer.absorb_class(Namespace.prefix() + node.get_string("name"),
                              node[1])
+
+  load_from_file(filename)
+    tf = TextFile.new(filename, TextFile.Read)
+    text = tf.read_entire()
+    tf.close()
+    map = Json.parse(text)
+    for k, v in map
+      typedb[k] = v
 
   dump()
     Out.println(Json.encode(typedb))

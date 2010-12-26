@@ -53,7 +53,7 @@
           <keyword>catch</keyword>
           <keyword>finally</keyword>
           <keyword>raise</keyword>
-          <keyword>module</keyword>
+          <keyword>namespace</keyword>
           <keyword>class</keyword>
           <keyword>constructor</keyword>
           <keyword>global</keyword>

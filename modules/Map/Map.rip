@@ -1,9 +1,5 @@
 #$ rdoc-file Map
 
-$
-  #include "clib/stringbuf.h"
-$
-
 #$ rdoc-name Map
 #$ rdoc-header Map
 #$ A key-to-value map.

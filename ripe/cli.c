@@ -44,35 +44,6 @@ const char* path_join(int num, ...)
   return cur;
 }
 
-#include <unistd.h>
-const char* path_get_app_dir()
-{
-  char buf[1024];
-  size_t len;
-  if ((len = readlink("/proc/self/exe", buf, 1024)) != -1){
-    buf[len] = 0; // readlink does not terminate buf with 0
-    char* slash = strrchr(buf, SEPARATOR);
-    if (slash != NULL){
-      *slash = 0;
-    }
-    return mem_strdup(buf);
-  } else {
-    fprintf(stderr, "couldn't detect app directory: %s\n",
-            strerror(errno));
-    return NULL;
-  }
-}
-
-#include <sys/stat.h>
-bool path_exists(const char* filename)
-{
-  struct stat buffer;
-  int status;
-  status = stat(filename, &buffer);
-  if (status == -1) return false;
-  return true;
-}
-
 const char* path_get_extension(const char* path)
 {
   return strrchr(path, '.');

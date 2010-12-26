@@ -13,7 +13,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "clib/dict.h"
 #include "vm/vm.h"
 
 Dict static_sym_table;

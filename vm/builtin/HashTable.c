@@ -50,10 +50,10 @@ static uint64 query(BucketType* buckets, Value* keys, uint64 size, Value key)
 static void rehash(HashTable* ht, bool do_values)
 {
   uint64 new_alloc_size = map_prime(ht->alloc_size);
-  BucketType* new_buckets = mem_malloc(sizeof(BucketType) * new_alloc_size);
-  Value* new_keys = mem_malloc(sizeof(Value) * new_alloc_size);
+  BucketType* new_buckets = mem_calloc(sizeof(BucketType) * new_alloc_size);
+  Value* new_keys = mem_calloc(sizeof(Value) * new_alloc_size);
   Value* new_values = NULL;
-  if (do_values) new_values = mem_malloc(sizeof(Value) * new_alloc_size);
+  if (do_values) new_values = mem_calloc(sizeof(Value) * new_alloc_size);
 
   const uint64 alloc_size = ht->alloc_size;
   for (uint64 i = 0; i < alloc_size; i++){
@@ -160,8 +160,8 @@ void ht_init(HashTable* ht)
 {
   ht->size = 0;
   ht->alloc_size = INIT_SIZE;
-  ht->buckets = mem_malloc(INIT_SIZE*sizeof(BucketType));
-  ht->keys = mem_malloc(INIT_SIZE*sizeof(Value));
+  ht->buckets = mem_calloc(INIT_SIZE*sizeof(BucketType));
+  ht->keys = mem_calloc(INIT_SIZE*sizeof(Value));
   ht->values = NULL;
 }
 
@@ -176,7 +176,7 @@ void ht_init2(HashTable* ht)
 {
   ht->size = 0;
   ht->alloc_size = INIT_SIZE;
-  ht->buckets = mem_malloc(INIT_SIZE*sizeof(BucketType));
-  ht->keys = mem_malloc(INIT_SIZE*sizeof(Value));
-  ht->values = mem_malloc(INIT_SIZE*sizeof(Value));
+  ht->buckets = mem_calloc(INIT_SIZE*sizeof(BucketType));
+  ht->keys = mem_calloc(INIT_SIZE*sizeof(Value));
+  ht->values = mem_calloc(INIT_SIZE*sizeof(Value));
 }

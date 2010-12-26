@@ -3,7 +3,6 @@
 $
   #include <stdlib.h>
   #include <unistd.h>
-  #include "clib/stringbuf.h"
 $
 
 namespace Os
@@ -74,16 +73,3 @@ namespace Os
       txt = String.join(arg, " ")
       return $ int64_to_val(system(val_to_string(__txt))) $
     raise "invalid type of argument to Os.system()"
-
-  #$ rdoc-name Os.temp_name
-  #$ rdoc-header String Os.temp_name(String prefix, String suffix)
-  #$ Return a temporary filename with the given prefix and suffix.
-  temp_name(String prefix, String suffix)
-    $
-      char* s = tempnam("/tmp", val_to_string(__prefix));
-      char* s2 = mem_asprintf("%s%s", s, val_to_string(__suffix));
-      free(s);
-    $
-    rv = $ string_to_val(s2) $
-    $ mem_free(s2); $
-    return rv

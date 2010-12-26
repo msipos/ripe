@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "utf8.h"
+#include "clib/clib.h"
 
 // Some bit-sequence macros (to make this code more maintainable).
 #define B_00000111 0x7
@@ -70,7 +70,7 @@ error utf8_read(const char** str, const char* limit, unichar* out)
   // it should be improved.
   assert(str != NULL); assert((*str) != NULL); assert(out != NULL);
 
-  // 4 byte octets. 
+  // 4 byte octets.
   const char* str1 = *str;
   const char* str2 = str1 + 1;
   const char* str3 = str1 + 2;
@@ -93,7 +93,7 @@ error utf8_read(const char** str, const char* limit, unichar* out)
     // 2 octets: 110yyyyy 10zzzzzz => yyyyyzzzzzz
     if (str2 >= limit) return ERROR_UTF8_LIMITED;
     if (not utf8_in_middle(*str2)) return ERROR_UTF8_INVALID;
-    
+
     y = (*str1) & B_00011111;
     z = (*str2) & B_00111111;
     (*str) += 2;
@@ -102,9 +102,9 @@ error utf8_read(const char** str, const char* limit, unichar* out)
   } else if (utf8_is_start3(*str1)) {
     // 3 octets: 1110xxxx 10yyyyyy 10zzzzzz => xxxxyyyy yyzzzzzz
     if (str3 >= limit) return ERROR_UTF8_LIMITED;
-    if (not utf8_in_middle(*str2)) return ERROR_UTF8_INVALID; 
+    if (not utf8_in_middle(*str2)) return ERROR_UTF8_INVALID;
     if (not utf8_in_middle(*str3)) return ERROR_UTF8_INVALID;
-      
+
     x = (*str1) & B_00001111;
     y = (*str2) & B_00111111;
     z = (*str3) & B_00111111;
@@ -114,10 +114,10 @@ error utf8_read(const char** str, const char* limit, unichar* out)
   } else if (utf8_is_start4(*str1)) {
     // 4 octets: 11110www 10xxxxxx 10yyyyyy 10zzzzzz => wwwxx xxxxyyyy yyzzzzzz
     if (str4 >= limit) return ERROR_UTF8_LIMITED;
-    if (not utf8_in_middle(*str2)) return ERROR_UTF8_INVALID; 
+    if (not utf8_in_middle(*str2)) return ERROR_UTF8_INVALID;
     if (not utf8_in_middle(*str3)) return ERROR_UTF8_INVALID;
     if (not utf8_in_middle(*str4)) return ERROR_UTF8_INVALID;
-    
+
     w = (*str1) & B_00000111;
     x = (*str2) & B_00111111;
     y = (*str3) & B_00111111;
@@ -136,12 +136,12 @@ error utf8_write(char** str, const char* limit, unichar c)
   if (not utf8_valid(c)) return ERROR_UTF8_INVALID;
   int bytes = utf8_needs(c);
 
-  // 4 byte octets. 
+  // 4 byte octets.
   uint8* str1 = (uint8*) *str;
   uint8* str2 = str1 + 1;
   uint8* str3 = str1 + 2;
   uint8* str4 = str1 + 3;
-  
+
   if (str1 + bytes > (uint8*) limit) return ERROR_UTF8_LIMITED;
   switch(bytes){
     case 1:
@@ -175,4 +175,3 @@ error utf8_write(char** str, const char* limit, unichar c)
   }
   return ERROR_OK;
 }
-

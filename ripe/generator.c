@@ -14,8 +14,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "ripe/ripe.h"
-#include "clib/stringbuf.h"
-#include "clib/dict.h"
 #include <setjmp.h>
 
 ///////////////////////////////////////////////////////////////////////////////
