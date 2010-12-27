@@ -71,6 +71,8 @@ void dict_init(Dict* d, uint16 key_size, uint16 value_size,
 Dict* dict_new(uint16 key_size, uint16 value_size, DictHashFunc hash_func,
                DictEqualFunc equal_func)
 {
+  assert(key_size > 0); assert(value_size > 0);
+  assert(hash_func != NULL); assert(equal_func != NULL);
   Dict* d = mem_new(Dict);
   dict_init(d, key_size, value_size, hash_func, equal_func);
   return d;
@@ -78,22 +80,26 @@ Dict* dict_new(uint16 key_size, uint16 value_size, DictHashFunc hash_func,
 
 static inline void* get_value(Dict* d, void* buckets, uint64 place)
 {
+  assert(d != NULL); assert(buckets != NULL);
   return buckets + d->total_size * place + sizeof(Flag) + d->key_size_align;
 }
 
 static inline void* get_key(Dict* d, void* buckets, uint64 place)
 {
+  assert(d != NULL); assert(buckets != NULL);
   return buckets + d->total_size * place + sizeof(Flag);
 }
 
 static inline Flag* get_flag(Dict* d, void* buckets, uint64 place)
 {
+  assert(d != NULL); assert(buckets != NULL);
   return ((Flag*) (buckets + d->total_size * place));
 }
 
 static void set(Dict* d, void* key, void* value, void* buckets,
                 uint64 num_buckets)
 {
+  assert(d != NULL);
   uint64 hash = d->hash_func(key);
   for (uint64 idx = 0; idx < num_buckets; idx++){
     // Quadratic probing

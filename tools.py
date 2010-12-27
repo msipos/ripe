@@ -49,7 +49,7 @@ def cons_objs(srcs, depends):
 def copy_file(dest, src):
     import shutil
     if depends(dest, [src]):
-        pprint('CP', src, dest)
+        # pprint('CP', src, dest)
         shutil.copy(src, dest)
 
 def load_meta(filename):

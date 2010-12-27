@@ -105,6 +105,8 @@ namespace Typer
     tf.close()
     map = Json.parse(text)
     for k, v in map
+      if typedb.has_key?(k)
+        raise "duplicate key in typedb '%a'".f(k)
       typedb[k] = v
 
   dump()

@@ -209,6 +209,7 @@ bool typer_needs_check(const char* destination, const char* source)
   if (strequal(destination, source)) return false;
   err("require type '%s' but got type '%s'", destination, source);
   assert_never();
+  return false;
 }
 
 const char* typer_infer(Node* expr)

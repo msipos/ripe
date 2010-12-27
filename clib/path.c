@@ -72,7 +72,7 @@ const char* path_temp_name(const char* prefix, const char* suffix)
     }
   }
   fclose(f);
-  buf[16] = 0;
+  buf[15] = 0;
   const char* tmp_dir = path_get_temp_dir();
   const char* rv = mem_asprintf("%s%c%s%s%s", tmp_dir, SEPARATOR, prefix, buf, suffix);
   mem_free((void*) tmp_dir);

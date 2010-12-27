@@ -47,7 +47,7 @@ namespace Module
     if g_modules.has_key?(name)
       return
     module = Map.new()
-    dir = Path.join(Path.get_program_dir(), modules, name)
+    dir = Path.join(Path.get_program_dir(), "modules", name)
 
     if not Path.exists?(dir)
       raise "error module '%a' does not exist (looked for '%a')".f(name, dir)

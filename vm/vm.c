@@ -76,5 +76,9 @@ int main(int argc, char** argv)
   Value sym_main = ssym_get("main");
 
   // Call main.
-  func_call0(sym_main);
+  Value rv = func_call0(sym_main);
+  if (is_int64(rv)){
+    return unpack_int64(rv);
+  }
+  return 0;
 }

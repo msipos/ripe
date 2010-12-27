@@ -323,10 +323,149 @@ int run()
   return rv;
 }
 
+void bootstrap(const char* out_filename, int optind, int argc, char* const* argv)
+{
+  logging("starting bootstrap (%d input files)...", argc - optind);
+  Array asts, objs;
+  array_init(&asts, Node*);
+  array_init(&objs, const char*);
+  typer_init();
+
+  for (int i = optind; i < argc; i++){
+    const char* arg = argv[i];
+    const char* ext = path_get_extension(arg);
+    if (strequal(ext, ".rip")){
+      Node* ast = build_tree(arg);
+      array_append(&asts, ast);
+      typer_ast(ast);
+    } else if (strequal(ext, ".o")) {
+      array_append(&objs, arg);
+    } else if (strequal(ext, ".meta")) {
+      Conf conf;
+      conf_load(&conf, arg);
+      cflags = mem_asprintf("%s %s", cflags, conf_query(&conf, "cflags"));
+      lflags = mem_asprintf("%s %s", lflags, conf_query(&conf, "lflags"));
+    } else {
+      err("invalid extension '%s'", ext);
+    }
+  }
+
+  // Now generate ASTs into dump objects.
+  dump_init();
+  for (int i = 0; i < asts.size; i++){
+    Node* ast = array_get(&asts, Node*, i);
+    generate(ast, "User", "input");
+  }
+
+  // Now dump into C file.
+  const char* tmp_c_path = path_temp_name("ripe_boot_", ".c");
+  logging("dumping into '%s'...", tmp_c_path);
+  FILE* f = fopen(tmp_c_path, "w");
+  if (f == NULL){
+    err("cannot open '%s' for writing: %s\n", tmp_c_path, strerror(errno));
+  }
+  dump_output(f, "User");
+  fclose(f);
+
+  // Compile into an object file.
+  const char* tmp_o_path = path_temp_name("ripe_boot_", ".o");
+  const char* cmd_line = mem_asprintf("gcc %s %s -c -o %s",
+                                      cflags,
+                                      tmp_c_path,
+                                      tmp_o_path);
+  if (system(cmd_line)){
+    err("failed running '%s'", cmd_line);
+  }
+
+  // Finally compile into the output file
+  char* objs_txt = "";
+  for (int i = 0; i < objs.size; i++){
+    const char* o_path = array_get(&objs, const char*, i);
+    objs_txt = mem_asprintf("%s %s", objs_txt, o_path);
+  }
+
+  cmd_line = mem_asprintf("gcc %s %s %s -o %s",
+                          lflags,
+                          objs_txt,
+                          tmp_o_path,
+                          out_filename);
+  if (system(cmd_line)){
+    err("failed running '%s'", cmd_line);
+  }
+}
+
+
 int main(int argc, char* const* argv)
 {
   const char* out_filename = NULL;
   const char* module_name = NULL;
+  cflags = "";
+  lflags = "";
+
+  // Mode of operation
+  #define MODE_MODULE 1
+  #define MODE_BUILD  2
+  #define MODE_RUN    3
+  #define MODE_DUMP_C 4
+  #define MODE_DUMP_S 5
+  #define MODE_TYPE   6
+  #define MODE_DUMP_T 7
+  #define MODE_BOOTSTRAP 8
+
+  int mode = MODE_RUN;
+  {
+    int c;
+    while ((c = getopt(argc, argv, "Xutbcdvo:n:m:f:s")) != -1){
+      switch(c){
+        case 'v':
+          log_verbosity = 1;
+          break;
+        case 'b':
+          mode = MODE_BUILD;
+          break;
+        case 'c':
+          mode = MODE_MODULE;
+          break;
+        case 'd':
+          mode = MODE_DUMP_C;
+          break;
+        case 's':
+          mode = MODE_DUMP_S;
+          break;
+        case 't':
+          mode = MODE_TYPE;
+          break;
+        case 'u':
+          mode = MODE_DUMP_T;
+          break;
+        case 'o':
+          out_filename = optarg;
+          break;
+        case 'n':
+          module_name = optarg;
+          break;
+        case 'm':
+          module_add_by_name(optarg);
+          break;
+        case 'f':
+          {
+            cflags = mem_asprintf("%s %s", cflags, optarg);
+          }
+          break;
+        case 'X':
+          mode = MODE_BOOTSTRAP;
+          break;
+        default:
+          err("getopt failed");
+          return 1;
+      }
+    }
+  }
+
+  if (mode == MODE_BOOTSTRAP){
+    bootstrap(out_filename, optind, argc, argv);
+    return 0;
+  }
 
   module_init();
   app_dir = path_get_app_dir();
@@ -363,62 +502,6 @@ int main(int argc, char* const* argv)
   // Extend cflags
   cflags = mem_asprintf("%s -I%s/include", cflags, app_dir);
 
-  // Mode of operation
-  #define MODE_MODULE 1
-  #define MODE_BUILD  2
-  #define MODE_RUN    3
-  #define MODE_DUMP_C 4
-  #define MODE_DUMP_S 5
-  #define MODE_TYPE   6
-  #define MODE_DUMP_T 7
-
-  int mode = MODE_RUN;
-
-  int c;
-  while ((c = getopt(argc, argv, "utbcdvo:n:m:f:s")) != -1){
-    switch(c){
-      case 'v':
-        log_verbosity = 1;
-        break;
-      case 'b':
-        mode = MODE_BUILD;
-        break;
-      case 'c':
-        mode = MODE_MODULE;
-        break;
-      case 'd':
-        mode = MODE_DUMP_C;
-        break;
-      case 's':
-        mode = MODE_DUMP_S;
-        break;
-      case 't':
-        mode = MODE_TYPE;
-        break;
-/*      case 'h':*/
-/*        display_help();*/
-/*        return 0;*/
-      case 'u':
-        mode = MODE_DUMP_T;
-        break;
-      case 'o':
-        out_filename = optarg;
-        break;
-      case 'n':
-        module_name = optarg;
-        break;
-      case 'm':
-        module_add_by_name(optarg);
-        break;
-      case 'f':
-        {
-          cflags = mem_asprintf("%s %s", cflags, optarg);
-        }
-        break;
-      default:
-        return 1;
-    }
-  }
   logging("cflags = %s", cflags);
 
   if (mode == MODE_DUMP_T){

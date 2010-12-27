@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #######################################################################
-# Utilties
+# Utilities
 
 sys(args)
   txt = String.join(args, " ")
@@ -35,6 +35,9 @@ load_meta(filename)
     map[left] = right
   return map
   tf.close()
+
+empty_buffers()
+  return tuple("", "", "", "", "")
 
 #######################################################################
 # Globals
@@ -57,11 +60,7 @@ dump(header, code, init1, init2, init3, module_name, outfile)
   outfile.println("}\n")
 
 go_dump(files)
-  header = ""
-  code = ""
-  init1 = ""
-  init2 = ""
-  init3 = ""
+  header, code, init1, init2, init3 = empty_buffers()
 
   asts = []
   for file in files
@@ -84,14 +83,7 @@ go_dump(files)
   Out.println("}\n")
 
 go_bootstrap(files, outfile)
-  header = ""
-  code = ""
-  init1 = ""
-  init2 = ""
-  init3 = ""
-
-  cflags = ""
-  lflags = ""
+  header, code, init1, init2, init3 = empty_buffers()
 
   asts = []
   rips = []
@@ -110,10 +102,9 @@ go_bootstrap(files, outfile)
       case ".meta"
         meta = load_meta(file)
         if meta.has_key?("cflags")
-          cflags = cflags + " " + meta["cflags"]
+          g_cflags = g_cflags + " " + meta["cflags"]
         if meta.has_key?("lflags")
-          lflags = lflags + " " + meta["lflags"]
-  objs.push(Module.make_loader(["User"], cflags))
+          g_lflags = g_lflags + " " + meta["lflags"]
 
   index = 1
   for ast in asts
@@ -128,13 +119,50 @@ go_bootstrap(files, outfile)
   tf.close()
 
   tmp_o_file = Path.temp_name("ripe", ".o")
-  sys(["gcc", cflags, tmp_c_file, "-c", "-o", tmp_o_file])
+  sys(["gcc", g_cflags, tmp_c_file, "-c", "-o", tmp_o_file])
 
   objs_txt = String.join(objs, " ")
-  sys(["gcc", lflags, objs_txt, tmp_o_file, "-o", outfile])
+  sys(["gcc", g_lflags, objs_txt, tmp_o_file, "-o", outfile])
+
+go_build(files, outfile)
+
 
 go_module(files, module_name, outfile)
-  pass
+  header, code, init1, init2, init3 = empty_buffers()
+
+  asts = []
+  rips = []
+  objs = []
+  for file in files
+    root, ext = Path.split_extension(file)
+    switch ext
+      case ".rip"
+        rips.push(file)
+        ast = Ast.Node.new_from_file(file)
+        asts.push(ast)
+        if not g_omit_typing
+          Typer.absorb_info(ast)
+      case ".o"
+        objs.push(file)
+      case ".meta"
+        meta = load_meta(file)
+        if meta.has_key?("cflags")
+          g_cflags = g_cflags + " " + meta["cflags"]
+      case ".typ"
+        Typer.load_from_file(file)
+  for ast in asts
+    generate(ast, header, code, init1, init2, init3)
+
+  tmp_c_file = Path.temp_name("ripe", ".c")
+  tf = TextFile.new(tmp_c_file, TextFile.Write)
+  dump(header, code, init1, init2, init3, module_name, tf)
+  tf.close()
+
+  tmp_o_file = Path.temp_name("ripe", ".o")
+  sys(["gcc", "-c", g_cflags, tmp_c_file, "-o", tmp_o_file])
+
+  objs_txt = String.join(objs, " ")
+  sys(["ld", "-r", objs_txt, tmp_o_file, "-o", outfile])
 
 go_type(files)
   for file in files
@@ -158,6 +186,7 @@ load_defaults()
 main()
   options = [
     [&BOOTSTRAP,   "-s", "--bootstrap", 0  , "bootstrap build"],
+    [&BUILD,       "-b", "--build", 0, "build program"],
     [&MODULE,      "-c", "--build-module", 0, "module build"],
     [&DUMP,        "-d", "--dump", 0, "dump C code"],
     [&NAME,        "-n", "--module-name", Opt.ARG, "set module name"],
@@ -190,18 +219,26 @@ main()
       case &TYPE
         mode = &TYPE
 
-  if mode == &BOOTSTRAP
-    go_bootstrap(leftover, outfile)
-    return
+  if mode == nil
+    Err.println("error: no mode specified (use -h for help)")
+    return 1
 
-  load_defaults()
+  # These modes do not load the defaults
   switch mode
+    case &BOOTSTRAP
+      go_bootstrap(leftover, outfile)
+      return 0
     case &MODULE
       go_module(leftover, module_name, outfile)
-    case &DUMP
-      go_dump(leftover)
+      return 0
     case &TYPE
       go_type(leftover)
-    case nil
-      Err.println("error: no mode specified (use -h for help)")
-      return 1
+      return 0
+
+  # Remaining modes do load the defaults
+  load_defaults()
+  switch mode
+    case &DUMP
+      go_dump(leftover)
+    case &BUILD
+      go_build(leftover)

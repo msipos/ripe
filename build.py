@@ -18,11 +18,15 @@ import os, sys, tools
 conf = tools.conf
 conf["CC"] = "gcc"
 conf["LD"] = "ld"
-conf["CFLAGS"] = ["-Wall", "-Wstrict-aliasing=0", "-Wfatal-errors", "-std=gnu99", "-I."]
+conf["CFLAGS"] = ["-Wall", "-Wstrict-aliasing=0", "-Wfatal-errors", "-std=gnu99", "-I.", "-Wno-unused"]
 conf["LFLAGS"] = ["-lgc"]
 conf["YACC"] = "bison"
 conf["LEX"] = "flex"
 conf["VERBOSITY"] = 1
+if "valgrind" in sys.argv:
+    conf["VALGRIND"] = ["valgrind", "--leak-check=no", "--track-origins=yes"]
+else:
+    conf["VALGRIND"] = []
 if "nogc" not in sys.argv:
     conf["CFLAGS"].append("-DCLIB_GC")
 conf["FORCING"] = False
@@ -52,7 +56,9 @@ required_dirs = ['bin', 'product', 'product/include', 'product/include/clib',
 for d in required_dirs:
     tools.mkdir_safe(d)
 
-# Clib
+###############################################################################
+# CLIB
+
 clib_hs =   [
               'clib/clib.h'
             ]
@@ -69,7 +75,6 @@ clib_objs = tools.cons_objs(clib_srcs, clib_hs)
 
 ###############################################################################
 # LANG
-###############################################################################
 
 tools.cons_yacc('lang/parser.c', 'lang/parser.y',
           ['lang/lang.h'] + clib_hs)
@@ -93,7 +98,6 @@ tools.link_objs(lang_objs, "lang/lang.o")
 
 ###############################################################################
 # RIPE TOOLS
-###############################################################################
 
 ripe_hs = [
             'ripe/ripe.h',
@@ -111,12 +115,10 @@ ripe_srcs = [
                'ripe/vars.c'
              ]
 ripe_objs = tools.cons_objs(ripe_srcs, ripe_hs + clib_hs + lang_hs)
-tools.cons_bin('product/ripe', ripe_objs + clib_objs + lang_objs, [])
-conf['RIPE'] = 'product/ripe'
+tools.cons_bin('product/ripeboot', ripe_objs + clib_objs + lang_objs, [])
 
 ###############################################################################
 # VM
-###############################################################################
 
 func_gen_objs = tools.cons_objs(['vm/func-gen/func-gen.c'], [])
 tools.cons_bin('bin/func-gen', func_gen_objs, [])
@@ -173,8 +175,61 @@ f.write('modules=%s\n' % (" ".join(DEF_MODULES)))
 f.close()
 
 ##############################################################################
-# BUILD MODULES
+# BOOTSTRAP STEP 1
+
+riperipesrcs = [
+                'riperipe/dump.rip',
+                'riperipe/eval.rip',
+                'riperipe/generator.rip',
+                'riperipe/main.rip',
+                'riperipe/module.rip',
+                'riperipe/namespace.rip',
+                'riperipe/typer.rip',
+               ]
+
+bootstrap_srcs = ['product/vm.o', 'lang/lang.o', 'product/ripe.meta']
+bootstrap_srcs.extend(riperipesrcs)
+for module in DEF_MODULES:
+    name = 'modules/%s/%s.meta' % (module, module)
+    if os.path.exists(name):
+        bootstrap_srcs.append(name)
+    name = 'modules/%s/%s.rip' % (module, module)
+    bootstrap_srcs.append(name)
+bootstrap_srcs.append('modules/Ast/Ast.rip')
+bootstrap_srcs.append('modules/Json/Json.rip')
+
+tools.cons_obj('riperipe/bootstrap.o', 'riperipe/bootstrap.c', [])
+bootstrap_srcs.append('riperipe/bootstrap.o')
+
+if tools.depends('product/ripe2', ['product/ripeboot'] + bootstrap_srcs):
+    tools.pprint('RIP', 'riperipe/*.rip', 'product/ripe2')
+    tools.call([conf["VALGRIND"], 'product/ripeboot',
+                '-X',
+                '-o', 'product/ripe2',
+                bootstrap_srcs])
+
+
 ##############################################################################
+# BOOTSTRAP STEP 2
+
+if tools.depends('product/ripe3', ['product/ripe2']):
+    tools.pprint('RIP', 'riperipe/*.rip', 'product/ripe3')
+    tools.call([conf["VALGRIND"], 'product/ripe2', '-s',
+                '-o', 'product/ripe3',
+                bootstrap_srcs])
+
+##############################################################################
+# BOOTSTRAP STEP 3
+
+if tools.depends('product/ripe', ['product/ripe3']):
+    tools.pprint('RIP', 'riperipe/*.rip', 'product/ripe')
+    tools.call([conf["VALGRIND"], 'product/ripe2', '-s',
+                '-o', 'product/ripe',
+                bootstrap_srcs])
+conf['RIPE'] = 'product/ripe'
+
+##############################################################################
+# TYPE MODULES
 
 type_deps = ['product/ripe']
 def type_module(module):
@@ -192,14 +247,31 @@ for module in MODULES + OPTIONAL_MODULES:
     type_infos.append(type_module(module))
 sys.stdout.write("\n")
 
+##############################################################################
+# BUILD MODULES
+
 module_deps = vm_hs + clib_hs + ['modules/modules.h', 'product/ripe'] + type_infos
 failed_modules = []
 
-def cons_module(src, dest, module, required, extra_CFLAGS='', extra_objs=''):
-    if tools.depends(dest, module_deps + [src]):
-        tools.pprint('MOD', src, dest)
-        args = ['product/ripe', '-n', module, '-c', src, extra_objs, '-o', dest,
-                        '-f', '"%s"' % extra_CFLAGS]
+def build_module(module, required):
+    import os.path
+    tools.mkdir_safe('product/modules/%s' % module)
+    out = 'product/modules/%s/%s.o' % (module, module)
+    srcs = [type_infos, 'product/ripe.meta']
+
+    metafile = 'modules/%s/%s.meta' % (module, module)
+    if os.path.exists(metafile):
+        tools.copy_file('product/modules/%s/%s.meta' % (module, module), metafile)
+        srcs.append(metafile)
+    meta = tools.load_meta(metafile)
+    extra_objs = ''
+    if 'objs' in meta:
+        extra_objs = meta['objs']
+    src = 'modules/%s/%s.rip' % (module, module)
+    if tools.depends(out, module_deps + [src]):
+        tools.pprint('MOD', src, out)
+        args = ['product/ripe', '-n', module,
+                '-c', srcs, src, extra_objs, '-o', out]
         if conf["VERBOSITY"] > 1:
             args.append('-v')
         if required:
@@ -208,41 +280,9 @@ def cons_module(src, dest, module, required, extra_CFLAGS='', extra_objs=''):
             if not tools.try_call(args):
                 failed_modules.append(module)
 
-def build_module(module, required):
-    import os.path
-    tools.mkdir_safe('product/modules/%s' % module)
-    out = 'product/modules/%s/%s.o' % (module, module)
-
-    # Deal with metafile
-    metafile = 'modules/%s/%s.meta' % (module, module)
-    if os.path.exists(metafile):
-        tools.copy_file('product/modules/%s/%s.meta' % (module, module), metafile)
-    meta = tools.load_meta(metafile)
-    extra_CFLAGS = ''
-    extra_objs = ''
-    if 'cflags' in meta:
-        extra_CFLAGS = extra_CFLAGS + meta['cflags']
-    if 'objs' in meta:
-        extra_objs = meta['objs']
-    if 'builder' in meta:
-        builder = meta['builder']
-        tools.call([builder], conf)
-    else:
-        path = 'modules/%s/%s.rip' % (module, module)
-        if os.path.exists(path):
-            cons_module(path, out, module, required, extra_CFLAGS, extra_objs)
-            return
-        else:
-            path = 'modules/%s/%s.c' % (module, module)
-            if os.path.exists(path):
-                cons_module(path, out, module, required, extra_CFLAGS,
-                            extra_objs)
-                return
-            else:
-                failed_modules.append(module)
-
 for module in MODULES:
     build_module(module, True)
+
 if "nomods" not in sys.argv:
     for module in OPTIONAL_MODULES:
         build_module(module, False)
@@ -253,50 +293,3 @@ if "doc" in sys.argv:
   tools.call(["ripedoc/build.sh", "2>", "/dev/null"])
   tools.call(["ripedoc/ripedoc", "."])
   tools.call(["mv", "*.html", "doc/"])
-
-# For now, until riperipe is complete.
-#sys.exit(0)
-
-riperipesrcs = [
-                'riperipe/dump.rip',
-                'riperipe/eval.rip',
-                'riperipe/generator.rip',
-                'riperipe/main.rip',
-                'riperipe/module.rip',
-                'riperipe/namespace.rip',
-                'riperipe/typer.rip',
-               ]
-
-bootstrap_srcs = ['product/vm.o', 'lang/lang.o', 'product/ripe.meta']
-for module in DEF_MODULES:
-    name = 'modules/%s/%s.meta' % (module, module)
-    if os.path.exists(name):
-        bootstrap_srcs.append(name)
-    name = 'modules/%s/%s.rip' % (module, module)
-    bootstrap_srcs.append(name)
-bootstrap_srcs.extend(riperipesrcs)
-bootstrap_srcs.append('modules/Ast/Ast.rip')
-bootstrap_srcs.append('modules/Json/Json.rip')
-
-if tools.depends('product/riperipe',
-                 ['product/vm.o', 'product/ripe'] + riperipesrcs + module_deps):
-    tools.pprint('RIP', 'riperipe/main.rip', 'product/riperipe')
-    tools.call(
-      ['product/ripe', '-b', '-o', 'product/riperipe',
-                       '-m', 'Ast', '-m', 'Json'] + riperipesrcs)
-
-sys.exit(0)
-
-# Bootstrap step 2
-if tools.depends('product/riperipe2', ['product/riperipe']):
-    tools.pprint('RIP', 'riperipe/main.rip', 'product/riperipe2')
-    tools.call(
-      ['product/riperipe', '-s', '-o', 'product/riperipe2'] + bootstrap_srcs
-    )
-
-# Bootstrap step 3
-if tools.depends('product/riperipe3', ['product/riperipe2']):
-    tools.pprint('RIP', 'riperipe/main.rip', 'product/riperipe3')
-    tools.call(
-      ['product/riperipe2', '-s', '-o', 'product/riperipe3'] + bootstrap_srcs
-    )

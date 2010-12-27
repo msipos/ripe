@@ -50,8 +50,16 @@ void array_prepend(Array* arr, uint sz, void* el)
 
 void array_expand(Array* arr, uint sz)
 {
+  assert(arr != NULL);
+  assert(sz > 0);
+
   if (arr->alloc_size > arr->size) return;
-  arr->alloc_size *= 2;
+
+  if (arr->alloc_size == 0) {
+    arr->alloc_size = 2;
+  } else {
+    arr->alloc_size *= 2;
+  }
   arr->data = mem_realloc(arr->data, sz * arr->alloc_size);
 }
 
@@ -59,4 +67,3 @@ void array_clear(Array* arr)
 {
   arr->size = 0;
 }
-
