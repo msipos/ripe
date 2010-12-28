@@ -54,7 +54,12 @@ typedef uint16_t error;
 #include <assert.h>
 #define assert_never()  assert(false)
 
-#define ATTR_NORETURN __attribute__((noreturn))
+#define ATTR_NORETURN      __attribute__((noreturn))
+#ifndef NOTHREADS
+#define THREAD_LOCAL  __thread
+#else
+#define THREAD_LOCAL
+#endif
 
 ///////////////////////////////////////////////////////////////////////
 // array.c
@@ -144,7 +149,9 @@ uint32 hash_bytes(const char * data, int len);
   #ifndef NDEBUG
     #define GC_DEBUG
   #endif
-  #define GC_THREADS
+  #ifndef NOTHREADS
+    #define GC_THREADS
+  #endif
   #include <gc/gc.h>
 
   #define mem_malloc(sz) GC_MALLOC(sz)

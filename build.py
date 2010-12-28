@@ -48,6 +48,8 @@ else:
     conf["CFLAGS"].append("-g")
 if "nostack" in sys.argv:
     conf["CFLAGS"].append("-DNOSTACK")
+if "nothreads" in sys.argv:
+    conf["CFLAGS"].append("-DNOTHREADS")
 
 # Construct required directories
 required_dirs = ['bin', 'product', 'product/include', 'product/include/clib',

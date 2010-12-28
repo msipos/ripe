@@ -158,7 +158,7 @@ main()
   obj.i = 10
   Test.test("set/get", 10, obj.i)
 
-  exceptions()
+  #exceptions()
   symbols()
 
   Test.test("c-expr", $ int64_to_val(1) $, 1)

@@ -22,7 +22,32 @@ class Tuple
     $
 
   index(i)
-    return $ tuple_index(&(@t), val_to_int64(__i)) $
+    if i is Integer
+      return $ tuple_index(&(@t), val_to_int64(__i)) $
+    $
+      Range* range = val_to_range(__i);
+      int64 start, finish;
+      util_index_range("Tuple",
+                       range,
+                       @t.size,
+                       &start,
+                       &finish);
+      if (start <= finish){
+        Tuple* tuple;
+        Value v = tuple_new(finish - start + 1, &tuple);
+        for (int64 i = start; i <= finish; i++){
+          tuple->data[i - start] = @t.data[i];
+        }
+        return v;
+      } else {
+        Tuple* tuple;
+        Value v = tuple_new(start - finish + 1, &tuple);
+        for (int64 i = 0; i < start - finish + 1; i++){
+          tuple->data[i] = @t.data[start - i];
+        }
+        return v;
+      }
+    $
 
   virtual_get size()
     return $ int64_to_val(@t.size) $

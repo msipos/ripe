@@ -336,6 +336,9 @@ void bootstrap(const char* out_filename, int optind, int argc, char* const* argv
     const char* ext = path_get_extension(arg);
     if (strequal(ext, ".rip")){
       Node* ast = build_tree(arg);
+      if (ast == NULL){
+        err("failed to parse '%s': %s", arg, build_tree_error);
+      }
       array_append(&asts, ast);
       typer_ast(ast);
     } else if (strequal(ext, ".o")) {

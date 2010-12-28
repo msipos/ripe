@@ -406,6 +406,7 @@ typedef struct {
   Value* data;
 } Tuple;
 Tuple* val_to_tuple(Value v_tuple);
+Value tuple_new(int64 size, Tuple** out);
 Value tuple_to_val(uint16 num_args, ...);
 Value tuple_to_val2(uint16 num_args, Value* stuff);
 Value tuple_index(Tuple* tuple, int64 idx);

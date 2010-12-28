@@ -23,10 +23,19 @@ namespace Opt
   display_help(options)
     Err.println("  available options:")
     for option in options
+      opt2 = "  "
+      if option[2] != nil
+        opt2 = option[2]
+      opt3 = option[3]
       if Math.bit_and(option[4], Opt.ARG) != 0
-        Err.println("    ", option[2], ", ", option[3], " ARG   ", option[5])
-      else
-        Err.println("    ", option[2], ", ", option[3], "       ", option[5])
+        opt3 = opt3 + " ARG"
+      loop
+        if opt3.size < 25
+           opt3 = opt3 + " "
+        else
+           break
+
+      Err.println("    ", opt2, ", ", opt3, " ", option[5])
 
   # options should be of the form:
   #  the 4th is optional

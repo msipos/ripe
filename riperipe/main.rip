@@ -125,7 +125,46 @@ go_bootstrap(files, outfile)
   sys(["gcc", g_lflags, objs_txt, tmp_o_file, "-o", outfile])
 
 go_build(files, outfile)
+  header, code, init1, init2, init3 = empty_buffers()
 
+  asts = []
+  rips = []
+  objs = []
+  for file in files
+    root, ext = Path.split_extension(file)
+    switch ext
+      case ".rip"
+        rips.push(file)
+
+        ast = Ast.Node.new_from_file(file)
+        asts.push(ast)
+        Typer.absorb_info(ast)
+      case ".o"
+        objs.push(file)
+
+  for ast in asts
+    generate(ast, header, code, init1, init2, init3)
+
+  # Compile ripe
+  tmp_c_file = Path.temp_name("ripe", ".c")
+  tf = TextFile.new(tmp_c_file, TextFile.Write)
+  dump(header, code, init1, init2, init3, "User", tf)
+  tf.close()
+  tmp_o_file = Path.temp_name("ripe", ".o")
+  sys(["gcc", g_cflags, tmp_c_file, "-c", "-o", tmp_o_file])
+
+  # Generate module loader, append to other objects
+  mods = ["User"]
+  mods.append(Module.get_list())
+  objs.push(Module.make_loader(mods, g_cflags))
+  objs.append(Module.get_objs())
+  objs.push(Path.join(Path.get_program_dir(), "vm.o"))
+
+  objs_txt = String.join(objs, " ")
+
+  cmdline = ["gcc", g_lflags, objs_txt, tmp_o_file, "-o", outfile]
+  cmdline.append(Module.get_lflags())
+  sys(cmdline)
 
 go_module(files, module_name, outfile)
   header, code, init1, init2, init3 = empty_buffers()
@@ -175,21 +214,24 @@ go_type(files)
   Typer.dump()
 
 load_defaults()
-  meta = load_meta(Path.join(Path.get_program_dir(), "ripe.meta"))
+  root_dir = Path.get_program_dir()
+  meta = load_meta(Path.join(root_dir, "ripe.meta"))
   g_cflags = meta["cflags"]
   g_lflags = meta["lflags"]
   modules = meta["modules"]
   arr = modules.split_whitespace()
-  for module in modules
+  for module in arr
     Module.add(module)
+  g_cflags = g_cflags + " -I"+Path.join(root_dir, "include")
 
 main()
   options = [
     [&BOOTSTRAP,   "-s", "--bootstrap", 0  , "bootstrap build"],
     [&BUILD,       "-b", "--build", 0, "build program"],
-    [&MODULE,      "-c", "--build-module", 0, "module build"],
+    [&BUILD_MODULE,"-c", "--build-module", 0, "module build"],
     [&DUMP,        "-d", "--dump", 0, "dump C code"],
     [&NAME,        "-n", "--module-name", Opt.ARG, "set module name"],
+    [&MODULE,      "-m", "--module", Opt.ARG, "use a module"],
     [&OUTFILE,     "-o", "--outfile", Opt.ARG, "set output filename"],
     [&TYPE,        "-t", "--typer", 0, "create typer output"],
     [&OMIT_TYPING, nil,  "--omit-typing", 0, "omit typing"],
@@ -206,8 +248,10 @@ main()
     switch opt[1]
       case &BOOTSTRAP
         mode = &BOOTSTRAP
-      case &MODULE
-        mode = &MODULE
+      case &BUILD
+        mode = &BUILD
+      case &BUILD_MODULE
+        mode = &BUILD_MODULE
       case &DUMP
         mode = &DUMP
       case &NAME
@@ -218,6 +262,8 @@ main()
         g_omit_typing = true
       case &TYPE
         mode = &TYPE
+      case &MODULE
+        Module.add(opt[2])
 
   if mode == nil
     Err.println("error: no mode specified (use -h for help)")
@@ -228,7 +274,7 @@ main()
     case &BOOTSTRAP
       go_bootstrap(leftover, outfile)
       return 0
-    case &MODULE
+    case &BUILD_MODULE
       go_module(leftover, module_name, outfile)
       return 0
     case &TYPE
@@ -241,4 +287,4 @@ main()
     case &DUMP
       go_dump(leftover)
     case &BUILD
-      go_build(leftover)
+      go_build(leftover, outfile)

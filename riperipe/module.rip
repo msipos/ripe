@@ -66,3 +66,26 @@ namespace Module
     type_path = Path.join(dir, name + ".typ")
     if Path.exists?(type_path)
       Typer.load_from_file(type_path)
+
+    g_modules[name] = module
+
+  get_list()
+    arr = []
+    for k, v in g_modules
+      arr.push(k)
+    return arr
+
+  get_objs()
+    arr = []
+    for k, v in g_modules
+      arr.push(v[&OBJECT])
+    return arr
+
+  get_lflags()
+    arr = []
+    for k, v in g_modules
+      if v.has_key?(&META)
+        meta = v[&META]
+        if meta.has_key?("lflags")
+          arr.push(meta["lflags"])
+    return arr

@@ -49,6 +49,14 @@ Value tuple_to_val2(uint16 num_args, Value* stuff)
   return v;
 }
 
+Value tuple_new(int64 size, Tuple** out)
+{
+  Value v = obj_new(klass_Tuple, (void**) out);
+  (*out)->size = size;
+  (*out)->data = mem_malloc(sizeof(Value) * size);
+  return v;
+}
+
 Value tuple_index(Tuple* tuple, int64 idx)
 {
   return tuple->data[util_index("Tuple", idx, tuple->size)];
