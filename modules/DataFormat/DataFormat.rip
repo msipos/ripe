@@ -20,7 +20,7 @@ namespace DataFormat
           for x in 1:nx
             for y in 1:ny
               text = tf.read_line().strip()
-              if text.find(".")
+              if text.find(".") != nil
                 arr[x,y] = Double(text)
               else
                 arr[x,y] = Integer(text)
