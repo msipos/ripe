@@ -20,7 +20,7 @@
 void sbuf_init(StringBuf* sbuf, const char* s)
 {
   uint64 len = strlen(s);
-  sbuf->str = mem_malloc(len + 1);
+  sbuf->str = mem_malloc_atomic(len + 1);
   sbuf->alloc_size = len + 1;
   sbuf->size = len + 1;
   strcpy(sbuf->str, s);

@@ -46,7 +46,12 @@ const char* path_join(int num, ...)
 
 const char* path_get_extension(const char* path)
 {
-  return strrchr(path, '.');
+  const char* ext = strrchr(path, '.');
+
+  if (ext == NULL) {
+    return path + strlen(path);
+  }
+  return ext;
 }
 
 static char* strip_whitespace(char* s)

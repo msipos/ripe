@@ -48,8 +48,14 @@ class Array2
       @a.data[array2_index(&(@a), x, y)] = __v;
     $
 
+  #$ rdoc-name Array2.size_x
+  #$ rdoc-header Integer Array2.size_x
+  #$ x (first axis) size.
   virtual_get size_x()
     return $ int64_to_val(@a.size_x) $
 
+  #$ rdoc-name Array2.size_y
+  #$ rdoc-header Integer Array2.size_y
+  #$ y (second axis) size.
   virtual_get size_y()
     return $ int64_to_val(@a.size_y) $

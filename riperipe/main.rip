@@ -155,16 +155,21 @@ go_build(files, outfile)
 
   # Generate module loader, append to other objects
   mods = ["User"]
-  mods.append(Module.get_list())
+  mods.extend(Module.get_list())
   objs.push(Module.make_loader(mods, g_cflags))
-  objs.append(Module.get_objs())
+  objs.extend(Module.get_objs())
   objs.push(Path.join(Path.get_program_dir(), "vm.o"))
 
   objs_txt = String.join(objs, " ")
 
   cmdline = ["gcc", g_lflags, objs_txt, tmp_o_file, "-o", outfile]
-  cmdline.append(Module.get_lflags())
+  cmdline.extend(Module.get_lflags())
   sys(cmdline)
+
+go_run(leftover)
+  outfile = Path.temp_name("ripe", "")
+  go_build(leftover, outfile)
+  sys([outfile])
 
 go_module(files, module_name, outfile)
   header, code, init1, init2, init3 = empty_buffers()
@@ -243,7 +248,7 @@ main()
 
   outfile = "r.out"
   module_name = "Module"
-  mode = nil
+  mode = &RUN
   for opt in parsed
     switch opt[1]
       case &BOOTSTRAP
@@ -265,10 +270,6 @@ main()
       case &MODULE
         Module.add(opt[2])
 
-  if mode == nil
-    Err.println("error: no mode specified (use -h for help)")
-    return 1
-
   # These modes do not load the defaults
   switch mode
     case &BOOTSTRAP
@@ -288,3 +289,5 @@ main()
       go_dump(leftover)
     case &BUILD
       go_build(leftover, outfile)
+    case &RUN
+      go_run(leftover)

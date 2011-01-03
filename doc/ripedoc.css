@@ -22,12 +22,12 @@ div.menu{
   margin-top: 20px;
   padding: 10px;
   float: left;
-  width:20%;
+  width:12em;
 }
 
 div.content{
-  float: right;
-  width:75%;
+  float: left;
+  width:65em;
 }
 
 ul

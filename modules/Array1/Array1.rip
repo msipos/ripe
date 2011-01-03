@@ -70,7 +70,7 @@ class Array1
   $
 
   #$ rdoc-name Array1.new_const
-  #$ rdoc-header Array1.new_const(Integer n, val)
+  #$ rdoc-header Array1 Array1.new_const(Integer n, val)
   #$ Create an array of n elements, all of them val.
   constructor new_const(n, val)
     $
@@ -83,15 +83,21 @@ class Array1
       }
     $
 
-  #$ rdoc-name Array1.append
-  #$ rdoc-header Array1.append(Array1 array)
-  #$ Appends array to the end of self.
-  append(Array1 array)
+  #$ rdoc-name Array1.extend
+  #$ rdoc-header Nil Array1.extend(Array1 a)
+  #$ Extends the array by concatinating all elements of a.
+  extend(Array1 array)
     for el in array
       self.push(el)
 
+  #$ rdoc-name Array1.get_iter
+  #$ rdoc-header Array1Iterator Array1.get_iter()
+  #$ Returns an Array1Iterator over self.
+  get_iter()
+    return Array1Iterator.new(self)
+
   #$ rdoc-name Array1.index
-  #$ rdoc-header Array1.index(Integer or Range i)
+  #$ rdoc-header ? Array1.index(Integer or Range i)
   #$ If i is an Integer, this returns the i-th element of the Array1.
   #$ If i is a range, this returns a new Array1View that is a view of the given
   #$ range of self.
@@ -101,8 +107,75 @@ class Array1
     if i is Range
       return Array1View.new(self, i)
 
+  #$ rdoc-name Array1.index_set
+  #$ rdoc-header Nil Array1.index_set(Integer i, val)
+  #$ Sets the i-th element of the array to val.
+  index_set(Integer i, val)
+    $ array1_index_set(&(@a), val_to_int64(__i), __val); $
+
+  #$ rdoc-name Array1.insert
+  #$ rdoc-header Nil Array1.insert(Integer i, val)
+  #$ Insert val into position i in the array.  Moves everything in position
+  #$ i and beyond one step.
+  insert(Integer i, val)
+    if i == self.size + 1
+      self.push(val)
+      return
+    $
+      const int64 size = @a.size;
+      array1_push(&(@a), __val);
+      int64 idx = util_index("Array1",
+                             val_to_int64(__i),
+                             size);
+      Value* data = @a.data;
+      for (int64 i = size - 1; i >= idx; i--){
+        data[i+1] = data[i];
+      }
+      data[idx] = __val;
+    $
+
+  #$ rdoc-name Array1.push
+  #$ rdoc-header Nil Array1.push(val)
+  #$ Appends a Value val onto the end of the array. Returns nil.
+  push(val)
+    $ array1_push(&(@a), __val); $
+
+  #$ rdoc-name Array1.pop
+  #$ rdoc-header Array1.pop()
+  #$ Removes the last element of the Array1 and returns it.  Throws an
+  #$ exception if the Array1 is empty.
+  pop()
+    return $ array1_pop(&(@a)) $
+
+  #$ rdoc-name Array1.reverse!
+  #$ rdoc-header Nil Array1.reverse!()
+  #$ Reverse array in place.
+  reverse!()
+    $
+      const int64 sz = @a.size;
+      const int64 upto = sz / 2;
+      Value* data = @a.data;
+      for (int64 i = 0; i < upto; i++){
+        Value tmp = data[i];
+        int64 j = sz - i - 1;
+        data[i] = data[j];
+        data[j] = tmp;
+      }
+    $
+
+  #$ rdoc-name Array1.set_const
+  #$ rdoc-header Nil Array1.set_const(val)
+  #$ Sets each element of the array to val.
+  set_const(val)
+    $
+      const int64 sz = @a.size;
+      for (int64 i = 0; i < sz; i++){
+        @a.data[i] = __val;
+      }
+    $
+
   #$ rdoc-name Array1.slice
-  #$ rdoc-header Array1.slice(Range r)
+  #$ rdoc-header Array1 Array1.slice(Range r)
   #$ This returns a new Array1 that is a slice of self.
   slice(r)
     $
@@ -127,73 +200,6 @@ class Array1
           arr->data[i] = @a.data[start - i];
         }
         return v;
-      }
-    $
-
-  #$ rdoc-name Array1.index_set
-  #$ rdoc-header Array1.index_set(Integer i, val)
-  #$ Sets the i-th element of the array to val.
-  index_set(Integer i, val)
-    $ array1_index_set(&(@a), val_to_int64(__i), __val); $
-
-  #$ rdoc-name Array1.insert
-  #$ rdoc-header Array1.insert(Integer i, val)
-  #$ Insert val into position i in the array.  Moves everything in position
-  #$ i and beyond one step.
-  insert(Integer i, val)
-    if i == self.size + 1
-      self.push(val)
-      return
-    $
-      const int64 size = @a.size;
-      array1_push(&(@a), __val);
-      int64 idx = util_index("Array1",
-                             val_to_int64(__i),
-                             size);
-      Value* data = @a.data;
-      for (int64 i = size - 1; i >= idx; i--){
-        data[i+1] = data[i];
-      }
-      data[idx] = __val;
-    $
-
-  #$ rdoc-name Array1.push
-  #$ rdoc-header Array1.push(val)
-  #$ Appends a Value val onto the end of the array. Returns nil.
-  push(val)
-    $ array1_push(&(@a), __val); $
-
-  #$ rdoc-name Array1.pop
-  #$ rdoc-header Array1.pop()
-  #$ Removes the last element of the Array1 and returns it.  Throws an
-  #$ exception if the Array1 is empty.
-  pop()
-    return $ array1_pop(&(@a)) $
-
-  #$ rdoc-name Array1.reverse!
-  #$ rdoc-header Array1.reverse!()
-  #$ Reverse array in place.
-  reverse!()
-    $
-      const int64 sz = @a.size;
-      const int64 upto = sz / 2;
-      Value* data = @a.data;
-      for (int64 i = 0; i < upto; i++){
-        Value tmp = data[i];
-        int64 j = sz - i - 1;
-        data[i] = data[j];
-        data[j] = tmp;
-      }
-    $
-
-  #$ rdoc-name Array1.set_const
-  #$ rdoc-header Array1.set_const(val)
-  #$ Sets each element of the array to val.
-  set_const(val)
-    $
-      const int64 sz = @a.size;
-      for (int64 i = 0; i < sz; i++){
-        @a.data[i] = __val;
       }
     $
 
@@ -236,12 +242,6 @@ class Array1
   #$ Returns the size (length) of the Array1.
   virtual_get size()
     return $ int64_to_val(@a.size) $
-
-  #$ rdoc-name Array1.get_iter
-  #$ rdoc-header Array1.get_iter()
-  #$ Returns an Array1Iterator over self.
-  get_iter()
-    return Array1Iterator.new(self)
 
 #$ rdoc-name Array1View
 #$ rdoc-header Array1View

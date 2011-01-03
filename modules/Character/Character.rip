@@ -1,4 +1,7 @@
 namespace Character
+  #$ rdoc-name Character.to_string
+  #$ rdoc-header String Character.to_string(Integer c)
+  #$ Returns string representation of the character.
   to_string(c)
     str = " "
     str[1] = c

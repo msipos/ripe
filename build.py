@@ -117,7 +117,7 @@ ripe_srcs = [
                'ripe/vars.c'
              ]
 ripe_objs = tools.cons_objs(ripe_srcs, ripe_hs + clib_hs + lang_hs)
-tools.cons_bin('product/ripeboot', ripe_objs + clib_objs + lang_objs, [])
+tools.cons_bin('bin/ripeboot', ripe_objs + clib_objs + lang_objs, [])
 
 ###############################################################################
 # VM
@@ -203,31 +203,17 @@ bootstrap_srcs.append('modules/Json/Json.rip')
 tools.cons_obj('riperipe/bootstrap.o', 'riperipe/bootstrap.c', [])
 bootstrap_srcs.append('riperipe/bootstrap.o')
 
-if tools.depends('product/ripe2', ['product/ripeboot'] + bootstrap_srcs):
-    tools.pprint('RIP', 'riperipe/*.rip', 'product/ripe2')
-    tools.call([conf["VALGRIND"], 'product/ripeboot',
-                '-X',
-                '-o', 'product/ripe2',
-                bootstrap_srcs])
-
-
 ##############################################################################
-# BOOTSTRAP STEP 2
+# BOOTSTRAP
+def bootstrap(newripe, oldripe):
+    if tools.depends(newripe, [oldripe]):
+        tools.pprint('RIP', 'riperipe/*.rip', newripe)
+        tools.call([conf["VALGRIND"], oldripe,
+                   '-s', '-o', newripe, bootstrap_srcs])
 
-if tools.depends('product/ripe3', ['product/ripe2']):
-    tools.pprint('RIP', 'riperipe/*.rip', 'product/ripe3')
-    tools.call([conf["VALGRIND"], 'product/ripe2', '-s',
-                '-o', 'product/ripe3',
-                bootstrap_srcs])
-
-##############################################################################
-# BOOTSTRAP STEP 3
-
-if tools.depends('product/ripe', ['product/ripe3']):
-    tools.pprint('RIP', 'riperipe/*.rip', 'product/ripe')
-    tools.call([conf["VALGRIND"], 'product/ripe2', '-s',
-                '-o', 'product/ripe',
-                bootstrap_srcs])
+bootstrap('bin/ripe2', 'bin/ripeboot')
+bootstrap('bin/ripe3', 'bin/ripe2')
+bootstrap('product/ripe', 'bin/ripe3')
 conf['RIPE'] = 'product/ripe'
 
 ##############################################################################

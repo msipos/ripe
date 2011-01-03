@@ -94,9 +94,9 @@ process(root)
       if ext == ".py"
         process_py(path)
 
-make_links(text, names_by_size, ignore)
+make_links(text, names, ignore)
   arr = [text]
-  for name in names_by_size
+  for name in names
     i = 1
     loop
       if i > arr.size
