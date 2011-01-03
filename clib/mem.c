@@ -18,37 +18,34 @@
 #include <stdarg.h>
 
 #ifndef CLIB_GC
-void* mem_calloc(size_t sz)
+void* mem_calloc2(size_t sz)
 {
   void* p = calloc(1, sz);
   if (p == NULL) abort();
   return p;
 }
 
-void* mem_malloc(size_t sz)
+void* mem_malloc2(size_t sz)
 {
   void* p = malloc(sz);
   if (p == NULL) abort();
   return p;
 }
 
-void* mem_malloc_atomic(size_t sz)
+void* mem_malloc_atomic2(size_t sz)
 {
   void* p = malloc(sz);
   if (p == NULL) abort();
   return p;
 }
 
-void* mem_realloc(void* p, size_t sz)
+void* mem_realloc2(void* p, size_t sz)
 {
   void* t = realloc(p, sz);
   if (t == NULL) abort();
   return t;
 }
-#endif
-
-#ifndef CLIB_GC
-char* mem_strdup(const char* s)
+char* mem_strdup2(const char* s)
 {
   char* d = strdup(s);
   if (d == NULL) abort();
@@ -56,7 +53,7 @@ char* mem_strdup(const char* s)
 }
 #endif
 
-char* mem_asprintf(char* format, ...)
+char* mem_asprintf2(char* format, ...)
 {
   #ifdef CLIB_GC
 
@@ -84,3 +81,7 @@ char* mem_asprintf(char* format, ...)
   return s;
   #endif
 }
+
+#ifdef MEMLOG
+FILE* f_memlog;
+#endif

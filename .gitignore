@@ -20,3 +20,4 @@ lang/parser.c
 lang/parser.h
 lang/scanner.c
 lang/scanner.h
+memlog

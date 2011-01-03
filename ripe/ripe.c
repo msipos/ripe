@@ -100,6 +100,7 @@ int main(int argc, char* const* argv)
   const char* module_name = NULL;
   cflags = "";
   lflags = "";
+  mem_init();
 
   {
     int c;

@@ -154,24 +154,93 @@ uint32 hash_bytes(const char * data, int len);
   #endif
   #include <gc/gc.h>
 
-  #define mem_malloc(sz) GC_MALLOC(sz)
-  #define mem_malloc_atomic(sz) GC_MALLOC_ATOMIC(sz)
-  #define mem_calloc(sz) GC_MALLOC(sz)
-  #define mem_realloc(p, sz) GC_REALLOC(p, sz)
-  #define mem_strdup(p) GC_STRDUP(p)
-  #define mem_free(p) GC_FREE(p)
+  #define mem_init2() GC_INIT()
+  #define mem_malloc2(sz) GC_MALLOC(sz)
+  #define mem_malloc_atomic2(sz) GC_MALLOC_ATOMIC(sz)
+  #define mem_calloc2(sz) GC_MALLOC(sz)
+  #define mem_realloc2(p, sz) GC_REALLOC(p, sz)
+  #define mem_strdup2(p) GC_STRDUP(p)
+  #define mem_free2(p) GC_FREE(p)
+  #define mem_deinit2()
 #else
-  void* mem_malloc(size_t sz);
-  void* mem_malloc_atomic(size_t sz);
-  void* mem_calloc(size_t sz);
-  void* mem_realloc(void* p, size_t sz);
-  #define mem_free(p)   free(p)
-  char* mem_strdup(const char* s);
+  #define mem_init2()
+  void* mem_malloc2(size_t sz);
+  void* mem_malloc_atomic2(size_t sz);
+  void* mem_calloc2(size_t sz);
+  void* mem_realloc2(void* p, size_t sz);
+  #define mem_free2(p)   free(p)
+  char* mem_strdup2(const char* s);
+  #define mem_deinit2()
+#endif
+char* mem_asprintf2(char* format, ...);
+
+#ifdef MEMLOG
+  extern FILE* f_memlog;
+
+  #define mem_init()            ({ mem_init2(); \
+                                   f_memlog = fopen("memlog", "w"); \
+                                   if (f_memlog == NULL) {\
+                                     fprintf(stderr, "can't open memlog\n"); \
+                                   } \
+                                })
+  #define mem_malloc(sz)        ({ \
+                                  int __SZ__ = (int) sz; \
+                                  void* __P__ = mem_malloc2(__SZ__); \
+                                  fprintf(f_memlog, "%s:%d mem_malloc(%d) returns %p\n", \
+                                         __FILE__, __LINE__, (int) (__SZ__), __P__); \
+                                  __P__; })
+  #define mem_malloc_atomic(sz) ({ \
+                                  int __SZ__ = (int) sz; \
+                                  void* __P__ = mem_malloc_atomic2(__SZ__); \
+                                  fprintf(f_memlog, "%s:%d mem_malloc_atomic(%d) returns %p\n", \
+                                         __FILE__, __LINE__, (int) (__SZ__), __P__); \
+                                  __P__; })
+  #define mem_calloc(sz)        ({ \
+                                  int __SZ__ = (int) sz; \
+                                  void* __P__ = mem_calloc2(__SZ__); \
+                                  fprintf(f_memlog, "%s:%d mem_calloc(%d) returns %p\n", \
+                                         __FILE__, __LINE__, (int) (__SZ__), __P__); \
+                                  __P__; })
+  #define mem_realloc(p,sz)     ({ \
+                                  void* __P__ = (void*) p; \
+                                  int __SZ__ = (int) sz; \
+                                  void* __S__ = mem_realloc2(__P__, __SZ__); \
+                                  fprintf(f_memlog, "%s:%d mem_realloc(%p, %d) returns %p\n", \
+                                         __FILE__, __LINE__, __P__, (int) (__SZ__), __S__); \
+                                  __S__; })
+  #define mem_strdup(p)         ({ \
+                                  void* __P__ = (void*) p; \
+                                  void* __S__ = mem_strdup2(__P__); \
+                                  fprintf(f_memlog, "%s:%d mem_strdup(%p) returns %p\n", \
+                                         __FILE__, __LINE__, __P__, __S__); \
+                                  __S__; })
+  #define mem_free(p)           ({ \
+                                  void* __P__ = (void*) p; \
+                                  mem_free2(__P__); \
+                                  fprintf(f_memlog, "%s:%d mem_free(%p)\n", \
+                                         __FILE__, __LINE__, __P__); \
+                                  })
+  #define mem_asprintf(...)     ({ \
+                                  char* __S__ = mem_asprintf2(__VA_ARGS__); \
+                                  fprintf(f_memlog, "%s:%d mem_asprintf() returns %p\n", \
+                                         __FILE__, __LINE__, __S__); \
+                                  fprintf(f_memlog, "asprintf text: %s", __S__); \
+                                  __S__; })
+  #define mem_deinit()          ({ fclose(f_memlog); })
+#else
+  #define mem_init()            mem_init2()
+  #define mem_malloc(sz)        mem_malloc2(sz)
+  #define mem_malloc_atomic(sz) mem_malloc_atomic2(sz)
+  #define mem_calloc(sz)        mem_calloc2(sz)
+  #define mem_realloc(p,sz)     mem_realloc2(p, sz)
+  #define mem_strdup(p)         mem_strdup2(p)
+  #define mem_free(p)           mem_free2(p)
+  #define mem_asprintf(...)     mem_asprintf2(__VA_ARGS__)
+  #define mem_deinit()
 #endif
 
 // General functions
 #define mem_new(T)    ((T *) mem_malloc(sizeof(T)))
-char* mem_asprintf(char* format, ...);
 
 ///////////////////////////////////////////////////////////////////////
 // path.c

@@ -50,6 +50,8 @@ if "nostack" in sys.argv:
     conf["CFLAGS"].append("-DNOSTACK")
 if "nothreads" in sys.argv:
     conf["CFLAGS"].append("-DNOTHREADS")
+if "memlog" in sys.argv:
+    conf["CFLAGS"].append("-DMEMLOG")
 
 # Construct required directories
 required_dirs = ['bin', 'product', 'product/include', 'product/include/clib',

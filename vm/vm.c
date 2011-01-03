@@ -26,9 +26,8 @@ int main(int argc, char** argv)
   sys_argc = argc;
   sys_argv = argv;
 
-  #ifdef CLIB_GC
-  GC_INIT();
-  #endif
+  // Initialize memory system
+  mem_init();
 
   // Initialize stack and exception system
   stack_init();
@@ -80,5 +79,6 @@ int main(int argc, char** argv)
   if (is_int64(rv)){
     return unpack_int64(rv);
   }
+  mem_deinit();
   return 0;
 }
