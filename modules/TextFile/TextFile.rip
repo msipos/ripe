@@ -55,7 +55,9 @@ class TextFile
       fseek(@f, 0, SEEK_SET);
       char* buf = alloca(len + 1);
       buf[len] = 0;
-      fread(buf, len, 1, @f);
+      if (fread(buf, len, 1, @f) != 1){
+        exc_raise("failed to read entire file");
+      }
       __s = string_to_val(buf);
     $
     return s

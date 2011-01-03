@@ -62,9 +62,18 @@ const char* path_temp_name(const char* prefix, const char* suffix)
 {
   char buf[16];
   FILE *f = fopen("/dev/urandom", "rb");
+  if (f == NULL){
+    fprintf(stderr, "could not open /dev/urandom for reading: %s\n",
+            strerror(errno));
+    return NULL;
+  }
   for (int i = 0; i < 15; i++){
     uint16 r;
-    fread(&r, sizeof(r), 1, f);
+    if (fread(&r, sizeof(r), 1, f) != 1){
+      fprintf(stderr, "could not read /dev/urandom: %s\n",
+              strerror(errno));
+      return NULL;
+    }
     if (r & 1) {
       buf[i] = 'a' + ((r >> 1) % 26);
     } else {
