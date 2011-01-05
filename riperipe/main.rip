@@ -275,9 +275,6 @@ main()
     case &BOOTSTRAP
       go_bootstrap(leftover, outfile)
       return 0
-    case &BUILD_MODULE
-      go_module(leftover, module_name, outfile)
-      return 0
     case &TYPE
       go_type(leftover)
       return 0
@@ -287,6 +284,8 @@ main()
   switch mode
     case &DUMP
       go_dump(leftover)
+    case &BUILD_MODULE
+      go_module(leftover, module_name, outfile)
     case &BUILD
       go_build(leftover, outfile)
     case &RUN

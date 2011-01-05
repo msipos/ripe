@@ -30,6 +30,13 @@ namespace DataFormat
     tf = TextFile.new(filename, TextFile.Write)
     for k, v in map
       tf.println(k)
+      if v is Array1
+        tf.println("Array1")
+        sz = v.size
+        tf.println(sz.to_string())
+        for i in 1:sz
+          tf.println(v[i].to_string())
+
       if v is Array2
         tf.println("Array2")
 

@@ -247,7 +247,8 @@ def build_module(module, required):
     import os.path
     tools.mkdir_safe('product/modules/%s' % module)
     out = 'product/modules/%s/%s.o' % (module, module)
-    srcs = [type_infos, 'product/ripe.meta']
+    #srcs = [type_infos, 'product/ripe.meta']
+    srcs = []
 
     metafile = 'modules/%s/%s.meta' % (module, module)
     if os.path.exists(metafile):
