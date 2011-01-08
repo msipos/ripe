@@ -20,6 +20,17 @@
 %option noinput
 %x COND_STRING
 
+%{
+int input_read(char* buf, int max_size); // Used by flex to do reading
+%}
+
+%{
+#define YY_INPUT(buf,result,max_size) \
+   { \
+     result = input_read(buf, max_size); \
+   }
+%}
+
 %%
 
 [0-9]+                          { return INT; }

@@ -71,7 +71,13 @@ namespace Ast
 
     constructor new_from_file(String filename)
       $
-        @n = build_tree(val_to_string(__filename));
+        RipeInput input;
+        if (input_from_file(&input, val_to_string(__filename))){
+      $
+      raise "failed to load input from %a".f(filename)
+      $
+        }
+        @n = build_tree(&input);
         if (@n == NULL){
       $
       raise $ string_to_val(build_tree_error) $

@@ -69,6 +69,7 @@ typedef struct {
   void* data;
   uint size;
   uint alloc_size;
+  uint el_size;
 } Array;
 
 #define array_init(arr, T)  array_init2(arr, sizeof(T))
@@ -81,12 +82,14 @@ void array_delete(Array* arr);
 
 #define array_data(arr, T)          ((T*) (arr)->data)
 #define array_get(arr, T, i)        (((T *) (arr)->data)[i])
-#define array_append(arr, value)  { array_expand(arr, sizeof(value)); \
+void array_get2(Array* arr, void* dest, int i);
+#define array_append(arr, value)  { array_expand(arr); \
                                     ((typeof(value) *) (arr)->data)[(arr)->size] = value; \
                                     (arr)->size++; }
+void array_append2(Array* arr, void* el);
 #define array_pop(arr, T)         ({(arr)->size--; (((T*) (arr)->data)[(arr)->size]); })
 void array_prepend(Array* arr, uint sz, void* el);
-void array_expand(Array* arr, uint sz);
+void array_expand(Array* arr);
 void array_clear(Array* arr);
 
 ///////////////////////////////////////////////////////////////////////

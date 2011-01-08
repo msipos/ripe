@@ -18,6 +18,40 @@
 
 jmp_buf jb;
 
+/////////////////////////////////////////////////////////////////////////////
+// Input
+/////////////////////////////////////////////////////////////////////////////
+RipeInput* input;
+int input_lineno;
+int input_colno;
+
+int input_read(char* buf, int max_size)
+{
+  int num_lines = input->lines.size;
+  if (input_lineno > num_lines) return 0;
+
+  char* line;
+  array_get2(&(input->lines), &line, input_lineno - 1);
+
+  int left = strlen(line + input_colno - 1);
+  if (left <= max_size){
+    // Then we can return the whole line
+    memcpy(buf, line + input_colno - 1, left);
+    input_lineno++;
+    input_colno = 1;
+    return left;
+  } else {
+    // We can return up to max_size.
+    memcpy(buf, line + input_colno - 1, max_size);
+    input_colno += max_size;
+    return max_size;
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Utilities
+///////////////////////////////////////////////////////////////////////////////
+
 // Helper buffer for start conditions.
 StringBuf buf_sb;
 void buf_reset()
@@ -30,12 +64,10 @@ void buf_cat(const char* text)
   sbuf_cat(&buf_sb, text);
 }
 
-int current_line;
-
 // This gets called from bison.
 void rc_error(const char*s)
 {
-  build_tree_error = mem_asprintf("line %d: %s", current_line - 1, s);
+  build_tree_error = mem_asprintf("%s:%d: %s", input->filename, input_lineno - 1, s);
   longjmp(jb, 2);
 }
 
@@ -57,21 +89,19 @@ static void lex_init()
   array_init(&indents, int);
   next_token = 0;
   prev_indentation = -1;
-  yylineno = 0;
 }
 
 static Node* lex_read()
 {
   int tok = yylex();
-  current_line = yylineno;
   if (tok == UNKNOWN){
-    build_tree_error = mem_asprintf("line %d: invalid characters '%s'",
-                                    current_line, yytext);
+    build_tree_error = mem_asprintf("%s:%d: invalid characters '%s'",
+                                    input->filename, input_lineno, yytext);
     longjmp(jb, 1);
   }
   const char* token_text = yytext;
   if (tok == STRING) token_text = buf_sb.str;
-  return node_new_token(tok, mem_strdup(token_text), NULL, yylineno);
+  return node_new_token(tok, mem_strdup(token_text), NULL, input_lineno);
 }
 
 // Returns non-zero if EOF reached.
@@ -138,7 +168,6 @@ int rc_lex()
       // Skip line that has only whitespace.
       Node* first = array_get(&raw_line, Node*, 0);
       if (raw_line.size == 1 and first->type == WHITESPACE) continue;
-
       // Otherwise line is good.
 
       // Calculate indentation level.
@@ -193,33 +222,26 @@ int rc_lex()
   return rc_lval->type;
 }
 
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 // Parsing.
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 
 Node* rc_result;
 #include <errno.h>
 const char* build_tree_error;
-
-Node* build_tree(const char* filename)
+Node* build_tree(RipeInput* in)
 {
-  FILE* f = fopen(filename, "r");
-  if (f == NULL){
-    build_tree_error = mem_asprintf("cannot open '%s' for reading: %s",
-                                    filename, strerror(errno));
-    return NULL;
-  }
+  input = in;
+  input_lineno = 1;
+  input_colno = 1;
   lex_init();
-  yyin = f;
 
   if (!setjmp(jb)){
     rc_parse();
   } else {
     // Came back via error
-    fclose(f);
     return NULL;
   }
 
-  fclose(f);
   return rc_result;
 }

@@ -93,6 +93,7 @@ lang_hs = [
 lang_srcs = [
               'lang/astnode.c',
               'lang/build-tree.c',
+              'lang/input.c',
               'lang/scanner.c',
               'lang/parser.c',
             ]
