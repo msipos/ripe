@@ -60,6 +60,21 @@ Node* node_new_field_call(Node* callee, char* field_name, int64 num, ...);
 Node* node_new_type(const char* type);
 
 //////////////////////////////////////////////////////////////////////////////
+// lang/input.c
+//////////////////////////////////////////////////////////////////////////////
+typedef struct {
+  const char* filename;
+  Array lines;
+} RipeInput;
+int input_from_file(RipeInput* input, const char* filename);
+
+//////////////////////////////////////////////////////////////////////////////
+// lang/pp.c
+//////////////////////////////////////////////////////////////////////////////
+
+int preprocess(RipeInput* input);
+
+//////////////////////////////////////////////////////////////////////////////
 // ripe/build-tree.c
 //////////////////////////////////////////////////////////////////////////////
 
@@ -67,14 +82,15 @@ Node* node_new_type(const char* type);
 extern const char* build_tree_error;
 
 // Parse the given file.
-Node* build_tree(const char* filename);
+Node* build_tree(RipeInput* in);
 
-// Interface to bison
+// Interface to bison & flex
 #define YYSTYPE Node*
 extern Node* rc_result;
 void rc_error(const char*s);
 int rc_parse();
 int rc_lex();
+int input_read(char* buf, int max_size); // Used by flex to do reading
 
 // Types of AST nonterminal nodes:
 #define TOPLEVEL_LIST     1000

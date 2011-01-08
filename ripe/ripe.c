@@ -31,7 +31,11 @@ void bootstrap(const char* out_filename, int arg1, int argc, char* const* argv)
     const char* arg = argv[i];
     const char* ext = path_get_extension(arg);
     if (strequal(ext, ".rip")){
-      Node* ast = build_tree(arg);
+      RipeInput input;
+      if (input_from_file(&input, arg)){
+        err("failed to load '%s'", arg);
+      }
+      Node* ast = build_tree(&input);
       if (ast == NULL){
         err("failed to parse '%s': %s", arg, build_tree_error);
       }
