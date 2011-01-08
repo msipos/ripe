@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <iso646.h>
 #include <ctype.h>
+#include <setjmp.h>
 
 #define L_INTEGER 1
 #define L_DOUBLE  2
@@ -11,6 +12,23 @@
 #define L_FALSE   5
 #define L_NULL    6
 #define L_EOF     7
+
+// Error handling
+jmp_buf jb;
+char* json_error_text;
+static void json_error(int error, char* format, ...) ATTR_NORETURN;
+
+static void json_error(int error, char* format, ...)
+{
+  va_list ap;
+  va_start (ap, format);
+  char buf[1024];
+  vsprintf(buf, format, ap);
+  json_error_text = mem_strdup(buf);
+  va_end (ap);
+
+  longjmp(jb, error);
+}
 
 typedef struct {
   int a;
@@ -22,14 +40,6 @@ typedef union {
   int i;
   double d;
 } json_token_info;
-
-static void json_error(int error) ATTR_NORETURN;
-
-static void json_error(int error)
-{
-  fprintf(stderr, "json_error: %d\n", error);
-  exit(1);
-}
 
 static int json_lex(char* input, int* cur, json_token_info* tok_info)
 {
@@ -105,7 +115,7 @@ static int json_lex(char* input, int* cur, json_token_info* tok_info)
           (*cur) += 4;
           return L_TRUE;
         }
-        json_error(JSON_ERROR_INVALID_TOKEN);
+        json_error(JSON_ERROR_INVALID_TOKEN, "expected 'true'");
 
       case 'f':
         if (input[n+1]=='a' and input[n+2]=='l' and input[n+3]=='s'
@@ -113,19 +123,20 @@ static int json_lex(char* input, int* cur, json_token_info* tok_info)
           (*cur) += 5;
           return L_FALSE;
         }
-        json_error(JSON_ERROR_INVALID_TOKEN);
+        json_error(JSON_ERROR_INVALID_TOKEN, "expected 'false'");
 
       case 'n':
         if (input[n+1]=='u' and input[n+2]=='l' and input[n+3]=='l'){
           (*cur) += 4;
           return L_NULL;
         }
+        json_error(JSON_ERROR_INVALID_TOKEN, "expected 'null'");
 
       case 0:
         return L_EOF;
 
       default:
-        json_error(JSON_ERROR_INVALID_TOKEN);
+        json_error(JSON_ERROR_INVALID_TOKEN, "invalid letter '%c'", c);
     }
   }
 }
@@ -202,7 +213,7 @@ Value json_parse_r(char* input, int* c)
           } else if (tok == ',') {
             json_lex(input, c, &tok_info);
           } else {
-            json_error(JSON_ERROR_SYNTAX);
+            json_error(JSON_ERROR_SYNTAX, "broken syntax while parsing array");
           }
         }
       }
@@ -210,7 +221,7 @@ Value json_parse_r(char* input, int* c)
       {
         HashTable* ht;
         Value __map = obj_new(klass_Map, (void**) &ht);
-        ht_init2(ht);
+        ht_init2(ht, 0);
         tok = peek_type(input, *c);
         if (tok == '}'){
           json_lex(input, c, &tok_info);
@@ -219,7 +230,7 @@ Value json_parse_r(char* input, int* c)
         for(;;){
           Value key = json_parse_r(input, c);
           if (json_lex(input, c, &tok_info) != ':'){
-            json_error(JSON_ERROR_SYNTAX);
+            json_error(JSON_ERROR_SYNTAX, "expected ':' while parsing map");
           }
           Value val = json_parse_r(input, c);
           ht_set2(ht, key, val);
@@ -231,16 +242,24 @@ Value json_parse_r(char* input, int* c)
           } else if (tok == ','){
             json_lex(input, c, &tok_info);
           } else {
-            json_error(JSON_ERROR_SYNTAX);
+            json_error(JSON_ERROR_SYNTAX, "broken syntax while parsing a map");
           }
         }
       }
     default:
-      json_error(JSON_ERROR_SYNTAX);
+      json_error(JSON_ERROR_SYNTAX, "unexpected token %d (%c)", tok, tok);
   }
 }
 
-Value json_parse(char* input, int c)
+Value json_parse(char* input, int* error, char** out)
 {
-  return json_parse_r(input, &c);
+  int e;
+  if ((e = setjmp(jb)) == 0){
+    int c = 0;
+    return json_parse_r(input, &c);
+  } else {
+    *out = json_error_text;
+    *error = 1;
+    return 0;
+  }
 }

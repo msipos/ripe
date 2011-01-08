@@ -20,7 +20,7 @@ class Set
   #$ Constructs a new empty Set.
   constructor new()
     $
-      ht_init(&(@ht));
+      ht_init(&(@ht), 0);
     $
 
   #$ rdoc-name Set.has?

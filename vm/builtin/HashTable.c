@@ -155,28 +155,27 @@ void ht_set2(HashTable* ht, Value key, Value value)
   ht->values[place] = value;
 }
 
-#define INIT_SIZE 7
-void ht_init(HashTable* ht)
+void ht_init(HashTable* ht, int64 items)
 {
   ht->size = 0;
-  ht->alloc_size = INIT_SIZE;
-  ht->buckets = mem_calloc(INIT_SIZE*sizeof(BucketType));
-  ht->keys = mem_calloc(INIT_SIZE*sizeof(Value));
+  ht->alloc_size = map_prime(items);
+  ht->buckets = mem_calloc(ht->alloc_size*sizeof(BucketType));
+  ht->keys = mem_calloc(ht->alloc_size*sizeof(Value));
   ht->values = NULL;
+}
+
+void ht_init2(HashTable* ht, int64 items)
+{
+  ht->size = 0;
+  ht->alloc_size = map_prime(items);
+  ht->buckets = mem_calloc(ht->alloc_size*sizeof(BucketType));
+  ht->keys = mem_calloc(ht->alloc_size*sizeof(Value));
+  ht->values = mem_calloc(ht->alloc_size*sizeof(Value));
 }
 
 void ht_clear(HashTable* ht)
 {
   mem_free(ht->buckets);
   mem_free(ht->keys);
-  ht_init(ht);
-}
-
-void ht_init2(HashTable* ht)
-{
-  ht->size = 0;
-  ht->alloc_size = INIT_SIZE;
-  ht->buckets = mem_calloc(INIT_SIZE*sizeof(BucketType));
-  ht->keys = mem_calloc(INIT_SIZE*sizeof(Value));
-  ht->values = mem_calloc(INIT_SIZE*sizeof(Value));
+  ht_init(ht, 0);
 }

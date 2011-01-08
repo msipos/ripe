@@ -13,7 +13,7 @@ class Map
   #$ Create a new empty Map.
   constructor new()
     $
-      ht_init2(&(@ht));
+      ht_init2(&(@ht), 0);
     $
 
   #$ rdoc-name Map.get_iter

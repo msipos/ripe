@@ -6,8 +6,16 @@ $
 namespace Json
   parse(s)
     $
-      return json_parse(val_to_string(__s), 0);
+      int error = 0;
+      char* error_text;
+      Value v = json_parse(val_to_string(__s), &error, &error_text);
+      if (error){
     $
+    raise "JSON error: " + $ string_to_val(error_text) $
+    $
+      }
+    $
+    return $v$
 
   encode(value)
     output = ""

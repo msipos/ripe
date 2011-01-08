@@ -29,7 +29,7 @@ Klass* klass_Range;
 Klass* klass_String;
 Klass* klass_Tuple;
 Klass* klass_Map;
-
+Klass* klass_Set;
 Value dsym_to_string;
 
 void common_init_phase15()
@@ -45,6 +45,7 @@ void common_init_phase15()
   klass_String = klass_get(dsym_get("String"));
   klass_Tuple = klass_get(dsym_get("Tuple"));
   klass_Map = klass_get(dsym_get("Map"));
+  klass_Set = klass_get(dsym_get("Set"));
 
   dsym_to_string = dsym_get("to_string");
 }

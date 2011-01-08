@@ -45,6 +45,12 @@ empty_buffers()
 global g_verbose = false
 global g_cflags = "", g_lflags = "", g_omit_typing = false
 
+is_verbose?()
+  return g_verbose
+
+#######################################################################
+# Actions
+
 dump(header, code, init1, init2, init3, module_name, outfile)
   outfile.println("#include \"modules/modules.h\"")
   outfile.println(header)
@@ -240,6 +246,7 @@ main()
     [&OUTFILE,     "-o", "--outfile", Opt.ARG, "set output filename"],
     [&TYPE,        "-t", "--typer", 0, "create typer output"],
     [&OMIT_TYPING, nil,  "--omit-typing", 0, "omit typing"],
+    [&VERBOSE,     "-v", "--verbose", 0, "verbose"],
     [&HELP,        "-h", "--help", Opt.HELP, "display help"]
   ]
 
@@ -269,6 +276,8 @@ main()
         mode = &TYPE
       case &MODULE
         Module.add(opt[2])
+      case &VERBOSE
+        g_verbose = true
 
   # These modes do not load the defaults
   switch mode

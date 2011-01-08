@@ -186,44 +186,44 @@ char* mem_asprintf2(char* format, ...);
   #define mem_malloc(sz)        ({ \
                                   int __SZ__ = (int) sz; \
                                   void* __P__ = mem_malloc2(__SZ__); \
-                                  fprintf(f_memlog, "%s:%d mem_malloc(%d) returns %p\n", \
-                                         __FILE__, __LINE__, (int) (__SZ__), __P__); \
+                                  fprintf(f_memlog, "%s:%d in %s: mem_malloc(%d) returns %p\n", \
+                                         __FILE__, __LINE__, __PRETTY_FUNCTION__, (int) (__SZ__), __P__); \
                                   __P__; })
   #define mem_malloc_atomic(sz) ({ \
                                   int __SZ__ = (int) sz; \
                                   void* __P__ = mem_malloc_atomic2(__SZ__); \
-                                  fprintf(f_memlog, "%s:%d mem_malloc_atomic(%d) returns %p\n", \
-                                         __FILE__, __LINE__, (int) (__SZ__), __P__); \
+                                  fprintf(f_memlog, "%s:%d in %s: mem_malloc_atomic(%d) returns %p\n", \
+                                         __FILE__, __LINE__, __PRETTY_FUNCTION__, (int) (__SZ__), __P__); \
                                   __P__; })
   #define mem_calloc(sz)        ({ \
                                   int __SZ__ = (int) sz; \
                                   void* __P__ = mem_calloc2(__SZ__); \
-                                  fprintf(f_memlog, "%s:%d mem_calloc(%d) returns %p\n", \
-                                         __FILE__, __LINE__, (int) (__SZ__), __P__); \
+                                  fprintf(f_memlog, "%s:%d in %s: mem_calloc(%d) returns %p\n", \
+                                         __FILE__, __LINE__, __PRETTY_FUNCTION__, (int) (__SZ__), __P__); \
                                   __P__; })
   #define mem_realloc(p,sz)     ({ \
                                   void* __P__ = (void*) p; \
                                   int __SZ__ = (int) sz; \
                                   void* __S__ = mem_realloc2(__P__, __SZ__); \
-                                  fprintf(f_memlog, "%s:%d mem_realloc(%p, %d) returns %p\n", \
-                                         __FILE__, __LINE__, __P__, (int) (__SZ__), __S__); \
+                                  fprintf(f_memlog, "%s:%d in %s: mem_realloc(%p, %d) returns %p\n", \
+                                         __FILE__, __LINE__, __PRETTY_FUNCTION__, __P__, (int) (__SZ__), __S__); \
                                   __S__; })
   #define mem_strdup(p)         ({ \
                                   void* __P__ = (void*) p; \
                                   void* __S__ = mem_strdup2(__P__); \
-                                  fprintf(f_memlog, "%s:%d mem_strdup(%p) returns %p\n", \
-                                         __FILE__, __LINE__, __P__, __S__); \
+                                  fprintf(f_memlog, "%s:%d in %s: mem_strdup(%p) returns %p (size %d)\n", \
+                                         __FILE__, __LINE__, __PRETTY_FUNCTION__, __P__, __S__, strlen((char*) __S__)+1); \
                                   __S__; })
   #define mem_free(p)           ({ \
                                   void* __P__ = (void*) p; \
                                   mem_free2(__P__); \
-                                  fprintf(f_memlog, "%s:%d mem_free(%p)\n", \
-                                         __FILE__, __LINE__, __P__); \
+                                  fprintf(f_memlog, "%s:%d in %s: mem_free(%p)\n", \
+                                         __FILE__, __LINE__, __PRETTY_FUNCTION__, __P__); \
                                   })
   #define mem_asprintf(...)     ({ \
                                   char* __S__ = mem_asprintf2(__VA_ARGS__); \
-                                  fprintf(f_memlog, "%s:%d mem_asprintf() returns %p\n", \
-                                         __FILE__, __LINE__, __S__); \
+                                  fprintf(f_memlog, "%s:%d in %s: mem_asprintf() returns %p\n", \
+                                         __FILE__, __LINE__, __PRETTY_FUNCTION__, __S__); \
                                   fprintf(f_memlog, "asprintf text: %s", __S__); \
                                   __S__; })
   #define mem_deinit()          ({ fclose(f_memlog); })

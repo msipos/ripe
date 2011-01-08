@@ -83,6 +83,7 @@ extern Klass* klass_Range;
 extern Klass* klass_String;
 extern Klass* klass_Tuple;
 extern Klass* klass_Map;
+extern Klass* klass_Set;
 
 extern Value dsym_to_string;
 
@@ -352,8 +353,8 @@ void ht_set(HashTable* ht, Value key);
 void ht_set2(HashTable* ht, Value key, Value value);
 bool ht_remove(HashTable* ht, Value key);
 void ht_clear(HashTable* ht);
-void ht_init(HashTable* ht);
-void ht_init2(HashTable* ht);
+void ht_init(HashTable* ht, int64 items);
+void ht_init2(HashTable* ht, int64 items);
 
 //////////////////////////////////////////////////////////////////////////////
 // Integer.c
