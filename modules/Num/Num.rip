@@ -1,0 +1,71 @@
+namespace Num
+  const DOUBLE = $ int64_to_val(NUM_DOUBLE) $
+  const COMPLEX = $ int64_to_val(NUM_COMPLEX) $
+
+  class Array2
+    $ NumArray2 a; $
+
+    constructor zeros(Integer x, Integer y, Integer type)
+      if x < 1 or y < 1
+        raise "Invalid size in Num.Array2.zeros (%ax%a)".f(x, y)
+
+      if type != Num.COMPLEX and type != Num.DOUBLE
+        raise "Invalid type in Num.Array2.zeros (%a)".f(type)
+
+      $ uint64 size_x = unpack_int64(__x);
+        uint64 size_y = unpack_int64(__y);
+        int type = unpack_int64(__type);
+
+        @a.size_x = size_x; @a.size_y = size_y; @a.type = type;
+        uint64 total_size = size_x*size_y;
+
+        uint64 el_size = sizeof(double);
+        if (type == NUM_COMPLEX) el_size = sizeof(double complex);
+
+        @a.data = mem_calloc_atomic(total_size * el_size); $
+
+    index(Integer x, Integer y)
+      $ int64 x = unpack_int64(__x);
+        int64 y = unpack_int64(__y);
+        uint64 size_x = @a.size_x;
+        uint64 size_y = @a.size_y;
+
+        if (x < 1 or y < 1 or x > size_x or y > size_y){
+          exc_raise("invalid index (%"PRId64", %"PRId64") in array of "
+                    "size (%"PRIu64" x %"PRIu64")", x, y, size_x, size_y);
+        }
+
+        uint64 idx = (y-1)*size_x + x-1;
+        switch(@a.type){
+          case NUM_DOUBLE:
+            return double_to_val(@a.data_double[idx]);
+          case NUM_COMPLEX:
+          default:
+            assert_never();
+        }$
+
+    index_set(Integer x, Integer y, v)
+      $ int64 x = unpack_int64(__x);
+        int64 y = unpack_int64(__y);
+        uint64 size_x = @a.size_x;
+        uint64 size_y = @a.size_y;
+
+        if (x < 1 or y < 1 or x > size_x or y > size_y){
+          exc_raise("invalid index (%"PRId64", %"PRId64") in array of "
+                    "size (%"PRIu64" x %"PRIu64")", x, y, size_x, size_y);
+        }
+
+        uint64 idx = (y-1)*size_x + x-1;
+        switch(@a.type){
+          case NUM_DOUBLE:
+            @a.data_double[idx] = val_to_double_soft(__v);
+          case NUM_COMPLEX:
+          default:
+            assert_never();
+        }$
+
+    virtual_get size_x()
+      return $ int64_to_val(@a.size_x) $
+
+    virtual_get size_y()
+      return $ int64_to_val(@a.size_y) $

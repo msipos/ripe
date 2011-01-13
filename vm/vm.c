@@ -45,9 +45,6 @@ int main(int argc, char** argv)
   stack_push_annotation("init1_Object");
     init1_Object();
   stack_pop();
-  stack_push_annotation("init1_Complex");
-    init1_Complex();
-  stack_pop();
 
   ripe_module1();
 
@@ -63,9 +60,6 @@ int main(int argc, char** argv)
   stack_pop();
   stack_push_annotation("init2_Object");
     init2_Object();
-  stack_pop();
-  stack_push_annotation("init2_Complex");
-    init2_Complex();
   stack_pop();
 
   ripe_module2();

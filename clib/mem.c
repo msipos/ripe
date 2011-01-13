@@ -32,13 +32,6 @@ void* mem_malloc2(size_t sz)
   return p;
 }
 
-void* mem_malloc_atomic2(size_t sz)
-{
-  void* p = malloc(sz);
-  if (p == NULL) abort();
-  return p;
-}
-
 void* mem_realloc2(void* p, size_t sz)
 {
   void* t = realloc(p, sz);
@@ -50,6 +43,13 @@ char* mem_strdup2(const char* s)
   char* d = strdup(s);
   if (d == NULL) abort();
   return d;
+}
+#else
+void* gc_calloc_atomic(size_t sz)
+{
+  void* p = GC_MALLOC_ATOMIC(sz);
+  memset(p, 0, sz);
+  return p;
 }
 #endif
 

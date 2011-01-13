@@ -4,7 +4,7 @@
 
 DATA_TYPES = ['Array1', 'Array2', 'Array3', 'Double', 'Flags', 'Integer', 'Map',
               'Range', 'Set', 'String', 'Tuple']
-STDLIB = ['Character', 'DataFormat', 'Err', 'Iterable', 'Math', 'Opt',
+STDLIB = ['Character', 'DataFormat', 'Err', 'Iterable', 'Math', 'Num', 'Opt',
           'Os', 'Out', 'Path', 'Std', 'Stream', 'Test', 'Template',
           'TextFile', 'Time']
 OPTIONAL_MODULES = ['Ast', 'Bio', 'Curl', 'Gd', 'Gsl', 'Json',
@@ -162,7 +162,6 @@ vm_srcs = [
             'vm/builtin/Double.c',
             'vm/builtin/Arrays.c',
             'vm/builtin/Range.c',
-            'vm/builtin/Complex.c',
             'vm/builtin/Tuple.c'
           ]
 vm_objs = tools.cons_objs(vm_srcs, vm_hs + clib_hs)

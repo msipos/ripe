@@ -91,17 +91,17 @@ void val_to_complex_soft(Value v, double* real, double* imag)
     *imag = 0.0;
     return;
   }
-  Complex* complex = val_to_complex(v);
-  *real = complex->real;
-  *imag = complex->imag;
+  Complex* c = val_to_complex(v);
+  *real = c->real;
+  *imag = c->imag;
 }
 
 static Value ripe_to_real(Value v)
 {
   if (is_int64(v)) return v;
   if (is_double(v)) return v;
-  Complex* complex = val_to_complex(v);
-  return double_to_val(complex->real);
+  Complex* c = val_to_complex(v);
+  return double_to_val(c->real);
 }
 
 Value complex_to_val(double real, double imag)

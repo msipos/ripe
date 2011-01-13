@@ -161,6 +161,8 @@ uint32 hash_bytes(const char * data, int len);
   #define mem_malloc2(sz) GC_MALLOC(sz)
   #define mem_malloc_atomic2(sz) GC_MALLOC_ATOMIC(sz)
   #define mem_calloc2(sz) GC_MALLOC(sz)
+  #define mem_calloc_atomic2(sz) gc_calloc_atomic(sz)
+  void* gc_calloc_atomic(size_t sz);
   #define mem_realloc2(p, sz) GC_REALLOC(p, sz)
   #define mem_strdup2(p) GC_STRDUP(p)
   #define mem_free2(p) GC_FREE(p)
@@ -168,8 +170,9 @@ uint32 hash_bytes(const char * data, int len);
 #else
   #define mem_init2()
   void* mem_malloc2(size_t sz);
-  void* mem_malloc_atomic2(size_t sz);
+  #define mem_malloc_atomic2(sz)  mem_malloc2(sz)
   void* mem_calloc2(size_t sz);
+  #define mem_calloc_atomic2(sz)  mem_calloc2(sz)
   void* mem_realloc2(void* p, size_t sz);
   #define mem_free2(p)   free(p)
   char* mem_strdup2(const char* s);
@@ -204,6 +207,12 @@ char* mem_asprintf2(char* format, ...);
                                   fprintf(f_memlog, "%s:%d in %s: mem_calloc(%d) returns %p\n", \
                                          __FILE__, __LINE__, __PRETTY_FUNCTION__, (int) (__SZ__), __P__); \
                                   __P__; })
+  #define mem_calloc_atomic(sz) ({ \
+                                  int __SZ__ = (int) sz; \
+                                  void* __P__ = mem_calloc_atomic2(__SZ__); \
+                                  fprintf(f_memlog, "%s:%d in %s: mem_calloc_atomic(%d) returns %p\n", \
+                                         __FILE__, __LINE__, __PRETTY_FUNCTION__, (int) (__SZ__), __P__); \
+                                  __P__; })
   #define mem_realloc(p,sz)     ({ \
                                   void* __P__ = (void*) p; \
                                   int __SZ__ = (int) sz; \
@@ -235,6 +244,7 @@ char* mem_asprintf2(char* format, ...);
   #define mem_malloc(sz)        mem_malloc2(sz)
   #define mem_malloc_atomic(sz) mem_malloc_atomic2(sz)
   #define mem_calloc(sz)        mem_calloc2(sz)
+  #define mem_calloc_atomic(sz) mem_calloc_atomic2(sz)
   #define mem_realloc(p,sz)     mem_realloc2(p, sz)
   #define mem_strdup(p)         mem_strdup2(p)
   #define mem_free(p)           mem_free2(p)

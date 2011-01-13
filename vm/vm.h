@@ -307,12 +307,10 @@ extern Klass* klass_Complex;
 typedef struct {
   double real;
   double imag;
-} Complex;
+} RipeComplex;
 void val_to_complex_soft(Value v, double* real, double* imag);
-Value complex_to_val(double real, double imag);
-Complex* val_to_complex(Value v);
-void init1_Complex();
-void init2_Complex();
+//Value complex_to_val(double real, double imag);
+//Complex* val_to_complex(Value v);
 
 //////////////////////////////////////////////////////////////////////////////
 // Double.c
@@ -364,6 +362,29 @@ void init2_Integer();
 #define int64_to_val(a) pack_int64(a)
 #define val_to_int64(v)  ({ obj_verify(v, klass_Integer); unpack_int64(v); })
 int64 val_to_int64_soft(Value v);
+
+//////////////////////////////////////////////////////////////////////////////
+// Num.c
+//////////////////////////////////////////////////////////////////////////////
+
+#include <complex.h>
+#undef I
+
+#define NUM_DOUBLE   1
+#define NUM_COMPLEX  2
+
+typedef struct {
+  uint64 size_x;
+  uint64 size_y;
+  union {
+    void* data;
+    double* data_double;
+    double complex* data_complex;
+  };
+  int type;
+} NumArray2;
+// Index should always be calculated via y*size_x + x
+// And loops should always be y outside, x inside
 
 //////////////////////////////////////////////////////////////////////////////
 // Object.c
