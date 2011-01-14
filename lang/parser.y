@@ -50,7 +50,7 @@
 %token   C_CODE
 // Keywords are labeled with K_ prefix. All keywords should appear in lex_get2()
 // in addition to here.
-%token   K_NAMESPACE      "namespace"
+%token   K_NAMESPACE   "namespace"
 %token   K_RETURN      "return"
 %token   K_TRUE        "true"
 %token   K_FALSE       "false"
@@ -58,6 +58,11 @@
 %token   K_AND         "and"
 %token   K_OR          "or"
 %token   K_NOT         "not"
+%token   K_BIT_AND     "bit_and"
+%token   K_BIT_OR      "bit_or"
+%token   K_BIT_XOR     "bit_xor"
+%token   K_BIT_NOT     "bit_not"
+%token   K_MODULO      "modulo"
 %token   K_IF          "if"
 %token   K_ELSE        "else"
 %token   K_ELIF        "elif"
@@ -95,7 +100,9 @@
 %left    '<' "<=" '>' ">="
 %left    "==" "!="
 %left    '+' '-'
-%left    '*' '/'
+%left    "bit_or" "bit_xor"
+%left    "bit_and"
+%left    '*' '/' "modulo"
 %left    '['
 %left    '.'
 
@@ -281,6 +288,14 @@ r_expr:    rvalue "==" rvalue  { $$ = operator($1, $2, $3); };
 r_expr:    rvalue "!=" rvalue  { $$ = operator($1, $2, $3); };
 r_expr:    rvalue "and" rvalue { $$ = operator($1, $2, $3); };
 r_expr:    rvalue "or" rvalue  { $$ = operator($1, $2, $3); };
+r_expr:    rvalue "bit_and" rvalue
+                               { $$ = operator($1, $2, $3); };
+r_expr:    rvalue "bit_or" rvalue
+                               { $$ = operator($1, $2, $3); };
+r_expr:    rvalue "bit_xor" rvalue
+                               { $$ = operator($1, $2, $3); };
+r_expr:    rvalue "modulo" rvalue
+                               { $$ = operator($1, $2, $3); };
 r_expr:    rvalue '<' rvalue   { $$ = operator($1, $2, $3); };
 r_expr:    rvalue "<=" rvalue  { $$ = operator($1, $2, $3); };
 r_expr:    rvalue '>' rvalue   { $$ = operator($1, $2, $3); };
@@ -299,6 +314,8 @@ r_expr:    ':'                 { $$ = node_new(EXPR_RANGE_UNBOUNDED); };
 r_expr:    '-' rvalue %prec '.'
                                { $$ = $1; node_add_child($$, $2); };
 r_expr:    "not" rvalue %prec "and"
+                               { $$ = $1; node_add_child($$, $2); };
+r_expr:    "bit_not" rvalue %prec "bit_and"
                                { $$ = $1; node_add_child($$, $2); };
 r_expr:    d_expr              { $$ = $1; };
 

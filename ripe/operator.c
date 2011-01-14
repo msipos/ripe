@@ -28,6 +28,10 @@ static OperatorTable binary_ot[] =
   {'/',          "op_slash"},
   {K_AND,        "op_and"},
   {K_OR,         "op_or"},
+  {K_BIT_AND,    "op_bit_and"},
+  {K_BIT_OR,     "op_bit_or"},
+  {K_BIT_XOR,    "op_bit_xor"},
+  {K_MODULO,     "op_modulo"},
   {OP_EQUAL,     "op_equal"},
   {OP_NOT_EQUAL, "op_not_equal"},
   {'<',          "op_lt"},
@@ -61,6 +65,7 @@ static OperatorTable unary_ot[] =
 {
   {'-',          "op_unary_minus"},
   {K_NOT,        "op_unary_not"},
+  {K_BIT_NOT,    "op_unary_bit_not"},
   {0,            0}
 };
 

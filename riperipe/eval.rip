@@ -20,6 +20,7 @@ init_ops()
     unary_ops = Map.new()
     unary_ops['-'] = "op_unary_minus"
     unary_ops[Ast.K_NOT] = "op_unary_not"
+    unary_ops[Ast.K_BIT_NOT] = "op_unary_bit_not"
   if binary_ops == nil
     binary_ops = Map.new()
     binary_ops['+'] = "op_plus"
@@ -28,6 +29,10 @@ init_ops()
     binary_ops['/'] = "op_slash"
     binary_ops[Ast.K_AND] = "op_and"
     binary_ops[Ast.K_OR] = "op_or"
+    binary_ops[Ast.K_BIT_AND] = "op_bit_and"
+    binary_ops[Ast.K_BIT_OR] = "op_bit_or"
+    binary_ops[Ast.K_BIT_XOR] = "op_bit_xor"
+    binary_ops[Ast.K_MODULO] = "op_modulo"
     binary_ops[Ast.OP_EQUAL] = "op_equal"
     binary_ops[Ast.OP_NOT_EQUAL] = "op_not_equal"
     binary_ops['>'] = "op_gt"

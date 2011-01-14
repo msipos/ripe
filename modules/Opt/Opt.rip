@@ -27,7 +27,7 @@ namespace Opt
       if option[2] != nil
         opt2 = option[2]
       opt3 = option[3]
-      if Math.bit_and(option[4], Opt.ARG) != 0
+      if option[4] bit_and Opt.ARG != 0
         opt3 = opt3 + " ARG"
       loop
         if opt3.size < 25
@@ -72,13 +72,13 @@ namespace Opt
         Os.exit(1)
 
       flag = option[4]
-      if Math.bit_and(flag, Opt.HELP) != 0
+      if flag bit_and Opt.HELP != 0
         Opt.display_help(options)
         Os.exit(0)
 
       # Obtain optarg
       optarg = nil
-      if Math.bit_and(flag, Opt.ARG) != 0
+      if flag bit_and Opt.ARG != 0
         if index > args.size
           Err.printf("error: option '%a' requires an argument", arg)
           Opt.display_help(options)

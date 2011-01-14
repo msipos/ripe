@@ -50,6 +50,7 @@ int input_read(char* buf, int max_size); // Used by flex to do reading
 "-"                             { return '-'; }
 "*"                             { return '*'; }
 "/"                             { return '/'; }
+modulo                          { return K_MODULO; }
 "="                             { return '='; }
 "=="                            { return OP_EQUAL; }
 "!="                            { return OP_NOT_EQUAL; }
@@ -66,13 +67,17 @@ int input_read(char* buf, int max_size); // Used by flex to do reading
 ","                             { return ','; }
 \@                              { return '@'; }
 return                          { return K_RETURN; }
-namespace                          { return K_NAMESPACE; }
+namespace                       { return K_NAMESPACE; }
 true                            { return K_TRUE; }
 false                           { return K_FALSE; }
 nil                             { return K_NIL; }
 and                             { return K_AND; }
 or                              { return K_OR; }
 not                             { return K_NOT; }
+bit_and                         { return K_BIT_AND; }
+bit_or                          { return K_BIT_OR; }
+bit_xor                         { return K_BIT_XOR; }
+bit_not                         { return K_BIT_NOT; }
 if                              { return K_IF; }
 else                            { return K_ELSE; }
 elif                            { return K_ELIF; }

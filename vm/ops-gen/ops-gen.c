@@ -16,7 +16,32 @@
 #include <stdio.h>
 #include <string.h>
 
-const char* c_template = 
+const char* c_template_int =
+"Value op_%s(Value a, Value b)\n"
+"{\n"
+"  switch(a & MASK_TAIL){\n"
+"    case 0b00:\n"
+"      return method_call1(a, dsym_%s, b);\n"
+"    case 0b01:\n"
+"      switch(b & MASK_TAIL){\n"
+"        case 0b00:\n"
+"          return method_call1(b, dsym_%s2, a);\n"
+"        case 0b01:\n"
+"          return pack_int64(unpack_int64(a) %s unpack_int64(b));\n"
+"        case 0b10:\n"
+"        default:\n"
+"          goto error;\n"
+"      }\n"
+"    case 0b10:\n"
+"      goto error;\n"
+"  }\n"
+"error:\n"
+"  exc_raise(\"invalid operands of '%s' (%%s and %%s)\",\n"
+"            klass_name(obj_klass(a)),\n"
+"            klass_name(obj_klass(b)));\n"
+"}\n";
+
+const char* c_template =
 "Value op_%s(Value a, Value b)\n"
 "{\n"
 "  switch(a & MASK_TAIL){\n"
@@ -67,7 +92,7 @@ void func_numeric_numeric(const char* name, const char* op){
 
 void func_bool_numeric(const char* name, const char* op){
   printf(c_template,
-         name, name, 
+         name, name,
          name,
          "bool", op,
          "bool", op,
@@ -77,10 +102,15 @@ void func_bool_numeric(const char* name, const char* op){
          op);
 }
 
+void func_int_int(const char* name, const char* op)
+{
+  printf(c_template_int, name, name, name, op, name);
+}
+
 void gen_c()
 {
   printf("// ops-generated source file\n\n");
-  
+
   printf("#include \"vm/ops-generated.h\"\n\n");
   func_numeric_numeric("plus", "+");
   func_numeric_numeric("minus", "-");
@@ -90,6 +120,10 @@ void gen_c()
   func_bool_numeric("gte", ">=");
   func_bool_numeric("lt", "<");
   func_bool_numeric("lte", "<=");
+  func_int_int("bit_and", "&");
+  func_int_int("bit_or", "|");
+  func_int_int("bit_xor", "^");
+  func_int_int("modulo", "%");
 }
 
 void gen_h()
@@ -109,6 +143,10 @@ void gen_h()
   printf(h_template, "gte");
   printf(h_template, "lt");
   printf(h_template, "lte");
+  printf(h_template, "bit_and");
+  printf(h_template, "bit_or");
+  printf(h_template, "bit_xor");
+  printf(h_template, "modulo");
   printf("#endif\n");
 }
 

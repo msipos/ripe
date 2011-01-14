@@ -9,6 +9,11 @@ namespace Ast
   const K_EOF                     = $ int64_to_val(K_EOF) $
   const K_AND                     = $ int64_to_val(K_AND) $
   const K_OR                      = $ int64_to_val(K_OR) $
+  const K_BIT_AND                 = $ int64_to_val(K_BIT_AND) $
+  const K_BIT_OR                  = $ int64_to_val(K_BIT_OR) $
+  const K_BIT_XOR                 = $ int64_to_val(K_BIT_XOR) $
+  const K_BIT_NOT                 = $ int64_to_val(K_BIT_NOT) $
+  const K_MODULO                  = $ int64_to_val(K_MODULO) $
   const K_NOT                     = $ int64_to_val(K_NOT) $
   const OP_EQUAL                  = $ int64_to_val(OP_EQUAL) $
   const OP_NOT_EQUAL              = $ int64_to_val(OP_NOT_EQUAL) $

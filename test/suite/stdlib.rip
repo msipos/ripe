@@ -269,8 +269,6 @@ main()
   Time()
   Template()
 
-  Test.test("Math.bit_or", Math.bit_or(15, 5), 15)
-  Test.test("Math.bit_and", Math.bit_and(15, 5), 5)
   Test.test("Integer.odd?", 7 .odd?(), true)
   Test.test("Integer.odd?", 8 .odd?(), false)
   Test.test("Integer.even?", 7 .even?(), false)
