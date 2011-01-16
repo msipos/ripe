@@ -89,6 +89,7 @@ extern Klass* klass_Map;
 extern Klass* klass_Set;
 
 extern Value dsym_to_string;
+extern Value dsym_contains;
 
 void common_init_phase15();
 
@@ -245,6 +246,7 @@ Value op_unary_minus(Value v);
 Value op_unary_bit_not(Value v);
 Value op_and(Value a, Value b);
 Value op_or(Value a, Value b);
+Value op_in(Value a, Value b);
 #include "vm/ops-generated.h"
 
 //////////////////////////////////////////////////////////////////////////////

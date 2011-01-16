@@ -23,10 +23,10 @@ class Set
       ht_init(&(@ht), 0);
     $
 
-  #$ rdoc-name Set.has?
-  #$ rdoc-header Set.has?(key)
+  #$ rdoc-name Set.contains?
+  #$ rdoc-header Set.contains?(key)
   #$ Return if the Set contains key.
-  has?(key)
+  contains?(key)
     $
       return pack_bool(ht_query(&(@ht), __key));
     $

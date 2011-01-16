@@ -34,10 +34,10 @@ class Map
       exc_raise("key error: '%s'", to_string(__key));
     $
 
-  #$ rdoc-name Map.has_key?
-  #$ rdoc-header Map.has_key?(key)
+  #$ rdoc-name Map.contains?
+  #$ rdoc-header Map.contains?(key)
   #$ Returns true if the Map contains the given key.
-  has_key?(key)
+  contains?(key)
     $
       return pack_bool(ht_query2(&(@ht), __key, NULL));
     $

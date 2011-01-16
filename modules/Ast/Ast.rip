@@ -15,6 +15,7 @@ namespace Ast
   const K_BIT_NOT                 = $ int64_to_val(K_BIT_NOT) $
   const K_MODULO                  = $ int64_to_val(K_MODULO) $
   const K_NOT                     = $ int64_to_val(K_NOT) $
+  const K_IN                      = $ int64_to_val(K_IN) $
   const OP_EQUAL                  = $ int64_to_val(OP_EQUAL) $
   const OP_NOT_EQUAL              = $ int64_to_val(OP_NOT_EQUAL) $
   const OP_LTE                    = $ int64_to_val(OP_LTE) $

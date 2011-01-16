@@ -28,6 +28,7 @@ static OperatorTable binary_ot[] =
   {'/',          "op_slash"},
   {K_AND,        "op_and"},
   {K_OR,         "op_or"},
+  {K_IN,         "op_in"},
   {K_BIT_AND,    "op_bit_and"},
   {K_BIT_OR,     "op_bit_or"},
   {K_BIT_XOR,    "op_bit_xor"},

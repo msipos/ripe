@@ -95,7 +95,7 @@
 %token   OP_GTE       ">="
 %left    "or"
 %left    "and"
-%left    "is"
+%left    "is" "in"
 %left    ':'
 %left    '<' "<=" '>' ">="
 %left    "==" "!="
@@ -303,6 +303,7 @@ r_expr:    rvalue ">=" rvalue  { $$ = operator($1, $2, $3); };
 r_expr:    rvalue "is" type    { $$ = node_new(EXPR_IS_TYPE);
                                  node_add_child($$, $1);
                                  node_add_child($$, $3); };
+r_expr:    rvalue "in" rvalue  { $$ = operator($1, $2, $3); };
 r_expr:    rvalue ':' rvalue   { $$ = node_new(EXPR_RANGE_BOUNDED);
                                  node_add_child($$, $1);
                                  node_add_child($$, $3); };

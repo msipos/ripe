@@ -17,8 +17,8 @@ Map()
     Test.test(name, map[k], v)
   Test.test(name, map["France"], "Paris")
   Test.test(name, map.size, 6)
-  Test.test(name, true, map.has_key?("Serbia"))
-  Test.test(name, false, map.has_key?("India"))
+  Test.test(name, true, "Serbia" in map)
+  Test.test(name, false, "India" in map)
 
   map = Map.new()
   for Integer i in 1:100000
@@ -40,24 +40,24 @@ Set()
   set.add("Spain")
 
   Test.test("Set.size", set.size, 5)
-  Test.test("Set.has?", set.has?("Serbia"), true)
-  Test.test("Set.has?", set.has?("Hungary"), false)
+  Test.test("Set.contains?", "Serbia" in set, true)
+  Test.test("Set.contains?", "Hungary" in set, false)
 
   set.remove("Serbia")
-  Test.test("Set.remove()", set.has?("Serbia"), false)
+  Test.test("Set.remove()", "Serbia" in set, false)
   Test.test("Set.remove()", set.size, 4)
 
   n = 0
   for v in set
     n = n + 1
-    Test.test("Set.has?", set.has?(v), true)
+    Test.test("Set iterator", v in set, true)
   Test.test("Set iterator", n, 4)
 
   n = 0
   for i in 1:set.alloc_size
     v = set.get_bucket(i)
     if v != nil
-      Test.test("Set.has?", set.has?(v), true)
+      Test.test("Set.get_bucket", v in set, true)
       n = n + 1
   Test.test("Set.get_bucket", n, 4)
 
@@ -112,6 +112,10 @@ arrays()
   Test.test(name + " -1", view.map_index(-1), 2)
   Test.test(name + " 2", view.map_index(2), 3)
 
+  name = "Array1.contains?"
+  Test.test(name, "serbia" in arr, true)
+  Test.test(name, "belgium" in arr, false)
+
 subarrays()
   name = "subarrays"
   my_arr = ["one", "two", "three", "four", "five", "six"]
@@ -154,7 +158,7 @@ Tuple()
   m[t] = 123
   m[v] = 12
   name = "tuple hashing/equality"
-  Test.test(name, m.has_key?(u), true)
+  Test.test(name, u in m, true)
   Test.test(name, m[u], 123)
   m[u] = 147
   Test.test(name, m.size, 2)

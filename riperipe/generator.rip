@@ -25,7 +25,7 @@ namespace Ctx
     ctx_class_dict = Map.new()
 
   class_dict_get(name)
-    if ctx_class_dict.has_key?(name)
+    if name in ctx_class_dict
       return ctx_class_dict[name]
     field_int_var = "_field_int%a_%a".f(counter(), Util.to_c(name))
     header.print("static int %a;\n".f(field_int_var))
@@ -50,7 +50,7 @@ namespace Ssym
     if ssym_table == nil
       ssym_table = Map.new()
 
-    if ssym_table.has_key?(name)
+    if name in ssym_table
       return ssym_table[name]
     c_name = "_ssym%a_%a".f(counter(), Util.to_c(name))
     header.print("static Value %a;\n".f(c_name))
@@ -63,7 +63,7 @@ namespace Dsym
     if dsym_table == nil
       dsym_table = Map.new()
 
-    if dsym_table.has_key?(name)
+    if name in dsym_table
       return dsym_table[name]
     c_name = "_dsym%a_%a".f(counter(), Util.to_c(name))
     header.print("static Value %a;\n".f(c_name))
@@ -76,7 +76,7 @@ namespace Type
     if type_table == nil
       type_table = Map.new()
 
-    if type_table.has_key?(name)
+    if name in type_table
       return type_table[name]
     c_name = "_klass%a_%a".f(counter(), Util.to_c(name))
     header.print("static Klass* %a;\n".f(c_name))
@@ -136,7 +136,7 @@ locals_query(ripe_name)
 
   for i in (-1):(-(locals.size))
     d = locals[i]
-    if d.has_key?(ripe_name)
+    if ripe_name in d
       return d[ripe_name]
   return nil
 

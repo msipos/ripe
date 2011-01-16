@@ -44,7 +44,7 @@ namespace Module
     return out_file
 
   add(name)
-    if g_modules.has_key?(name)
+    if name in g_modules
       return
     module = Map.new()
     dir = Path.join(Path.get_program_dir(), "modules", name)
@@ -84,8 +84,8 @@ namespace Module
   get_lflags()
     arr = []
     for k, v in g_modules
-      if v.has_key?(&META)
+      if &META in v
         meta = v[&META]
-        if meta.has_key?("lflags")
+        if "lflags" in meta
           arr.push(meta["lflags"])
     return arr

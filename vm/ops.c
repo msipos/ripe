@@ -95,6 +95,11 @@ Value op_not_equal(Value a, Value b)
   return pack_bool(not op_equal3(a, b));
 }
 
+Value op_in(Value a, Value b)
+{
+  return method_call1(b, dsym_contains, a);
+}
+
 Value op_unary_not(Value v)
 {
   switch(v){
