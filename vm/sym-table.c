@@ -25,6 +25,9 @@ Value dsym_gt, dsym_gt2;
 Value dsym_lt, dsym_lt2;
 Value dsym_gte, dsym_gte2;
 Value dsym_lte, dsym_lte2;
+Value dsym_bit_and, dsym_bit_or, dsym_bit_xor;
+Value dsym_bit_and2, dsym_bit_or2, dsym_bit_xor2;
+Value dsym_modulo, dsym_modulo2;
 
 void sym_init()
 {
@@ -44,6 +47,14 @@ void sym_init()
   dsym_gte = dsym_get("__gte"); dsym_gte2 = dsym_get("__gte2");
   dsym_lt = dsym_get("__lt"); dsym_lt2 = dsym_get("__lt2");
   dsym_lte = dsym_get("__lte"); dsym_lte2 = dsym_get("__lte2");
+  dsym_bit_and = dsym_get("__bit_and");
+  dsym_bit_and2 = dsym_get("__bit_and2");
+  dsym_bit_or = dsym_get("__bit_or");
+  dsym_bit_or2 = dsym_get("__bit_or2");
+  dsym_bit_xor = dsym_get("__bit_xor");
+  dsym_bit_xor2 = dsym_get("__bit_xor2");
+  dsym_modulo = dsym_get("__modulo");
+  dsym_modulo2 = dsym_get("__modulo2");
 }
 
 Value ssym_get(const char* name)

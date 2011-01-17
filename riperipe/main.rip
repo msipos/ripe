@@ -107,9 +107,9 @@ go_bootstrap(files, outfile)
         objs.push(file)
       case ".meta"
         meta = load_meta(file)
-        if meta.has_key?("cflags")
+        if "cflags" in meta
           g_cflags = g_cflags + " " + meta["cflags"]
-        if meta.has_key?("lflags")
+        if "lflags" in meta
           g_lflags = g_lflags + " " + meta["lflags"]
 
   index = 1
@@ -196,7 +196,7 @@ go_module(files, module_name, outfile)
         objs.push(file)
       case ".meta"
         meta = load_meta(file)
-        if meta.has_key?("cflags")
+        if "cflags" in meta
           g_cflags = g_cflags + " " + meta["cflags"]
       case ".typ"
         Typer.load_from_file(file)

@@ -33,12 +33,12 @@ namespace Typer
   const FUNCTION = 1
 
   add(name, token, type, item)
-    if not typedb.has_key?(name)
+    if not name in typedb
       typedb[name] = []
     typedb[name].push( [token, type, item] )
 
   get(name, type)
-    if not typedb.has_key?(name)
+    if not name in typedb
       raise "'%a' does not exist in type database".f(name)
     out = []
     for list in typedb[name]
@@ -108,7 +108,7 @@ namespace Typer
     tf.close()
     map = Json.parse(text)
     for k, v in map
-      if typedb.has_key?(k)
+      if k in typedb
         raise "duplicate key in typedb '%a'".f(k)
       typedb[k] = v
 

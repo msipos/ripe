@@ -83,6 +83,15 @@ class Array1
       }
     $
 
+  #$ rdoc-name Array1.contains?
+  #$ rdoc-header Bool Array1.contains?(v)
+  #$ Returns whether the array contains v.
+  contains?(v)
+    for el in self
+      if el == v
+        return true
+    return false
+
   #$ rdoc-name Array1.extend
   #$ rdoc-header Nil Array1.extend(Array1 a)
   #$ Extends the array by concatinating all elements of a.

@@ -95,6 +95,11 @@ Value op_not_equal(Value a, Value b)
   return pack_bool(not op_equal3(a, b));
 }
 
+Value op_in(Value a, Value b)
+{
+  return method_call1(b, dsym_contains, a);
+}
+
 Value op_unary_not(Value v)
 {
   switch(v){
@@ -115,4 +120,12 @@ Value op_unary_minus(Value v)
       return pack_double(-unpack_double(v));
   }
   exc_raise("unary '-' called with non-numerical value");
+}
+
+Value op_unary_bit_not(Value v)
+{
+  if ((v & MASK_TAIL) == 0b01){
+    return pack_int64(~unpack_int64(v));
+  }
+  exc_raise("unary 'bit_not' called with non-integer value");
 }
