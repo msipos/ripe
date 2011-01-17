@@ -90,7 +90,6 @@
 // Operator-like
 %token   OP_EQUAL     "=="
 %token   OP_NOT_EQUAL "!="
-%token   OP_ASSIGN    ":="
 %token   OP_LTE       "<="
 %token   OP_GTE       ">="
 %left    "or"

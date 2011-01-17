@@ -18,6 +18,7 @@ doc/*.html
 ripedoc/ripedoc
 lang/parser.c
 lang/parser.h
+lang/parser.output
 lang/scanner.c
 lang/scanner.h
 memlog
