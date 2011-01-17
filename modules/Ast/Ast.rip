@@ -57,6 +57,7 @@ namespace Ast
   const EXPR_FIELD_CALL           = $ int64_to_val(EXPR_FIELD_CALL) $
   const EXPR_INDEX                = $ int64_to_val(EXPR_INDEX) $
   const EXPR_ARRAY                = $ int64_to_val(EXPR_ARRAY) $
+  const EXPR_MAP                  = $ int64_to_val(EXPR_MAP) $
   const EXPR_FIELD                = $ int64_to_val(EXPR_FIELD) $
   const EXPR_AT_VAR               = $ int64_to_val(EXPR_AT_VAR) $
   const EXPR_RANGE_BOUNDED        = $ int64_to_val(EXPR_RANGE_BOUNDED) $

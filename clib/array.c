@@ -44,7 +44,7 @@ void array_delete(Array* arr)
 void array_append2(Array* arr, void* el)
 {
   array_expand(arr);
-  memcpy(arr->data + arr->size*arr->el_size, el, arr->el_size);
+  memmove(arr->data + arr->size*arr->el_size, el, arr->el_size);
   arr->size++;
 }
 
@@ -53,14 +53,14 @@ void array_get2(Array* arr, void* dest, int i)
   assert(i >= 0);
   assert(i < arr->size);
 
-  memcpy(dest, arr->data + i*arr->el_size, arr->el_size);
+  memmove(dest, arr->data + i*arr->el_size, arr->el_size);
 }
 
 void array_prepend(Array* arr, uint sz, void* el)
 {
   array_expand(arr);
   memmove(arr->data + sz, arr->data, sz * arr->size);
-  memcpy(arr->data, el, sz);
+  memmove(arr->data, el, sz);
   arr->size++;
 }
 

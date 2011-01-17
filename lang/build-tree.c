@@ -111,6 +111,7 @@ static int lex_read_line()
 
   int counter_p = 0;
   int counter_s = 0;
+  int counter_b = 0;
 
   for(;;){
     Node* n;
@@ -129,11 +130,17 @@ static int lex_read_line()
       case ']':
         counter_s--;
         break;
+      case '{':
+        counter_b++;
+        break;
+      case '}':
+        counter_b--;
+        break;
       case 0:
         if (raw_line.size == 0) return 1;
         return 0;
       case '\n':
-        if (counter_p > 0 or counter_s > 0){
+        if (counter_p > 0 or counter_s > 0 or counter_b > 0){
           goto loop;
         }
         return 0;

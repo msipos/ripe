@@ -359,6 +359,8 @@ bool ht_remove(HashTable* ht, Value key);
 void ht_clear(HashTable* ht);
 void ht_init(HashTable* ht, int64 items);
 void ht_init2(HashTable* ht, int64 items);
+Value ht_new_map(int64 num, ...);
+Value ht_new_set(int64 num, ...);
 
 //////////////////////////////////////////////////////////////////////////////
 // Integer.c

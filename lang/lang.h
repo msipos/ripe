@@ -130,7 +130,8 @@ int input_read(char* buf, int max_size); // Used by flex to do reading
 #define EXPR_FIELD_CALL   1031
 #define EXPR_INDEX        1032
 #define EXPR_ARRAY        1033
-#define EXPR_FIELD        1034
+#define EXPR_MAP          1034
+#define EXPR_FIELD        1035
 #define EXPR_AT_VAR       1036
 #define EXPR_RANGE_BOUNDED        1040
 #define EXPR_RANGE_BOUNDED_LEFT   1041
@@ -148,6 +149,8 @@ int input_read(char* buf, int max_size); // Used by flex to do reading
 #define TYPE              1055
 #define CASE_LIST         1056
 #define CASE              1057
+#define MAPPING_LIST      1058
+#define MAPPING           1059
 
 #include "lang/parser.h"
 #include "lang/scanner.h"

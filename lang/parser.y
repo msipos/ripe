@@ -87,6 +87,7 @@
 %token   K_VIRTUAL_SET "virtual_set"
 %token   K_GLOBAL      "global"
 %token   K_CONST       "const"
+%token   K_ARROW       "=>"
 // Operator-like
 %token   OP_EQUAL     "=="
 %token   OP_NOT_EQUAL "!="
@@ -278,6 +279,8 @@ r_expr:    ID '(' rvalue_star ')'
                                  node_add_child($$, $3); };
 r_expr:    '[' rvalue_star ']' { $$ = node_new(EXPR_ARRAY);
                                  node_add_child($$, $2); };
+r_expr:    '{' mapping_plus '}' { $$ = node_new(EXPR_MAP);
+                                  node_add_child($$, $2); };
 r_expr:    '(' rvalue ')'      { $$ = $2; };
 r_expr:    rvalue '+' rvalue   { $$ = operator($1, $2, $3); };
 r_expr:    rvalue '-' rvalue   { $$ = operator($1, $2, $3); };
@@ -342,6 +345,19 @@ type:      type '.' type       { $$ = $1;
                                  node_add_child($$, $3); };
 type:      ID                  { $$ = node_new_inherit(TYPE, $1);
                                  node_set_string($$, "name", $1->text); };
+
+mapping_plus: mapping_plus ',' mapping
+                               { $$ = $1;
+                                 node_add_child($$, $3); };
+mapping_plus: mapping          { $$ = node_new(MAPPING_LIST);
+                                 node_add_child($$, $1); };
+
+mapping:     rvalue            { $$ = node_new(MAPPING);
+                                 node_add_child($$, $1); };
+mapping:     rvalue "=>" rvalue
+                               { $$ = node_new(MAPPING);
+                                 node_add_child($$, $1);
+                                 node_add_child($$, $3); };
 
 rvalue_star: rvalue_star ',' rvalue
                                { $$ = $1;

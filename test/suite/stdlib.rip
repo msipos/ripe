@@ -1,8 +1,5 @@
 Map()
-  map = Map.new()
-  map[1] = "one"
-  map[2] = "two"
-  map[5] = "five"
+  map = { 1 => "one", 2 => "two", 5 => "five" }
   name = "map1"
   Test.test(name, "Map (1 => one, 2 => two, 5 => five)", map.to_string())
   Test.test(name, map[1], "one")
@@ -32,12 +29,7 @@ Map()
   Test.test(name, map[x], 2*x)
 
 Set()
-  set = Set.new()
-  set.add("Serbia")
-  set.add("France")
-  set.add("England")
-  set.add("Portugal")
-  set.add("Spain")
+  set = { "Serbia", "France", "England", "Portugal", "Spain" }
 
   Test.test("Set.size", set.size, 5)
   Test.test("Set.contains?", "Serbia" in set, true)

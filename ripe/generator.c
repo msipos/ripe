@@ -308,6 +308,41 @@ static const char* eval_expr(Node* expr)
                             expr_list->children.size,
                             eval_expr_list(expr_list, true));
       }
+    case EXPR_MAP:
+      {
+        Node* m_list = node_get_child(expr, 0);
+        bool is_map = false, is_set = false;
+        const char* args = "";
+
+        const int num_ms = node_num_children(m_list);
+        assert(num_ms > 0);
+        for (int i = 0; i < num_ms; i++){
+          Node* m = node_get_child(m_list, i);
+          switch (node_num_children(m)){
+            case 2:
+              is_map = true;
+              args = mem_asprintf("%s, %s, %s", args,
+                                  eval_expr(node_get_child(m, 0)),
+                                  eval_expr(node_get_child(m, 1)));
+              break;
+            case 1:
+              is_set = true;
+              args = mem_asprintf("%s, %s", args,
+                                  eval_expr(node_get_child(m, 0)));
+              break;
+            default:
+              assert_never();
+              break;
+          }
+        }
+
+        if (is_map and is_set){
+          err_node(expr, "invalid curly braces: is this a set or a map?");
+        }
+        if (is_map) return mem_asprintf("ht_new_map(%d%s)", num_ms, args);
+        if (is_set) return mem_asprintf("ht_new_set(%d%s)", num_ms, args);
+        assert_never();
+      }
     case EXPR_INDEX:
       return eval_index(node_get_child(expr, 0), node_get_child(expr, 1), NULL);
     case EXPR_FIELD_CALL:

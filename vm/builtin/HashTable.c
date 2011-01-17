@@ -179,3 +179,36 @@ void ht_clear(HashTable* ht)
   mem_free(ht->keys);
   ht_init(ht, 0);
 }
+
+Value ht_new_map(const int64 num_args, ...)
+{
+  va_list ap;
+  va_start(ap, num_args);
+
+  HashTable* ht;
+  const Value v_map = obj_new(klass_Map, (void**) &ht);
+  ht_init2(ht, num_args);
+  for (int64 i = 0; i < num_args; i++){
+    const Value key = va_arg(ap, Value);
+    const Value value = va_arg(ap, Value);
+    ht_set2(ht, key, value);
+  }
+  va_end(ap);
+
+  return v_map;
+}
+Value ht_new_set(const int64 num_args, ...)
+{
+  va_list ap;
+  va_start(ap, num_args);
+
+  HashTable* ht;
+  const Value v_set = obj_new(klass_Set, (void**) &ht);
+  ht_init2(ht, num_args);
+  for (int64 i = 0; i < num_args; i++){
+    const Value key = va_arg(ap, Value);
+    ht_set(ht, key);
+  }
+  va_end(ap);
+  return v_set;
+}

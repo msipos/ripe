@@ -13,33 +13,26 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-global unary_ops, binary_ops
-
-init_ops()
-  if unary_ops == nil
-    unary_ops = Map.new()
-    unary_ops['-'] = "op_unary_minus"
-    unary_ops[Ast.K_NOT] = "op_unary_not"
-    unary_ops[Ast.K_BIT_NOT] = "op_unary_bit_not"
-  if binary_ops == nil
-    binary_ops = Map.new()
-    binary_ops['+'] = "op_plus"
-    binary_ops['-'] = "op_minus"
-    binary_ops['*'] = "op_star"
-    binary_ops['/'] = "op_slash"
-    binary_ops[Ast.K_AND] = "op_and"
-    binary_ops[Ast.K_OR] = "op_or"
-    binary_ops[Ast.K_IN] = "op_in"
-    binary_ops[Ast.K_BIT_AND] = "op_bit_and"
-    binary_ops[Ast.K_BIT_OR] = "op_bit_or"
-    binary_ops[Ast.K_BIT_XOR] = "op_bit_xor"
-    binary_ops[Ast.K_MODULO] = "op_modulo"
-    binary_ops[Ast.OP_EQUAL] = "op_equal"
-    binary_ops[Ast.OP_NOT_EQUAL] = "op_not_equal"
-    binary_ops['>'] = "op_gt"
-    binary_ops['<'] = "op_lt"
-    binary_ops[Ast.OP_LTE] = "op_lte"
-    binary_ops[Ast.OP_GTE] = "op_gte"
+global unary_ops =  { '-'              => "op_unary_minus",
+                      Ast.K_NOT        => "op_unary_not",
+                      Ast.K_BIT_NOT    => "op_unary_bit_not" }
+global binary_ops = { '+'              => "op_plus",
+                      '-'              => "op_minus",
+                      '*'              => "op_star",
+                      '/'              => "op_slash",
+                      Ast.K_AND        => "op_and",
+                      Ast.K_OR         => "op_or",
+                      Ast.K_IN         => "op_in",
+                      Ast.K_BIT_AND    => "op_bit_and",
+                      Ast.K_BIT_OR     => "op_bit_or",
+                      Ast.K_BIT_XOR    => "op_bit_xor",
+                      Ast.K_MODULO     => "op_modulo",
+                      Ast.OP_EQUAL     => "op_equal",
+                      Ast.OP_NOT_EQUAL => "op_not_equal",
+                      '>'              => "op_gt",
+                      '<'              => "op_lt",
+                      Ast.OP_LTE       => "op_lte",
+                      Ast.OP_GTE       => "op_gte" }
 
 value_barrier(Tuple t)
   switch t[1]
@@ -169,6 +162,28 @@ eval_expr_Value(expr)
       expr_list = expr[1]
       return "array1_to_val2(%a%a)".f(expr_list.num_children,
                                       eval_expr_list(expr_list, true))
+    case Ast.EXPR_MAP
+      m_list = expr[1]
+      Bool is_map = false
+      Bool is_set = false
+      args = ""
+
+      num_ms = m_list.size
+      for m in m_list
+        switch m.size
+          case 2
+            is_map = true
+            args = "%a, %a, %a".f(args, eval_v_expr(m[1]), eval_v_expr(m[2]))
+          case 1
+            is_set = true
+            args = "%a, %a".f(args, eval_v_expr(m[1]))
+
+      if is_map and is_set
+        raise "invalid curly braces: is this a set or a map?"
+      if is_map
+        return "ht_new_map(%a%a)".f(num_ms, args)
+      if is_set
+        return "ht_new_set(%a%a)".f(num_ms, args)
     case Ast.EXPR_INDEX
       return eval_index(expr[1], expr[2])
     case Ast.EXPR_FIELD_CALL
@@ -242,7 +257,6 @@ eval_expr_Value(expr)
   return ""
 
 eval_expr(expr)
-  init_ops()
   if expr.size == 1
     if expr.type in unary_ops
       return tuple("Value", "%a(%a)".f(

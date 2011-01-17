@@ -43,13 +43,10 @@ namespace Ctx
 # Symbol tables
 ##############################################################################
 
-global ssym_table, dsym_table, type_table
+global ssym_table = Map.new(), dsym_table = Map.new(), type_table = Map.new()
 
 namespace Ssym
   get(name)
-    if ssym_table == nil
-      ssym_table = Map.new()
-
     if name in ssym_table
       return ssym_table[name]
     c_name = "_ssym%a_%a".f(counter(), Util.to_c(name))
@@ -60,9 +57,6 @@ namespace Ssym
 
 namespace Dsym
   get(name)
-    if dsym_table == nil
-      dsym_table = Map.new()
-
     if name in dsym_table
       return dsym_table[name]
     c_name = "_dsym%a_%a".f(counter(), Util.to_c(name))
@@ -73,9 +67,6 @@ namespace Dsym
 
 namespace Type
   get(name)
-    if type_table == nil
-      type_table = Map.new()
-
     if name in type_table
       return type_table[name]
     c_name = "_klass%a_%a".f(counter(), Util.to_c(name))

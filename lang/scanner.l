@@ -58,6 +58,9 @@ modulo                          { return K_MODULO; }
 ")"                             { return ')'; }
 "["                             { return '['; }
 "]"                             { return ']'; }
+"{"                             { return '{'; }
+"}"                             { return '}'; }
+"=>"                            { return K_ARROW; };
 "<"                             { return '<'; }
 ">"                             { return '>'; }
 ">="                            { return OP_GTE; }
