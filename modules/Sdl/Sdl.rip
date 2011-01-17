@@ -1,7 +1,10 @@
 $
   #include <SDL.h>
   #include <SDL_gfxPrimitives.h>
+  #include <SDL_rotozoom.h>
   #include <SDL_ttf.h>
+  #include <SDL_image.h>
+
 
   #define RED(x)   ((x & 0xFF000000) >> 24)
   #define GREEN(x) ((x & 0x00FF0000) >> 16)
@@ -40,6 +43,21 @@ namespace Sdl
           }
         $
         return surf
+
+  namespace Event
+    const QUIT = $ int64_to_val(SDL_QUIT) $
+
+  class Event
+    $ SDL_Event event; $
+
+    constructor new()
+      pass
+
+    poll()
+      return $ pack_bool(SDL_PollEvent(&(@event))) $
+
+    virtual_get type()
+      return $ int64_to_val(@event.type) $
 
   init()
     $
@@ -89,9 +107,17 @@ namespace Sdl
       $
         @surf = SDL_SetVideoMode(val_to_int64(__w),
                                  val_to_int64(__h),
-                                 32,
+                                 0,
                                  val_to_int64(__flags));
       $
+
+    constructor new_from_file(filename)
+      $ const char* filename = val_to_string(__filename);
+        @surf = IMG_Load(filename);
+        if (!@surf){
+          exc_raise("failed to load image from '%s': '%s'", filename,
+                                                          IMG_GetError());
+        } $
 
     constructor new(w, h, flags)
       $
@@ -132,6 +158,16 @@ namespace Sdl
                          val_to_int64(__color));
       $
 
+    rotozoom(angle, scale, smooth)
+      $ int smooth = 0; $
+      if smooth
+        $ smooth = 1; $
+      surf2 = Sdl.Surface.new_uninitialized()
+      $ SDL_Surface** dsurf = obj_c_data(__surf2);
+        *dsurf = rotozoomSurface(@surf, val_to_double_soft(__angle),
+                                 val_to_double_soft(__scale), smooth); $
+      return surf2
+
     fill(color)
       $
         Uint32 color = val_to_int64(__color);
@@ -163,62 +199,3 @@ namespace Sdl
       $
         SDL_Flip(@surf);
       $
-
-
-  loop_func(event_handlers)
-    $
-      SDL_Event ev;
-      if (not SDL_PollEvent(&ev)){
-        return VALUE_FALSE;
-      }
-
-      switch(ev.type){
-        case SDL_MOUSEMOTION:
-    $
-    if event_handlers.has_key?("sdl-mouse-motion")
-      call_func(event_handlers["sdl-mouse-motion"],
-                $ int64_to_val(ev.motion.x) $,
-                $ int64_to_val(ev.motion.y) $)
-    $
-          return VALUE_TRUE;
-        case SDL_QUIT:
-    $
-    if event_handlers.has_key?("sdl-quit")
-      call_func(event_handlers["sdl-quit"])
-    $
-          return VALUE_TRUE;
-        case SDL_MOUSEBUTTONDOWN:
-    $
-    if event_handlers.has_key?("sdl-mouse-down")
-      call_func(event_handlers["sdl-mouse-down"],
-                $ int64_to_val(ev.button.x) $,
-                $ int64_to_val(ev.button.y) $,
-                $ int64_to_val(ev.button.button)$)
-    $
-          return VALUE_TRUE;
-        case SDL_MOUSEBUTTONUP:
-    $
-    if event_handlers.has_key?("sdl-mouse-up")
-      call_func(event_handlers["sdl-mouse-up"],
-                $ int64_to_val(ev.button.x) $,
-                $ int64_to_val(ev.button.y) $,
-                $ int64_to_val(ev.button.button)$)
-    $
-          return VALUE_TRUE;
-        case SDL_KEYDOWN:
-    $
-    if event_handlers.has_key?("sdl-key-down")
-      call_func(event_handlers["sdl-key-down"],
-                $ int64_to_val(ev.key.keysym.sym)$)
-    $
-          return VALUE_TRUE;
-        case SDL_KEYUP:
-    $
-    if event_handlers.has_key?("sdl-key-up")
-      call_func(event_handlers["sdl-key-up"],
-                $ int64_to_val(ev.key.keysym.sym)$)
-    $
-          return VALUE_TRUE;
-      }
-    $
-    return false

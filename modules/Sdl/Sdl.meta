@@ -1,2 +1,2 @@
 cflags=`pkg-config --cflags sdl`
-lflags=`pkg-config --libs sdl` -lSDL_gfx -lSDL_ttf
+lflags=`pkg-config --libs sdl` -lSDL_gfx -lSDL_ttf -lSDL_image
