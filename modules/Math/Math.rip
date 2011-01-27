@@ -1,6 +1,8 @@
 $ #include <math.h> $
 
 namespace Math
+  const PI = $ double_to_val(M_PI) $
+
   hypot(x, y)
     return $ double_to_val(
                hypot(
@@ -30,3 +32,6 @@ namespace Math
 
   ceil(x)
     return $ int64_to_val((int64) ceil(val_to_double(__x))) $
+
+  atan2(x, y)
+    return $ double_to_val(atan2(val_to_double_soft(__x), val_to_double_soft(__y))) $

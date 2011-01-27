@@ -8,9 +8,17 @@ namespace Povray
     f.printf("light_source { <%a, %a, %a>, rgb <%a, %a, %a> }\n",
              x, y, z, i, i, i)
 
-  camera(f, x1, y1, z1, x2, y2, z2)
-    f.printf("camera { location <%a, %a, %a>\n look_at <%a, %a, %a> }\n",
-             x1, y1, z1, x2, y2, z2)
+  camera(f, loc, look_at, fp, aperture)
+    f.printf("camera {\n")
+    f.printf("  location <%a, %a, %a>\n", loc[1], loc[2], loc[3])
+    f.printf("  look_at <%a, %a, %a>\n", look_at[1], look_at[2],
+             look_at[3])
+    if fp != nil
+      f.printf("  focal_point <%a, %a, %a>\n",
+               fp[1], fp[2], fp[3])
+      f.printf("  aperture %a\n", aperture)
+      f.printf("  blur_samples 20\n")
+    f.printf("}\n")
 
   box(f, x1, y1, z1, x2, y2, z2, color)
     f.printf("box { <%a, %a, %a>, <%a, %a, %a>\n", x1, y1, z1, x2, y2, z2)

@@ -99,12 +99,11 @@
 %left    ':'
 %left    '<' "<=" '>' ">="
 %left    "==" "!="
-%left    '+' '-'
 %left    "bit_or" "bit_xor"
 %left    "bit_and"
+%left    '+' '-'
 %left    '*' '/' "modulo"
-%left    '['
-%left    '.'
+%left    '.' '['
 
 %% ////////////////////////////////////////////////////////////// Grammar rules
 
@@ -314,7 +313,7 @@ r_expr:    rvalue ':'          { $$ = node_new(EXPR_RANGE_BOUNDED_LEFT);
 r_expr:    ':' rvalue          { $$ = node_new(EXPR_RANGE_BOUNDED_RIGHT);
                                  node_add_child($$, $2); };
 r_expr:    ':'                 { $$ = node_new(EXPR_RANGE_UNBOUNDED); };
-r_expr:    '-' rvalue %prec '.'
+r_expr:    '-' rvalue %prec '*'
                                { $$ = $1; node_add_child($$, $2); };
 r_expr:    "not" rvalue %prec "and"
                                { $$ = $1; node_add_child($$, $2); };
@@ -339,7 +338,7 @@ string:    string STRING       { $$ = node_new(STRING);
                                  sbuf_init(&sb_temp, $1->text);
                                  sbuf_cat(&sb_temp, $2->text);
                                  $$->text = mem_strdup(sb_temp.str);
-                                 sbuf_deinit(&sb_temp); }
+                                 sbuf_deinit(&sb_temp); };
 
 type:      type '.' type       { $$ = $1;
                                  node_add_child($$, $3); };
