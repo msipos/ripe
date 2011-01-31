@@ -15,7 +15,7 @@
 
 #include "vm/vm.h"
 
-double val_to_double_soft(Value v)
+double val_to_double(Value v)
 {
   if (is_int64(v)) return (double) unpack_int64(v);
   obj_verify(v, klass_Double);
