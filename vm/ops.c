@@ -14,6 +14,41 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "vm/vm.h"
+#include <math.h>
+
+Value op_exp(Value a, Value b)
+{
+  switch(a & MASK_TAIL){
+    case 0b00:
+      goto error;
+    case 0b01:
+      switch(b & MASK_TAIL){
+        case 0b00:
+          goto error;
+        case 0b01:
+          return pack_double(pow((double) unpack_int64(a), (double) unpack_int64(b)));
+        case 0b10:
+          return pack_double(pow((double) unpack_int64(a), unpack_double(b)));
+        default:
+          goto error;
+      }
+    case 0b10:
+      switch(b & MASK_TAIL){
+        case 0b00:
+          goto error;
+        case 0b01:
+          return pack_double(pow(unpack_double(a), (double) unpack_int64(b)));
+        case 0b10:
+          return pack_double(pow(unpack_double(a), unpack_double(b)));
+        default:
+          goto error;
+      }
+  }
+error:
+  exc_raise("invalid operands of '-' (%s and %s)",
+            klass_name(obj_klass(a)),
+            klass_name(obj_klass(b)));
+}
 
 int64 op_hash(Value v)
 {

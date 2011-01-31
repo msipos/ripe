@@ -26,6 +26,7 @@ static OperatorTable binary_ot[] =
   {'-',          "op_minus"},
   {'*',          "op_star"},
   {'/',          "op_slash"},
+  {'^',          "op_exp"},
   {K_AND,        "op_and"},
   {K_OR,         "op_or"},
   {K_IN,         "op_in"},

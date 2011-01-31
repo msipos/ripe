@@ -19,7 +19,7 @@ conf = tools.conf
 conf["CC"] = "gcc"
 conf["LD"] = "ld"
 conf["CFLAGS"] = ["-Wall", "-Wstrict-aliasing=0", "-Wfatal-errors", "-std=gnu99", "-I.", "-Wno-unused"]
-conf["LFLAGS"] = ["-lgc"]
+conf["LFLAGS"] = ["-lm"]
 conf["YACC"] = ["bison", "--warnings=all", "-v"]
 conf["LEX"] = "flex"
 conf["VERBOSITY"] = 1
@@ -29,6 +29,7 @@ else:
     conf["VALGRIND"] = []
 if "nogc" not in sys.argv:
     conf["CFLAGS"].append("-DCLIB_GC")
+    conf["LFLAGS"].append("-lgc")
 conf["FORCING"] = False
 if "force" in sys.argv:
     conf["FORCING"] = True
@@ -247,7 +248,6 @@ def build_module(module, required):
     import os.path
     tools.mkdir_safe('product/modules/%s' % module)
     out = 'product/modules/%s/%s.o' % (module, module)
-    #srcs = [type_infos, 'product/ripe.meta']
     srcs = []
 
     metafile = 'modules/%s/%s.meta' % (module, module)
