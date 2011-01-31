@@ -4,9 +4,9 @@ namespace Povray
     f.println("background { color Cyan }")
     f.println("global_settings { radiosity {brightness 0.5}}")
 
-  light(f, x, y, z, i)
+  light(f, loc, i)
     f.printf("light_source { <%a, %a, %a>, rgb <%a, %a, %a> }\n",
-             x, y, z, i, i, i)
+             loc[1], loc[2], loc[3], i, i, i)
 
   camera(f, loc, look_at, fp, aperture)
     f.printf("camera {\n")
