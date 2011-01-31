@@ -103,6 +103,7 @@
 %left    "bit_and"
 %left    '+' '-'
 %left    '*' '/' "modulo"
+%right   '^'
 %left    '.' '['
 
 %% ////////////////////////////////////////////////////////////// Grammar rules
@@ -285,6 +286,7 @@ r_expr:    rvalue '+' rvalue   { $$ = operator($1, $2, $3); };
 r_expr:    rvalue '-' rvalue   { $$ = operator($1, $2, $3); };
 r_expr:    rvalue '*' rvalue   { $$ = operator($1, $2, $3); };
 r_expr:    rvalue '/' rvalue   { $$ = operator($1, $2, $3); };
+r_expr:    rvalue '^' rvalue   { $$ = operator($1, $2, $3); };
 r_expr:    rvalue "==" rvalue  { $$ = operator($1, $2, $3); };
 r_expr:    rvalue "!=" rvalue  { $$ = operator($1, $2, $3); };
 r_expr:    rvalue "and" rvalue { $$ = operator($1, $2, $3); };

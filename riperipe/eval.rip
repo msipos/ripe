@@ -20,6 +20,7 @@ global binary_ops = { '+'              => "op_plus",
                       '-'              => "op_minus",
                       '*'              => "op_star",
                       '/'              => "op_slash",
+                      '^'              => "op_exp",
                       Ast.K_AND        => "op_and",
                       Ast.K_OR         => "op_or",
                       Ast.K_IN         => "op_in",
@@ -265,14 +266,16 @@ eval_expr(expr)
                                       ))
   if expr.size == 2
     if expr.type in binary_ops
-      e1 = eval_expr(expr[1])
-      e2 = eval_expr(expr[2])
+      t1 = eval_expr(expr[1])
+      t2 = eval_expr(expr[2])
 
-      return tuple("Value", "%a(%a,%a)".f(
-                                          binary_ops[expr.type],
-                                          eval_v_expr(expr[1]),
-                                          eval_v_expr(expr[2])
-                                         ))
+      k1, e1 = t1
+      k2, e2 = t2
+
+      v1 = value_barrier(t1)
+      v2 = value_barrier(t2)
+
+      return tuple("Value", "%a(%a,%a)".f(binary_ops[expr.type], v1, v2))
 
   switch expr.type
     case Ast.K_TRUE
