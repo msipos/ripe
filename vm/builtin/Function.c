@@ -18,9 +18,7 @@
 Klass* klass_func;
 
 void init1_Function(){
-  klass_func = klass_new(dsym_get("Function"), 
-                         dsym_get("Object"),
-                         KLASS_CDATA_OBJECT,
+  klass_func = klass_new(dsym_get("Function"),
                          sizeof(Func));
 }
 

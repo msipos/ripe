@@ -35,7 +35,7 @@ void klass_dump()
 }
 
 // Create Klass structure and add it to the dictionary.
-Klass* klass_new(Value name, Value parent, KlassType type, int cdata_size)
+Klass* klass_new(Value name, int cdata_size)
 {
   if (dict_query(&dsym_to_klass, &name, NULL)){
     fprintf(stderr, "error: class '%s' initialized twice\n",
@@ -45,7 +45,6 @@ Klass* klass_new(Value name, Value parent, KlassType type, int cdata_size)
 
   Klass* klass = mem_new(Klass);
   klass->name = name;
-  klass->type = type;
   klass->cdata_size = cdata_size;
   // This preliminary calculation of obj_size is necessary because of Function
   // klass.
@@ -114,7 +113,6 @@ void klass_init_phase15()
   // put in all the methods, fields and cdata of the parent,
   // put in all your own methods, fields and cdata,
   // verify that only one cdata is defined by someone in the hierarchy.
-  // TODO: Handle parents
   for (int i = 0; i < klasses.size; i++){
     Klass* klass = array_get(&klasses, Klass*, i);
     if (klass->cdata_size > 0 and klass->num_fields > 0){

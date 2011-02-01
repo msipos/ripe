@@ -441,14 +441,13 @@ gen_class(Ast.Node node)
 
   # Get these two dynamic symbols first, because we will be writing to init1
   # as well.
-  dsym_parent = Dsym.get("Object")
   dsym_class = Dsym.get(ctx_class_name)
 
   # Now, write out class initialization.
   switch ctx_class_type
     case &VIRTUAL
-      init1.print("  %a = klass_new(%a, %a, KLASS_VIRTUAL_OBJECT, 0);\n".f(
-                  ctx_class_c_name, dsym_class, dsym_parent))
+      init1.print("  %a = klass_new(%a, 0);\n".f(
+                  ctx_class_c_name, dsym_class))
     case &CDATA
       ctx_class_typedef = "_KlassCData%a_".f(counter()) + Util.to_c(ctx_class_name)
       header.print("typedef struct {\n")
@@ -456,12 +455,12 @@ gen_class(Ast.Node node)
         if n.type == Ast.C_CODE
           header.print(n.text[2:(-2)])
       header.print("} %a;\n".f(ctx_class_typedef))
-      init1.print("  %a = klass_new(%a, %a, KLASS_CDATA_OBJECT, sizeof(%a));\n".f(
-                  ctx_class_c_name, dsym_class, dsym_parent, ctx_class_typedef))
+      init1.print("  %a = klass_new(%a, sizeof(%a));\n".f(
+                  ctx_class_c_name, dsym_class, ctx_class_typedef))
     case &FIELD
       ctx_class_typedef = "Value"
-      init1.print("  %a = klass_new(%a, %a, KLASS_FIELD_OBJECT, 0);\n".f(
-                  ctx_class_c_name, dsym_class, dsym_parent))
+      init1.print("  %a = klass_new(%a, 0);\n".f(
+                  ctx_class_c_name, dsym_class))
 
       # Now iterate over the class AST to find all fields, and initialize them.
       for n in ast

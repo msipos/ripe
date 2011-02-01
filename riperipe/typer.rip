@@ -13,47 +13,33 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Typedb stores type information during the course of the compilation.
-# It is a Map that maps string (name of the typed item) to an array.
-# The array contains information about each item that has that name.
-#
-#  typedb [name]  ->  [
-#                       [ token, type, [stuff] ],
-#                       [ token, type, [stuff] ],
-#                       ...
-#                     ]
-global typedb = Map.new()
-
+# typedb is a map of this form:
+#   typedb["functions"] = {  "function1" => func_signature,
+#                            "Class.function" => func_signature, ... }
+#   typedb["classes"] =
+#     {
+#       "Class"
+#         => { "parent" => "ClassName2",
+#              "methods" => [ "function", ... ] },
+#       ...
+#     }
+global typedb = { "functions" => Map.new(),
+                  "classes" => Map.new() }
 global access_token = nil
 
 namespace Typer
   set_access_token(token)
     access_token = token
 
-  const FUNCTION = 1
-
-  add(name, token, type, item)
-    if not name in typedb
-      typedb[name] = []
-    typedb[name].push( [token, type, item] )
-
-  get(name, type)
-    if not name in typedb
-      raise "'%a' does not exist in type database".f(name)
-    out = []
-    for list in typedb[name]
-      token = list[1]
-      this_type = list[2]
-      item = list[3]
-      if type == this_type
-        if token == nil or token == access_token
-          out.push(item)
-    if out.size == 0
-      raise "'%a' not accessible in type database".f(name)
-    return out
+  get_function(name)
+    if not name in typedb["functions"]
+      raise "function '%a' does not exist in type database".f(name)
+    return typedb["functions"][name]
 
   add_function(name, rv_type, param_types)
-    Typer.add(name, nil, Typer.FUNCTION, [rv_type, param_types])
+    if name in typedb["functions"]
+      raise "duplicate function '%a'".f(name)
+    typedb["functions"][name] = [rv_type, param_types]
 
   absorb_param_info(param_list)
     out = []
@@ -107,10 +93,14 @@ namespace Typer
     text = tf.read_entire()
     tf.close()
     map = Json.parse(text)
-    for k, v in map
-      if k in typedb
-        raise "duplicate key in typedb '%a'".f(k)
-      typedb[k] = v
+    for k, v in map["functions"]
+      if k in typedb["functions"]
+        raise "duplicate function '%a' defined".f(k)
+      typedb["functions"][k] = v
+    for k, v in map["classes"]
+      if k in typedb["classes"]
+        raise "duplicate class '%a' defined".f(k)
+      typedb["classes"][k] = v
 
   dump()
     Out.println(Json.encode(typedb))

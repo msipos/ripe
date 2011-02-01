@@ -47,19 +47,8 @@ extern Value dsym_modulo, dsym_modulo2;
 //////////////////////////////////////////////////////////////////////////////
 // klass.c
 //////////////////////////////////////////////////////////////////////////////
-// Rules are the following: Anything can inherit from a VIRTUAL_OBJECT.
-// VIRTUAL_OBJECT can also inherit anyone. FIELD_OBJECT may inherit another
-// FIELD_OBJECT. No other combinations are allowed.
-typedef enum {
-  KLASS_DIRECT,
-  KLASS_VIRTUAL_OBJECT,
-  KLASS_CDATA_OBJECT,
-  KLASS_FIELD_OBJECT
-} KlassType;
-
-typedef struct {
+struct KlassT {
   Value name;
-  KlassType type;
   Dict methods;
   int num_fields;
   int cdata_size;
@@ -67,7 +56,8 @@ typedef struct {
   Dict writable_fields;
   Dict fields;
   int obj_size;
-} Klass;
+};
+typedef struct KlassT Klass;
 
 //////////////////////////////////////////////////////////////////////////////
 // common.c
@@ -147,7 +137,7 @@ typedef struct {
   Value values[0];
 } Object;
 
-Klass* klass_new(Value name, Value parent, KlassType type, int cdata_size);
+Klass* klass_new(Value name, int cdata_size);
 void klass_new_method(Klass* klass, Value name, Value method);
 
 #define FIELD_READABLE 1

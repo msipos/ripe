@@ -101,7 +101,7 @@ eval_index(Ast.Node node_self, index_args)
   return eval_obj_call(node_self, "index", index_args)
 
 eval_static_call(ssym, arg_list)
-  tr = Typer.get(ssym, Typer.FUNCTION)[1]
+  tr = Typer.get_function(ssym)
   #rv_type = tr[1]
   param_types = tr[2]
 

@@ -208,15 +208,15 @@ bootstrap_srcs.append('riperipe/bootstrap.o')
 
 ##############################################################################
 # BOOTSTRAP
-def bootstrap(newripe, oldripe):
-    if tools.depends(newripe, [oldripe]):
+def bootstrap(newripe, oldripe, depends):
+    if tools.depends(newripe, [oldripe] + depends):
         tools.pprint('RIP', 'riperipe/*.rip', newripe)
         tools.call([conf["VALGRIND"], oldripe,
                    '-s', '-o', newripe, bootstrap_srcs])
 
-bootstrap('bin/ripe2', 'bin/ripeboot')
-bootstrap('bin/ripe3', 'bin/ripe2')
-bootstrap('product/ripe', 'bin/ripe3')
+bootstrap('bin/ripe2', 'bin/ripeboot', bootstrap_srcs)
+bootstrap('bin/ripe3', 'bin/ripe2', [])
+bootstrap('product/ripe', 'bin/ripe3', [])
 conf['RIPE'] = 'product/ripe'
 
 ##############################################################################
@@ -263,6 +263,10 @@ def build_module(module, required):
         tools.pprint('MOD', src, out)
         args = ['product/ripe', '-n', module,
                 '-c', srcs, src, extra_objs, '-o', out]
+        # Required (default) packages have already been typed, and are
+        # loaded by default.  Hence, they do not need to be typed.
+        if required:
+          args.append('--omit-typing')
         if conf["VERBOSITY"] > 1:
             args.append('-v')
         if required:

@@ -1004,17 +1004,16 @@ static void gen_class(Node* klass)
       }
       sbuf_printf(sb_header, "} %s;\n", context_class_typedef);
       // TODO: Class parents
-      sbuf_printf(sb_init1, "  %s = klass_new(dsym_get(\"%s\"), "
-                             "dsym_get(\"%s\"), KLASS_CDATA_OBJECT, sizeof(%s));\n",
-                  context_class_c_name, context_class_name, "Object",
+      sbuf_printf(sb_init1, "  %s = klass_new(dsym_get(\"%s\"), sizeof(%s));\n",
+                  context_class_c_name,
+                  context_class_name,
                   context_class_typedef);
       break;
     case CLASS_FIELD_OBJECT:
       // _c_data is of the type Value* for field objects
       context_class_typedef = "Value";
-      sbuf_printf(sb_init1, "  %s = klass_new(dsym_get(\"%s\"), "
-                             "dsym_get(\"%s\"), KLASS_FIELD_OBJECT, 0);\n",
-                  context_class_c_name, context_class_name, "Object");
+      sbuf_printf(sb_init1, "  %s = klass_new(dsym_get(\"%s\"), 0);\n",
+                  context_class_c_name, context_class_name);
 
       for (int i = 0; i < ast->children.size; i++){
         Node* n = node_get_child(ast, i);
@@ -1045,9 +1044,8 @@ static void gen_class(Node* klass)
       break;
     case CLASS_VIRTUAL_OBJECT:
       context_class_typedef = NULL;
-      sbuf_printf(sb_init1, "  %s = klass_new(dsym_get(\"%s\"), "
-                             "dsym_get(\"%s\"), KLASS_VIRTUAL_OBJECT, 0);\n",
-                  context_class_c_name, context_class_name, "Object");
+      sbuf_printf(sb_init1, "  %s = klass_new(dsym_get(\"%s\"), 0);\n",
+                  context_class_c_name, context_class_name);
   }
 
   // Generate all the methods and constructors
