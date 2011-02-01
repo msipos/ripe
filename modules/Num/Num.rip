@@ -5,6 +5,9 @@ namespace Num
   class Array1
     $ NumArray1 a; $
 
+    virtual_get size()
+      return $ int64_to_val(@a.size) $
+
     constructor zeros(Integer sz, Integer type)
       if sz < 1
         raise "Invalid size in Num.Array1.zeros(sz=%a)".f(sz)
