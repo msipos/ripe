@@ -58,6 +58,59 @@ namespace Num
             assert_never();
         }$
 
+    # A[x] <- A[x+delta]
+    rotate(Integer delta)
+      $ const int64 size = @a.size;
+        const int type = @a.type;
+        int64 delta = unpack_int64(__delta);
+        double *data = @a.data_double;
+
+        while (delta < 0) delta += size;
+        while (delta >= size) delta -= size;
+        if (delta == 0) return VALUE_NIL;
+
+        if (delta < size / 2){
+          switch (type){
+            case NUM_DOUBLE:
+              {
+                double temp[delta];
+                for (int64 i = 0; i < delta; i++){
+                  temp[i] = data[i];
+                  data[i] = data[i+delta];
+                }
+                for (int64 i = delta; i < size - delta; i++){
+                  data[i] = data[i+delta];
+                }
+                for (int64 i = 0; i < delta; i++){
+                  data[size - delta + i] = temp[i];
+                }
+              }
+            default:
+              assert_never();
+          }
+        } else {
+          delta = delta - size;
+          delta = -delta;
+          switch (type){
+            case NUM_DOUBLE:
+              {
+                double temp[delta];
+                for (int64 i = delta; i >= 0; i--){
+                  temp[i] = data[size - delta + i];
+                  data[size - delta + i] = data[size - 2*delta + i];
+                }
+                for (int64 i = size - delta - 1; i >= delta; i--){
+                  data[i] = data[i-delta];
+                }
+                for (int64 i = 0; i < delta; i++){
+                  data[i] = temp[i];
+                }
+              }
+            default:
+              assert_never();
+          }
+        } $
+
   class Array2
     $ NumArray2 a; $
 
