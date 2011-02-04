@@ -25,6 +25,20 @@ namespace DataFormat
               else
                 arr[x,y] = Integer(text)
           map[name] = arr
+        case "Num.Array2"
+          type = Integer(tf.read_line().strip())
+          nx = Integer(tf.read_line().strip())
+          ny = Integer(tf.read_line().strip())
+
+          arr = Num.Array2.zeros(nx, ny, type)
+          for x in 1:nx
+            for y in 1:ny
+              text = tf.read_line().strip()
+              if text.find(".") != nil
+                arr[x,y] = Double(text)
+              else
+                arr[x,y] = Integer(text)
+          map[name] = arr
 
   save(filename, map)
     tf = TextFile.new(filename, TextFile.Write)
@@ -49,3 +63,17 @@ namespace DataFormat
         for x in 1:nx
           for y in 1:ny
             tf.println(v[x,y].to_string())
+
+      if v is Num.Array2
+        tf.println("Num.Array2")
+        tf.println(v.type.to_string())
+        nx = v.size_x
+        ny = v.size_y
+
+        tf.println(nx.to_string())
+        tf.println(ny.to_string())
+
+        for x in 1:nx
+          for y in 1:ny
+            tf.println(v[x,y].to_string())
+    tf.close()

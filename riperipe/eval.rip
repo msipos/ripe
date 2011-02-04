@@ -59,6 +59,8 @@ eval_v_expr(node)
 eval_expr_as_id(Ast.Node expr)
   switch expr.type
     case Ast.ID
+      if locals_query(expr.text) != nil
+        return nil
       return expr.text
     case Ast.EXPR_FIELD
       parent = expr[1]

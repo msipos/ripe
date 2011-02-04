@@ -370,6 +370,7 @@ int64 val_to_int64_soft(Value v);
 
 #define NUM_DOUBLE   1
 #define NUM_COMPLEX  2
+#define NUM_INT      3
 
 typedef struct {
   uint64 size;
@@ -377,6 +378,7 @@ typedef struct {
     void* data;
     double* data_double;
     double complex* data_complex;
+    int64* data_int64;
   };
   int type;
 } NumArray1;
@@ -388,6 +390,7 @@ typedef struct {
     void* data;
     double* data_double;
     double complex* data_complex;
+    int64* data_int64;
   };
   int type;
 } NumArray2;

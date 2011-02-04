@@ -1,6 +1,11 @@
 namespace Num
   const DOUBLE = $ int64_to_val(NUM_DOUBLE) $
+  const INTEGER = $ int64_to_val(NUM_INT) $
   const COMPLEX = $ int64_to_val(NUM_COMPLEX) $
+
+  check_type(type)
+      if type != Num.COMPLEX and type != Num.DOUBLE and type != Num.INTEGER
+        raise "Invalid Num type: %a".f(type)
 
   class Array1
     $ NumArray1 a; $
@@ -11,8 +16,7 @@ namespace Num
     constructor zeros(Integer sz, Integer type)
       if sz < 1
         raise "Invalid size in Num.Array1.zeros(sz=%a)".f(sz)
-      if type != Num.COMPLEX and type != Num.DOUBLE
-        raise "Invalid type in Num.Array1.zeros (type=%a)".f(type)
+      Num.check_type(type)
 
       $ uint64 size = unpack_int64(__sz);
         int type = unpack_int64(__type);
@@ -117,9 +121,7 @@ namespace Num
     constructor zeros(Integer x, Integer y, Integer type)
       if x < 1 or y < 1
         raise "Invalid size in Num.Array2.zeros (%ax%a)".f(x, y)
-
-      if type != Num.COMPLEX and type != Num.DOUBLE
-        raise "Invalid type in Num.Array2.zeros (type=%a)".f(type)
+      Num.check_type(type)
 
       $ uint64 size_x = unpack_int64(__x);
         uint64 size_y = unpack_int64(__y);
@@ -130,6 +132,7 @@ namespace Num
 
         uint64 el_size = sizeof(double);
         if (type == NUM_COMPLEX) el_size = sizeof(double complex);
+        if (type == NUM_INT) el_size = sizeof(int64);
 
         @a.data = mem_calloc_atomic(total_size * el_size); $
 
@@ -148,6 +151,8 @@ namespace Num
         switch(@a.type){
           case NUM_DOUBLE:
             return double_to_val(@a.data_double[idx]);
+          case NUM_INT:
+            return int64_to_val(@a.data_int64[idx]);
           case NUM_COMPLEX:
           default:
             assert_never();
@@ -168,6 +173,8 @@ namespace Num
         switch(@a.type){
           case NUM_DOUBLE:
             @a.data_double[idx] = val_to_double(__v);
+          case NUM_INT:
+            @a.data_int64[idx] = val_to_int64(__v);
           case NUM_COMPLEX:
           default:
             assert_never();
@@ -178,3 +185,6 @@ namespace Num
 
     virtual_get size_y()
       return $ int64_to_val(@a.size_y) $
+
+    virtual_get type()
+      return $ int64_to_val(@a.type) $
