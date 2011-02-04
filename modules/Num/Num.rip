@@ -2,9 +2,11 @@ namespace Num
   const DOUBLE = $ int64_to_val(NUM_DOUBLE) $
   const INTEGER = $ int64_to_val(NUM_INT) $
   const COMPLEX = $ int64_to_val(NUM_COMPLEX) $
+  const INTEGER8 = $ int64_to_val(NUM_INT8) $
 
   check_type(type)
-      if type != Num.COMPLEX and type != Num.DOUBLE and type != Num.INTEGER
+      if (type != Num.COMPLEX and type != Num.DOUBLE
+        and type != Num.INTEGER and type != Num.INTEGER8)
         raise "Invalid Num type: %a".f(type)
 
   class Array1
@@ -133,6 +135,7 @@ namespace Num
         uint64 el_size = sizeof(double);
         if (type == NUM_COMPLEX) el_size = sizeof(double complex);
         if (type == NUM_INT) el_size = sizeof(int64);
+        if (type == NUM_INT8) el_size = sizeof(int8);
 
         @a.data = mem_calloc_atomic(total_size * el_size); $
 
@@ -153,6 +156,8 @@ namespace Num
             return double_to_val(@a.data_double[idx]);
           case NUM_INT:
             return int64_to_val(@a.data_int64[idx]);
+          case NUM_INT8:
+            return int64_to_val(@a.data_int8[idx]);
           case NUM_COMPLEX:
           default:
             assert_never();
@@ -175,6 +180,8 @@ namespace Num
             @a.data_double[idx] = val_to_double(__v);
           case NUM_INT:
             @a.data_int64[idx] = val_to_int64(__v);
+          case NUM_INT8:
+            @a.data_int8[idx] = (int8) val_to_int64(__v);
           case NUM_COMPLEX:
           default:
             assert_never();
