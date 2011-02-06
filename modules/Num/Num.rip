@@ -45,7 +45,7 @@ namespace Num
           case NUM_COMPLEX:
           default:
             assert_never();
-        }$
+        } $
 
     index_set(Integer x, v)
       $ int64 x = unpack_int64(__x);
@@ -62,7 +62,7 @@ namespace Num
           case NUM_COMPLEX:
           default:
             assert_never();
-        }$
+        } $
 
     # A[x] <- A[x+delta]
     rotate(Integer delta)

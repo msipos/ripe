@@ -21,27 +21,30 @@ namespace Sci
 
       return tuple(bins_x, bins)
 
-  lin_fit(X, Y)
-    n = X.get_size()
-    xbar = 0.0
-    ybar = 0.0
-    sxx = 0.0
-    syy = 0.0
-    sxy = 0.0
-    for i in 1:n
-      xbar = xbar + X[i]
-      ybar = ybar + Y[i]
-      sxx = sxx + X[i] * X[i]
-      syy = syy + Y[i] * Y[i]
-      sxy = sxy + X[i] * Y[i]
-    xbar = xbar / n
-    ybar = ybar / n
-    ssxx = sxx - n * xbar * xbar
-    #ssyy = syy - n * ybar * ybar
-    ssxy = sxy - n * xbar * ybar
-    slope = ssxy / ssxx
-    intercept = ybar - slope*xbar
-    return [intercept, slope]
+  namespace Fit
+    linear(X, Y)
+      n = X.size
+      if n != Y.size
+        raise "size of X and Y must be the same in Sci.Fit.linear()"
+      xbar = 0.0
+      ybar = 0.0
+      sxx = 0.0
+      syy = 0.0
+      sxy = 0.0
+      for i in 1:n
+        xbar = xbar + X[i]
+        ybar = ybar + Y[i]
+        sxx = sxx + X[i] * X[i]
+        syy = syy + Y[i] * Y[i]
+        sxy = sxy + X[i] * Y[i]
+      xbar = xbar / n
+      ybar = ybar / n
+      ssxx = sxx - n * xbar * xbar
+      #ssyy = syy - n * ybar * ybar
+      ssxy = sxy - n * xbar * ybar
+      slope = ssxy / ssxx
+      intercept = ybar - slope*xbar
+      return [intercept, slope]
 
   mean(X)
     n = 0
