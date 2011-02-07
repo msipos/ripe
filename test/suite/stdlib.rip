@@ -249,6 +249,26 @@ Time()
   t3 = Time.get_current()
   Test.test("Time.sleep()", t3 - t1 >= 1, true)
 
+Num()
+  arr = Num.Array1.zeros(6, Num.DOUBLE)
+  arr[1] = 1.0
+  arr[2] = 2.0
+  arr[3] = 3.0
+  arr[4] = 4.0
+  arr[5] = 5.0
+  arr[6] = 6.0
+
+  name = "Num.Array1.rotate"
+  arr.rotate(2)
+  Test.test(name, arr[5], 1.0)
+  Test.test(name, arr[1], 3.0)
+  Test.test(name, arr[3], 5.0)
+  Test.test(name, arr[2], 4.0)
+  arr.rotate(-2)
+  Test.test(name, arr[5], 5.0)
+  Test.test(name, arr[1], 1.0)
+  Test.test(name, arr[3], 3.0)
+
 main()
   Test.set_verbose(false)
   Map()
@@ -264,6 +284,7 @@ main()
   Os()
   Time()
   Template()
+  Num()
 
   Test.test("Integer.odd?", 7 .odd?(), true)
   Test.test("Integer.odd?", 8 .odd?(), false)

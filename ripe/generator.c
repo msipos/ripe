@@ -240,6 +240,7 @@ static const char* eval_expr_as_id(Node* expr)
 {
   switch(expr->type){
     case ID:
+      if (query_local(expr->text)) return NULL;
       return expr->text;
     case EXPR_FIELD:
       {
