@@ -164,8 +164,8 @@ namespace Sdl
         $ smooth = 1; $
       surf2 = Sdl.Surface.new_uninitialized()
       $ SDL_Surface** dsurf = obj_c_data(__surf2);
-        *dsurf = rotozoomSurface(@surf, val_to_double_soft(__angle),
-                                 val_to_double_soft(__scale), smooth); $
+        *dsurf = rotozoomSurface(@surf, val_to_double(__angle),
+                                 val_to_double(__scale), smooth); $
       return surf2
 
     fill(color)

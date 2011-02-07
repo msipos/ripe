@@ -234,3 +234,10 @@ uint64 format(char* out, char* format_string, uint64 num_values, Value* values)
   if (out) out[sz] = 0;
   return sz + 1;
 }
+
+void format_parse(char* fstr, FormatParse* fp)
+{
+
+
+
+}

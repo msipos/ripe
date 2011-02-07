@@ -250,6 +250,12 @@ typedef struct {
 } Format;
 
 typedef struct {
+  int size;
+  int* types;
+  char** strs;
+} FormatParse;
+
+typedef struct {
   int64 a;
   int64 b;
   int type;
