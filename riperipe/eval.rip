@@ -16,36 +16,47 @@
 global unary_ops =  { '-'              => "op_unary_minus",
                       Ast.K_NOT        => "op_unary_not",
                       Ast.K_BIT_NOT    => "op_unary_bit_not" }
-global binary_ops = { '+'              => "op_plus",
-                      '-'              => "op_minus",
-                      '*'              => "op_star",
-                      '/'              => "op_slash",
-                      '^'              => "op_exp",
-                      Ast.K_AND        => "op_and",
-                      Ast.K_OR         => "op_or",
-                      Ast.K_IN         => "op_in",
-                      Ast.K_BIT_AND    => "op_bit_and",
-                      Ast.K_BIT_OR     => "op_bit_or",
-                      Ast.K_BIT_XOR    => "op_bit_xor",
-                      Ast.K_MODULO     => "op_modulo",
-                      Ast.OP_EQUAL     => "op_equal",
-                      Ast.OP_NOT_EQUAL => "op_not_equal",
-                      '>'              => "op_gt",
-                      '<'              => "op_lt",
-                      Ast.OP_LTE       => "op_lte",
-                      Ast.OP_GTE       => "op_gte" }
+
+# When to optimize out the binary operator?
+const NEVER = 0
+# For NUMERIC, the behaviour is the following:
+#   int64, int64  => int64
+#   int64, double => double
+#  double, double => double
+# Integer, Double => double
+# Integer, double => double
+# ...
+const NUMERIC = 1
+
+global binary_ops = { '+'              => ["op_plus", NUMERIC, "+"],
+                      '-'              => ["op_minus", NUMERIC, "-"],
+                      '*'              => ["op_star", NUMERIC, "*"],
+                      '/'              => ["op_slash", NUMERIC, "/"],
+                      '^'              => ["op_exp", NEVER, nil],
+                      Ast.K_AND        => ["op_and", NEVER, nil],
+                      Ast.K_OR         => ["op_or", NEVER, nil],
+                      Ast.K_IN         => ["op_in", NEVER, nil],
+                      Ast.K_BIT_AND    => ["op_bit_and", NEVER, nil],
+                      Ast.K_BIT_OR     => ["op_bit_or", NEVER, nil],
+                      Ast.K_BIT_XOR    => ["op_bit_xor", NEVER, nil],
+                      Ast.K_MODULO     => ["op_modulo", NEVER, nil],
+                      Ast.OP_EQUAL     => ["op_equal", NEVER, nil],
+                      Ast.OP_NOT_EQUAL => ["op_not_equal", NEVER, nil],
+                      '>'              => ["op_gt", NEVER, nil],
+                      '<'              => ["op_lt", NEVER, nil],
+                      Ast.OP_LTE       => ["op_lte", NEVER, nil],
+                      Ast.OP_GTE       => ["op_gte", NEVER, nil] }
 
 value_barrier(Tuple t)
   switch t[1]
-    case "Value"
-      return t[2]
     case "int64"
       return "int64_to_val(%a)".f(t[2])
     case "double"
       return "double_to_val(%a)".f(t[2])
     case "bool"
       return "pack_bool(%a)".f(t[2])
-  raise "invalid expression type"
+  # For anything else (including nil), return itself
+  return t[2]
 
 eval_type(node)
   if node.num_children == 1
@@ -86,11 +97,19 @@ eval_expr_list(expr_list, first_comma)
   return txt
 
 eval_obj_call(Ast.Node obj, String method_name, args)
-  return "method_call%a(%a, %a %a)".f(
-                      args.size,
-                      eval_v_expr(obj),
-                      Dsym.get(method_name),
-                      eval_expr_list(args, true) )
+  t, e_obj = eval_expr(obj)
+  if t == nil or t == "int64" or t == "bool" or t == "double" or not is_optims?()
+    return "method_call%a(%a, %a %a)".f(
+                        args.size,
+                        eval_v_expr(obj),
+                        Dsym.get(method_name),
+                        eval_expr_list(args, true) )
+  else
+    new_args = Ast.Node.new_typed(Ast.EXPR_LIST)
+    new_args.add_child(obj)
+    for arg in args
+      new_args.add_child(arg)
+    return eval_static_call("%a.%a".f(t, method_name), new_args)
 
 eval_index_set(Ast.Node node_self, index_args, Ast.Node assign)
   args = []
@@ -151,12 +170,6 @@ eval_expr_Value(expr)
       return "VALUE_NIL"
     case Ast.K_EOF
       return "VALUE_EOF"
-    case Ast.ID
-      local_var = locals_query(expr.text)
-      if local_var == nil
-        return Ssym.get(expr.text)
-      else
-        return local_var.c_name
     case Ast.SYMBOL
       return Dsym.get(expr.text[2:])
     case Ast.STRING
@@ -259,10 +272,38 @@ eval_expr_Value(expr)
 
   return ""
 
+numeric_proc(t, e)
+  switch t
+    case "int64"
+      return e
+    case "Integer"
+      return "val_to_int64(%a)".f(e)
+    case "double"
+      return e
+    case "Double"
+      return "val_to_double(%a)".f(e)
+  raise "Assertion error! This line should not be reached"
+
+numeric_op(tuple1, tuple2, op)
+  t1, e1 = tuple1
+  t2, e2 = tuple2
+
+  numeric_types = ["int64", "double", "Integer", "Double"]
+  double_types = ["double", "Double"]
+  if not ((t1 in numeric_types) and (t2 in numeric_types))
+    return nil
+
+  proc1 = numeric_proc(t1, e1)
+  proc2 = numeric_proc(t2, e2)
+  result_t = "int64"
+  if (t1 in double_types) or (t2 in double_types)
+    result_t = "double"
+  return tuple(result_t, "(%a %a %a)".f(proc1, op[3], proc2))
+
 eval_expr(expr)
   if expr.size == 1
     if expr.type in unary_ops
-      return tuple("Value", "%a(%a)".f(
+      return tuple(nil, "%a(%a)".f(
                                         unary_ops[expr.type],
                                         eval_v_expr(expr[1])
                                       ))
@@ -270,14 +311,21 @@ eval_expr(expr)
     if expr.type in binary_ops
       t1 = eval_expr(expr[1])
       t2 = eval_expr(expr[2])
-
-      k1, e1 = t1
-      k2, e2 = t2
-
       v1 = value_barrier(t1)
       v2 = value_barrier(t2)
 
-      return tuple("Value", "%a(%a,%a)".f(binary_ops[expr.type], v1, v2))
+      op = binary_ops[expr.type]
+      result = nil
+      if op[2] == NUMERIC
+        result = numeric_op(t1, t2, op)
+
+      if not is_optims?()
+        result = nil
+
+      if result == nil
+        return tuple(nil, "%a(%a,%a)".f(op[1], v1, v2))
+      else
+        return result
 
   switch expr.type
     case Ast.K_TRUE
@@ -295,5 +343,11 @@ eval_expr(expr)
                                   eval_v_expr(expr[1]),
                                   Type.get(eval_type(expr[2]))
                                       ))
+    case Ast.ID
+      local_var = locals_query(expr.text)
+      if local_var == nil
+        return tuple(nil, Ssym.get(expr.text))
+      else
+        return tuple(local_var.type, local_var.c_name)
 
-  return tuple("Value", eval_expr_Value(expr))
+  return tuple(nil, eval_expr_Value(expr))

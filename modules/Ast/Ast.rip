@@ -95,6 +95,9 @@ namespace Ast
     constructor new()
       $ @n = NULL; $
 
+    constructor new_typed(type)
+      $ @n = node_new(val_to_int64(__type)); $
+
     constructor new_id(text)
       $ @n = node_new(ID); $
       self.text = text

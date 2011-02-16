@@ -181,13 +181,12 @@ gen_stmt_assign2(lvalue, rvalue)
     case Ast.EXPR_TYPED_ID
       ripe_name = lvalue.get_string("name")
       var = locals_query(ripe_name)
-      if var == nil
-        c_name = "__%a".f(Util.to_c(ripe_name))
-        type = nil
-        code.print("  Value %a = %a;\n".f(c_name, right))
-        locals_add(c_name, ripe_name, type)
-      else
-        code.print("  %a = %a;\n".f(var.c_name, right))
+      if var != nil
+        raise "redefining a variable '%a'".f(ripe_name)
+      c_name = "__%a".f(Util.to_c(ripe_name))
+      type = eval_type(lvalue[1])
+      code.print("  Value %a = %a;\n".f(c_name, right))
+      locals_add(c_name, ripe_name, type)
     case Ast.EXPR_INDEX
       code.print("  %a;\n".f(eval_index_set(lvalue[1],
                                             lvalue[2],
