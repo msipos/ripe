@@ -12,3 +12,6 @@ main()
 
   MyClass obj = MyClass.new()
   obj.func()
+
+  for i in 1:10
+    Out.println(i)

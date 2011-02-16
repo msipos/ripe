@@ -25,6 +25,56 @@ Value range_to_val(RangeType type, int64 start, int64 finish)
   return obj;
 }
 
+int64 range_start(Value range)
+{
+  Range* r = val_to_range(range);
+  switch(r->type){
+    case RANGE_BOUNDED:
+    case RANGE_BOUNDED_LEFT:
+      return r->start;
+    case RANGE_BOUNDED_RIGHT:
+      exc_raise("range_start() for a range not bounded on the left");
+    case RANGE_UNBOUNDED:
+      exc_raise("range_start() for an unbounded range");
+  }
+  assert_never();
+  return 0;
+}
+
+int64 range_delta(Value range)
+{
+  Range* r = val_to_range(range);
+  switch(r->type){
+    case RANGE_BOUNDED:
+      if (r->finish >= r->start) return 1;
+      return -1;
+    case RANGE_BOUNDED_LEFT:
+      return 1;
+    case RANGE_BOUNDED_RIGHT:
+      exc_raise("range_delta() for a range not bounded on the left");
+    case RANGE_UNBOUNDED:
+      exc_raise("range_delta() for an unbounded range");
+  }
+  assert_never();
+  return 0;
+}
+
+int64 range_finish(Value range)
+{
+  Range* r = val_to_range(range);
+  switch(r->type){
+    case RANGE_BOUNDED:
+    case RANGE_BOUNDED_RIGHT:
+      return r->finish;
+    case RANGE_BOUNDED_LEFT:
+      return INT64_MAX - 1;
+    case RANGE_UNBOUNDED:
+      exc_raise("range_finish() for an unbounded range");
+  }
+  assert_never();
+  return 0;
+}
+
 Range* val_to_range(Value range)
 {
   obj_verify(range, klass_Range);

@@ -427,6 +427,9 @@ typedef struct {
   RangeType type;
 } Range;
 Value range_to_val(RangeType type, int64 start, int64 finish);
+int64 range_start(Value range);
+int64 range_delta(Value range);
+int64 range_finish(Value range);
 Range* val_to_range(Value range);
 
 //////////////////////////////////////////////////////////////////////////////

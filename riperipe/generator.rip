@@ -212,6 +212,72 @@ gen_stmt_assign(left, right)
                        Ast.Node.new_expr_index(id_tmp, [Ast.Node.new_int(index)]))
       index = index + 1
 
+gen_stmt_for(lvalue_list, expr, block)
+  # Define break and continue labels (will need this in any case)
+  break_label = "_brk_lbl%a".f(counter())
+  continue_label = "_cnt_lbl%a".f(counter())
+
+  # Check if expr is a Range object and lvalue_list has 1 element
+  if is_optims?() and lvalue_list.num_children == 1
+    t, e = eval_expr(expr)
+    if t == "Range"
+      # We can optimize by making an integer loop!
+      text_range = "_range%a".f(counter())
+      text_i = "_i%a".f(counter())
+      text_delta = "_delta%a".f(counter())
+      text_finish = "_finish%a".f(counter())
+
+      code.print("  {\n")
+      code.print("  Value %a = %a;\n".f(text_range, e))
+      code.print("  int64 %a = range_start(%a);\n".f(text_i, text_range))
+      code.print("  const int64 %a = range_delta(%a);\n".f(text_delta, text_range))
+      code.print("  const int64 %a = range_finish(%a) + %a;\n".f(text_finish,
+                                                                 text_range,
+                                                                 text_delta))
+      code.print("  for(;;){\n")
+      code.print("  if (%a == %a) break;\n".f(text_i, text_finish))
+      locals_push()
+      stack.push(tuple(break_label, continue_label))
+
+      # Assign to the variable
+      lvalue = lvalue_list[1]
+      rvalue = Ast.Node.new_typed(Ast.C_CODE)
+      rvalue.text = "$int64_to_val(%a)$".f(text_i)
+      gen_stmt_assign2(lvalue, rvalue)
+      gen_block(block)
+
+      stack.pop()
+      locals_pop()
+      code.print("%a:;\n".f(continue_label))
+      code.print("  %a += %a;\n".f(text_i, text_delta))
+      code.print("  }}\n")
+      code.print("%a:;\n".f(break_label))
+
+      return
+  # Otherwise, write the unoptimized loop
+
+  # Write the code to get the iterator object.
+  id_iterator = Ast.Node.new_id("_iterator%a".f(counter()))
+  gen_stmt_assign2(id_iterator, Ast.Node.new_field_call(expr, "get_iter"))
+
+  # Construct the AST to call iter() once
+  iter_call = Ast.Node.new_field_call(id_iterator, "iter")
+
+  # Write out the loop
+  code.print("  for(;;){\n")
+  code.print("%a:;\n".f(continue_label))
+  id_temp = Ast.Node.new_id("_iterator_temp%a".f(counter()))
+  locals_push()
+  gen_stmt_assign2(id_temp, iter_call)
+  code.print("  if (%a == VALUE_EOF) break;\n".f(eval_v_expr(id_temp)))
+  gen_stmt_assign(lvalue_list, id_temp)
+  stack.push(tuple(break_label, continue_label))
+  gen_block(block)
+  stack.pop()
+  locals_pop()
+  code.print("  }\n")
+  code.print("%a:;\n".f(break_label))
+
 gen_stmt(stmt)
   switch stmt.type
     case Ast.STMT_EXPR
@@ -258,36 +324,7 @@ gen_stmt(stmt)
     case Ast.STMT_ASSIGN
       gen_stmt_assign(stmt[1], stmt[2])
     case Ast.STMT_FOR
-      lvalue_list = stmt[1]
-      expr = stmt[2]
-      block = stmt[3]
-
-      # Write the code to get the iterator object.
-      id_iterator = Ast.Node.new_id("_iterator%a".f(counter()))
-      gen_stmt_assign2(id_iterator, Ast.Node.new_field_call(expr, "get_iter"))
-
-      # Construct the AST to call iter() once
-      iter_call = Ast.Node.new_field_call(id_iterator, "iter")
-
-      # Define break and continue labels
-      break_label = "_brk_lbl%a".f(counter())
-      continue_label = "_cnt_lbl%a".f(counter())
-
-      # Write out the loop
-      code.print("  for(;;){\n")
-      code.print("%a:;\n".f(continue_label))
-      id_temp = Ast.Node.new_id("_iterator_temp%a".f(counter()))
-      locals_push()
-      gen_stmt_assign2(id_temp, iter_call)
-      code.print("  if (%a == VALUE_EOF) break;\n".f(eval_v_expr(id_temp)))
-      gen_stmt_assign(lvalue_list, id_temp)
-      stack.push(tuple(break_label, continue_label))
-      gen_block(block)
-      stack.pop()
-      locals_pop()
-      code.print("  }\n")
-      code.print("%a:;\n".f(break_label))
-
+      gen_stmt_for(stmt[1], stmt[2], stmt[3])
     case Ast.STMT_PASS
       code.print("  ;")
     case Ast.STMT_RAISE

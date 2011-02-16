@@ -27,6 +27,8 @@ const NEVER = 0
 # Integer, double => double
 # ...
 const NUMERIC = 1
+# Like NUMERIC, except the result is always a bool
+const BOOL_NUMERIC = 2
 
 global binary_ops = { '+'              => ["op_plus", NUMERIC, "+"],
                       '-'              => ["op_minus", NUMERIC, "-"],
@@ -42,10 +44,10 @@ global binary_ops = { '+'              => ["op_plus", NUMERIC, "+"],
                       Ast.K_MODULO     => ["op_modulo", NEVER, nil],
                       Ast.OP_EQUAL     => ["op_equal", NEVER, nil],
                       Ast.OP_NOT_EQUAL => ["op_not_equal", NEVER, nil],
-                      '>'              => ["op_gt", NEVER, nil],
-                      '<'              => ["op_lt", NEVER, nil],
-                      Ast.OP_LTE       => ["op_lte", NEVER, nil],
-                      Ast.OP_GTE       => ["op_gte", NEVER, nil] }
+                      '>'              => ["op_gt", BOOL_NUMERIC, ">"],
+                      '<'              => ["op_lt", BOOL_NUMERIC, "<"],
+                      Ast.OP_LTE       => ["op_lte", BOOL_NUMERIC, "<="],
+                      Ast.OP_GTE       => ["op_gte", BOOL_NUMERIC, ">="] }
 
 value_barrier(Tuple t)
   switch t[1]
@@ -223,24 +225,6 @@ eval_expr_Value(expr)
         return "tuple_to_val(%a%a)".f(arg_list.num_children,
                                       eval_expr_list(arg_list, true))
       return eval_static_call(left_id, arg_list)
-    case Ast.EXPR_RANGE_BOUNDED
-      left = expr[1]
-      right = expr[2]
-      return ("range_to_val(RANGE_BOUNDED, "
-              "val_to_int64(%a), val_to_int64(%a))".f(
-                                          eval_v_expr(left),
-                                          eval_v_expr(right)
-                                                     ) )
-    case Ast.EXPR_RANGE_BOUNDED_LEFT
-      left = expr[1]
-      return ("range_to_val(RANGE_BOUNDED_LEFT, "
-              "val_to_int64(%a), 0)".f(eval_v_expr(left)))
-    case Ast.EXPR_RANGE_BOUNDED_RIGHT
-      right = expr[1]
-      return ("range_to_val(RANGE_BOUNDED_RIGHT, "
-              "0, val_to_int64(%a))".f(eval_v_expr(right)))
-    case Ast.EXPR_RANGE_UNBOUNDED
-      return "range_to_val(RANGE_UNBOUNDED, 0, 0)"
     case Ast.EXPR_FIELD
       left = expr[1]
       field = expr.get_string("name")
@@ -300,6 +284,18 @@ numeric_op(tuple1, tuple2, op)
     result_t = "double"
   return tuple(result_t, "(%a %a %a)".f(proc1, op[3], proc2))
 
+bool_numeric_op(tuple1, tuple2, op)
+  t1, e1 = tuple1
+  t2, e2 = tuple2
+
+  numeric_types = ["int64", "double", "Integer", "Double"]
+  if not ((t1 in numeric_types) and (t2 in numeric_types))
+    return nil
+
+  proc1 = numeric_proc(t1, e1)
+  proc2 = numeric_proc(t2, e2)
+  return tuple("bool", "(%a %a %a)".f(proc1, op[3], proc2))
+
 eval_expr(expr)
   if expr.size == 1
     if expr.type in unary_ops
@@ -318,6 +314,8 @@ eval_expr(expr)
       result = nil
       if op[2] == NUMERIC
         result = numeric_op(t1, t2, op)
+      if op[2] == BOOL_NUMERIC
+        result = bool_numeric_op(t1, t2, op)
 
       if not is_optims?()
         result = nil
@@ -349,5 +347,25 @@ eval_expr(expr)
         return tuple(nil, Ssym.get(expr.text))
       else
         return tuple(local_var.type, local_var.c_name)
+
+    case Ast.EXPR_RANGE_BOUNDED
+      left = expr[1]
+      right = expr[2]
+      # TODO: These val_to_int64s should be handled better...
+      return tuple("Range", "range_to_val(RANGE_BOUNDED, "
+              "val_to_int64(%a), val_to_int64(%a))".f(
+                                          eval_v_expr(left),
+                                          eval_v_expr(right)
+                                                     ) )
+    case Ast.EXPR_RANGE_BOUNDED_LEFT
+      left = expr[1]
+      return tuple("Range", "range_to_val(RANGE_BOUNDED_LEFT, "
+              "val_to_int64(%a), 0)".f(eval_v_expr(left)))
+    case Ast.EXPR_RANGE_BOUNDED_RIGHT
+      right = expr[1]
+      return tuple("Range", "range_to_val(RANGE_BOUNDED_RIGHT, "
+              "0, val_to_int64(%a))".f(eval_v_expr(right)))
+    case Ast.EXPR_RANGE_UNBOUNDED
+      return tuple("Range", "range_to_val(RANGE_UNBOUNDED, 0, 0)")
 
   return tuple(nil, eval_expr_Value(expr))
