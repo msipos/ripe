@@ -1,0 +1,14 @@
+class MyClass
+  private x
+  constructor new()
+    @x = 5
+
+  func()
+    return @x
+
+main()
+  Integer x = 3 + 4
+  Integer y = x + 7
+
+  MyClass obj = MyClass.new()
+  obj.func()
