@@ -154,8 +154,9 @@ void klass_init();
 void klass_init_phase15();
 void klass_dump();
 
-// Used to initialize KLASS_OBJECT object.
 Value obj_new(Klass* klass, void** data);
+Value obj_new2(Klass* klass);
+
 // Verify an object is of given type.
 static inline Klass* obj_klass(Value v_obj)
 {

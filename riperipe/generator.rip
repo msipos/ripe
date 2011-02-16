@@ -290,7 +290,7 @@ gen_stmt(stmt)
       code.print("%a:;\n".f(break_label))
 
     case Ast.STMT_PASS
-      return
+      code.print("  ;")
     case Ast.STMT_RAISE
       code.print("  exc_raise(val_to_string(%a));".f(
                    eval_v_expr(stmt[1])))
@@ -370,9 +370,12 @@ gen_constructor(Ast.Node ast)
   gen_params(param_list)
   code.print("){\n")
   locals_add("__self", "self", ctx_class_name)
-  code.print("  %a* _c_data;\n".f(ctx_class_typedef))
-  code.print("  Value __self = obj_new(%a, (void**) &_c_data);\n".f(
-             ctx_class_c_name))
+  if ctx_class_type == &CDATA or ctx_class_type == &FIELD
+    code.print("  %a* _c_data;\n".f(ctx_class_typedef))
+    code.print("  Value __self = obj_new(%a, (void**) &_c_data);\n".f(
+               ctx_class_c_name))
+  else
+    code.print("  Value __self = obj_new2(%a);\n".f(ctx_class_c_name))
   gen_block(stmt_list)
   code.print("  return __self;\n")
   code.print("}\n")

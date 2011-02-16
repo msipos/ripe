@@ -138,6 +138,12 @@ Value obj_new(Klass* klass, void** data)
   *((Klass**) obj) = klass;
   return pack_ptr(obj);
 }
+Value obj_new2(Klass* klass)
+{
+  void* obj = mem_malloc(klass->obj_size);
+  *((Klass**) obj) = klass;
+  return pack_ptr(obj);
+}
 
 Value obj_verify_assign(Value v_obj, Klass* klass)
 {
