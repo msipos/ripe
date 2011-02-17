@@ -51,6 +51,16 @@ namespace Bio
       return double_to_val(get_distance(s1, s2));
     $
 
+  dist_strstr(s1, s2)
+    $
+      char* s1 = val_to_string(__s1);
+      char* s2 = val_to_string(__s2);
+      if (strlen(s1) != strlen(s2)){
+        exc_raise("two sequences have different length");
+      }
+      return double_to_val(get_distance(s1, s2));
+    $
+
   class BufferedFile
     private tf
     private line_last
