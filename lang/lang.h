@@ -49,6 +49,9 @@ void node_extend_children(Node* new_parent, Node* old_parent);
 void node_set_string(Node* n, const char* key, const char* value);
 char* node_get_string(Node* n, const char* key);
 bool node_has_string(Node* n, const char* key);
+void node_set_node(Node* n, const char* key, Node* value);
+Node* node_get_node(Node* n, const char* key);
+bool node_has_node(Node* n, const char* key);
 
 void node_draw(Node* ast);
 

@@ -161,11 +161,20 @@ namespace Ast
     set_string(name, val)
       $ node_set_string(@n, val_to_string(__name), val_to_string(__val)); $
 
+    has_node?(name)
+      return $ pack_bool(node_has_node(@n, val_to_string(__name))) $
+
+    get_node(name)
+      if not self.has_node?(name)
+        raise "node does not have node property '%a'".f(name)
+      n = Ast.Node.new()
+      $ *((Node**) obj_c_data(__n)) = node_get_node(@n, val_to_string(__name)); $
+      return n
+
     index(i)
       if i is Integer
         n = Ast.Node.new()
-        $
-          int64 i = util_index("Ast.Node", unpack_int64(__i), @n->children.size);
+        $ int64 i = util_index("Ast.Node", unpack_int64(__i), @n->children.size);
 
           *((Node**) obj_c_data(__n)) = node_get_child(@n, i); $
         return n

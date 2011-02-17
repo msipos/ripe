@@ -24,6 +24,8 @@ Node* node_new(int type)
   array_init( &(node->children), Node*);
   dict_init( &(node->props_strings), sizeof(char*), sizeof(char*),
              dict_hash_string, dict_equal_string );
+  dict_init( &(node->props_nodes), sizeof(char*), sizeof(Node*),
+             dict_hash_string, dict_equal_string );
   return node;
 }
 
@@ -95,6 +97,30 @@ char* node_get_string(Node* n, const char* key)
 bool node_has_string(Node* n, const char* key)
 {
   return dict_query(&(n->props_strings), &key, NULL);
+}
+
+void node_set_node(Node* n, const char* key, Node* value)
+{
+  assert(n != NULL);
+  assert(key != NULL);
+  dict_set( &(n->props_nodes), &key, &value);
+}
+
+Node* node_get_node(Node* n, const char* key)
+{
+  Node* out;
+  #ifdef NDEBUG
+    dict_query(&(n->props_nodes), &key, &out);
+  #else
+    bool rv = dict_query(&(n->props_nodes), &key, &out);
+    assert(rv == true);
+  #endif
+  return out;
+}
+
+bool node_has_node(Node* n, const char* key)
+{
+  return dict_query(&(n->props_nodes), &key, NULL);
 }
 
 static void node_draw_r(Node* ast, int level)

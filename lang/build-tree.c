@@ -23,6 +23,7 @@ jmp_buf jb;
 /////////////////////////////////////////////////////////////////////////////
 RipeInput* input;
 int input_lineno;
+int cur_line1, cur_line2;
 int input_colno;
 
 int input_read(char* buf, int max_size)
@@ -67,7 +68,7 @@ void buf_cat(const char* text)
 // This gets called from bison.
 void rc_error(const char*s)
 {
-  build_tree_error = mem_asprintf("%s:%d: %s", input->filename, input_lineno - 1, s);
+  build_tree_error = mem_asprintf("%s:%d-%d: %s", input->filename, cur_line1, cur_line2, s);
   longjmp(jb, 2);
 }
 
@@ -104,6 +105,7 @@ static Node* lex_read()
   return node_new_token(tok, mem_strdup(token_text), NULL, input_lineno);
 }
 
+
 // Returns non-zero if EOF reached.
 static int lex_read_line()
 {
@@ -113,6 +115,7 @@ static int lex_read_line()
   int counter_s = 0;
   int counter_b = 0;
 
+  cur_line1 = input_lineno;
   for(;;){
     Node* n;
   loop:
@@ -138,11 +141,13 @@ static int lex_read_line()
         break;
       case 0:
         if (raw_line.size == 0) return 1;
+        cur_line2 = input_lineno;
         return 0;
       case '\n':
         if (counter_p > 0 or counter_s > 0 or counter_b > 0){
           goto loop;
         }
+        cur_line2 = input_lineno;
         return 0;
     }
     array_append(&raw_line, n);
