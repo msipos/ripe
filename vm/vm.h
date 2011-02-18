@@ -209,6 +209,16 @@ static inline void* obj_c_data(Value v_obj)
   return &(((Object*) unpack_ptr(v_obj))->values[0]);
 }
 
+static inline void** obj_c_dptr(Value v_obj)
+{
+  return obj_c_data(v_obj);
+}
+
+static inline void* obj_c_ptr(Value v_obj)
+{
+  return *((void**) obj_c_data(v_obj));
+}
+
 Value field_get(Value v_obj, Value field);
 void field_set(Value v_obj, Value field, Value val);
 

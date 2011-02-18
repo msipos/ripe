@@ -1,0 +1,15 @@
+main()
+  db = Sqlite.Db.new("mydb.sqlite")
+
+  stmt = db.prepare("CREATE TABLE files ("
+                      "file_id INTEGER PRIMARY KEY,"
+                      "name TEXT"
+                    ");")
+  Out.println(stmt.step())
+  stmt.finalize()
+
+  stmt = db.prepare("INSERT INTO files (file_id, name) VALUES (NULL, 'hello');")
+  Out.println(stmt.step())
+  stmt.finalize()
+
+  db.close()

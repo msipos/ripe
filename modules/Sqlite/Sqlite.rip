@@ -1,0 +1,47 @@
+$ #include<sqlite3.h> $
+
+namespace Sqlite
+  const DONE = $ int64_to_val(SQLITE_DONE) $
+  const ROW = $ int64_to_val(SQLITE_ROW) $
+
+  class Db
+    $ sqlite3* db; $
+    constructor new(filename)
+      $ const char* filename = val_to_string(__filename);
+        int rv = sqlite3_open(filename, &(@db));
+        if (rv != SQLITE_OK){
+          exc_raise("error opening sqlite3 database '%s': %s",
+                    filename, sqlite3_errmsg(@db));
+        } $
+
+    prepare(str)
+      stmt = Sqlite.Statement.new_empty()
+      $ sqlite3_stmt** stmt = obj_c_dptr(__stmt);
+        const char* str = val_to_string(__str);
+        int rv = sqlite3_prepare_v2(@db, str, -1, stmt, NULL);
+        if (rv != SQLITE_OK){
+          exc_raise("error while preparing statement '%s': %s",
+                    str, sqlite3_errmsg(@db));
+        } $
+      return stmt
+
+    close()
+      $ sqlite3_close(@db); $
+
+  class Statement
+    $ sqlite3_stmt* stmt; $
+
+    constructor new_empty()
+      $ @stmt = NULL; $
+
+    step()
+      $ int rv = sqlite3_step(@stmt);
+        if (rv == SQLITE_ROW or rv == SQLITE_DONE or rv == SQLITE_BUSY){
+          return int64_to_val(rv);
+        } else {
+          exc_raise("error %d while stepping statement: %s", rv,
+                    sqlite3_errmsg(sqlite3_db_handle(@stmt)));
+        } $
+
+    finalize()
+      $ sqlite3_finalize(@stmt); $
