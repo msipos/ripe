@@ -6,10 +6,12 @@ main()
                       "name TEXT"
                     ");")
   Out.println(stmt.step())
+  Out.println(stmt.column_count())
   stmt.finalize()
 
   stmt = db.prepare("INSERT INTO files (file_id, name) VALUES (NULL, 'hello');")
   Out.println(stmt.step())
+  Out.println(stmt.column_count())
   stmt.finalize()
 
   db.close()
