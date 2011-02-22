@@ -258,6 +258,10 @@ main()
   args = Os.get_args()
   parsed, leftover = Opt.parse(args, options)
 
+  if leftover.size == 0
+    Opt.display_help(options)
+    return
+
   outfile = "r.out"
   module_name = "Module"
   mode = &RUN
