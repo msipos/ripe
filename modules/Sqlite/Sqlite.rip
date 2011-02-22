@@ -10,7 +10,7 @@ namespace Sqlite
 
   class Db
     $ sqlite3* db; $
-    constructor new(filename)
+    constructor new(String filename)
       $ const char* filename = val_to_string(__filename);
         int rv = sqlite3_open(filename, &(@db));
         if (rv != SQLITE_OK){
@@ -18,7 +18,7 @@ namespace Sqlite
                     filename, sqlite3_errmsg(@db));
         } $
 
-    prepare(str)
+    prepare(String str)
       stmt = Sqlite.Statement.new_empty()
       $ sqlite3_stmt** stmt = obj_c_dptr(__stmt);
         const char* str = val_to_string(__str);
@@ -28,6 +28,20 @@ namespace Sqlite
                     str, sqlite3_errmsg(@db));
         } $
       return stmt
+
+    check_for_table(String table_name)
+      stmt = self.prepare(
+        "SELECT name FROM sqlite_master "
+        " WHERE type='table'"
+        " AND name=?;"
+      )
+      stmt.bind(1, table_name)
+      rv = stmt.step()
+      stmt.finalize()
+      if rv == Sqlite.DONE
+        return false
+      else
+        return true
 
     close()
       $ sqlite3_close(@db); $
@@ -51,8 +65,53 @@ namespace Sqlite
       return $ int64_to_val(sqlite3_column_count(@stmt)) $
 
     column_type(Integer i)
+      ncols = self.column_count()
+      if i < 1
+        raise "invalid column number %a (must be positive)".f(i)
+      if i > ncols
+        raise "invalid column number %a (there are %a columns)".f(i, ncols)
+
       return $ int64_to_val(sqlite3_column_type(@stmt,
-                                                val_to_int64(__i))) $
+                                                val_to_int64(__i)-1)) $
+
+    column(Integer i)
+      t = self.column_type(i)
+      $ int64 col = val_to_int64(__i) - 1; $
+      switch t
+        case Sqlite.INTEGER
+          $ return int64_to_val(
+                     sqlite3_column_int64(@stmt, col)
+                               ); $
+        case Sqlite.FLOAT
+          $ return double_to_val(
+                     sqlite3_column_double(@stmt, col)
+                               ); $
+        case Sqlite.TEXT
+          $ return string_to_val(
+                     sqlite3_column_text(@stmt, col)
+                               ); $
 
     finalize()
       $ sqlite3_finalize(@stmt); $
+
+    reset ()
+      $ sqlite3_reset(@stmt); $
+
+    bind(Integer i, v)
+      $ int64 i = val_to_int64(__i);
+        int rv = 0;$
+      if v is Integer
+        $ rv = sqlite3_bind_int64(@stmt, i, val_to_int64(__v)); $
+      elif v is Double
+        $ rv = sqlite3_bind_double(@stmt, i, val_to_double(__v)); $
+      elif v is String
+        $ rv = sqlite3_bind_text(@stmt, i, val_to_string(__v), -1,
+                                 SQLITE_TRANSIENT); $
+      else
+        raise "invalid type of value to bind"
+
+      $ if (rv == SQLITE_RANGE)
+          exc_raise("attempted to bind parameter that is out of range (%d)",
+                    i);
+        if (rv == SQLITE_NOMEM)
+          exc_raise("out of memory"); $

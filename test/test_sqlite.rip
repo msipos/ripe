@@ -1,17 +1,36 @@
+print_row(stmt)
+  Out.println("Row:")
+  for i in 1:stmt.column_count()
+    Out.println(stmt.column(i))
+
+run(db, str)
+  stmt = db.prepare(str)
+  if stmt.step() != Sqlite.DONE
+    raise "failed to run simple statement '%a'".f(str)
+  stmt.finalize()
+
 main()
   db = Sqlite.Db.new("mydb.sqlite")
 
-  stmt = db.prepare("CREATE TABLE files ("
-                      "file_id INTEGER PRIMARY KEY,"
-                      "name TEXT"
-                    ");")
-  Out.println(stmt.step())
-  Out.println(stmt.column_count())
+  if not db.check_for_table("files")
+    run(db, "CREATE TABLE files (file_id INTEGER PRIMARY KEY, name TEXT);")
+
+  stmt = db.prepare("INSERT INTO files (file_id, name) VALUES (NULL, ?);")
+  stmt.bind(1, "hello")
+  stmt.step()
+  stmt.reset()
+  stmt.bind(1, "world")
+  stmt.step()
+  stmt.reset()
+  stmt.bind(1, "goodbye")
+  stmt.step()
+  stmt.reset()
   stmt.finalize()
 
-  stmt = db.prepare("INSERT INTO files (file_id, name) VALUES (NULL, 'hello');")
-  Out.println(stmt.step())
-  Out.println(stmt.column_count())
+  stmt = db.prepare("SELECT * FROM files;")
+  loop
+    if stmt.step() == Sqlite.DONE
+      break
+    print_row(stmt)
   stmt.finalize()
-
   db.close()
