@@ -1,0 +1,6 @@
+main()
+  Gtk.init()
+  builder = Gtk.Builder.new_from_file("test/test.glade")
+  window = builder.get_object("window")
+  window.show_widget()
+  Gtk.main()

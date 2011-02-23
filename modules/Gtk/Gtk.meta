@@ -1,0 +1,2 @@
+cflags=`pkg-config --cflags gtk+-2.0`
+lflags=`pkg-config --libs gtk+-2.0`

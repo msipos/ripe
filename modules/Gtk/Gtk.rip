@@ -1,0 +1,37 @@
+$ #include <gtk/gtk.h> $
+
+namespace Gtk
+  init()
+    $ gtk_init(&sys_argc, &sys_argv); $
+
+  main()
+    $ gtk_main(); $
+
+  quit()
+    $ gtk_main_quit(); $
+
+  class Builder
+    $ GtkBuilder* builder; $
+    constructor new_from_file(filename)
+      $ @builder = gtk_builder_new();
+        const char* filename = val_to_string(__filename);
+        if (!gtk_builder_add_from_file(@builder,
+                                       filename,
+                                       NULL)){
+          exc_raise("failed to load Gtk.Builder file '%s'", filename);
+        } $
+
+    get_object(name)
+      obj = Gtk.Object.new()
+      $ const char* name = val_to_string(__name);
+        GObject** pobj = obj_c_dptr(__obj);
+        *pobj = gtk_builder_get_object(@builder, name); $
+      return obj
+
+  class Object
+    $ GObject* obj; $
+    constructor new()
+      $ @obj = NULL; $
+
+    show_widget()
+      $ gtk_widget_show((GtkWidget*) @obj); $
