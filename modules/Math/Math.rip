@@ -30,6 +30,9 @@ namespace Math
   sqrt(x)
     return $ double_to_val(sqrt(val_to_double(__x))) $
 
+  exp(x)
+    return $ double_to_val(exp(val_to_double(__x))) $
+
   ceil(x)
     return $ int64_to_val((int64) ceil(val_to_double(__x))) $
 
