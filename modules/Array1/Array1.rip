@@ -83,6 +83,13 @@ class Array1
       }
     $
 
+  clone()
+    size = self.size
+    arr = Array1.new_const(size, nil)
+    for i in 1:size
+      arr[i] = self.index(i)
+    return arr
+
   #$ rdoc-name Array1.contains?
   #$ rdoc-header Bool Array1.contains?(v)
   #$ Returns whether the array contains v.
