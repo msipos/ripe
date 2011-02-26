@@ -1,4 +1,4 @@
-$ 
+$
   #include <gsl/gsl_rng.h>
   #include <gsl/gsl_randist.h>
 $
@@ -8,12 +8,25 @@ namespace Gsl
     $
       gsl_rng* rng;
     $
-    
+
     constructor new()
       $
         @rng = gsl_rng_alloc(gsl_rng_default);
       $
-    
+
+    select(arr)
+      sz = arr.size
+      Double total = 0.0
+      for i in 1:sz
+        total = total + arr[i]
+      Double p = 0.0
+      Double C = self.uniform(0.0, 1.0)
+      for i in 1:sz
+        p = p + arr[i] / total
+        if C < p
+          return i
+      return sz
+
     roll(p)
       $
         double dp = val_to_double(__p);
@@ -21,21 +34,21 @@ namespace Gsl
         if (x < dp) return VALUE_TRUE;
         return VALUE_FALSE;
       $
-      
+
     uniform(a, b)
       $
         double da = val_to_double(__a);
         double db = val_to_double(__b);
         return double_to_val(da + gsl_rng_uniform(@rng) * (db - da));
       $
-    
+
     uniform_int(a, b)
       $
         int64 a = val_to_int64(__a);
         int64 b = val_to_int64(__b);
         return int64_to_val(a + gsl_rng_uniform_int(@rng, b - a + 1));
       $
-    
+
     exponential(mu)
       $
         return double_to_val(gsl_ran_exponential(@rng, val_to_double(__mu)));
