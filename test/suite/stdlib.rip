@@ -90,6 +90,11 @@ arrays()
             ["england", "france", "germany", "italy", "japan", "serbia",
              "usa"].to_string())
 
+  arr.remove(2)
+  Test.test("Array1.remove()", arr.to_string(),
+            ["england", "germany", "italy", "japan", "serbia", "usa"].to_string())
+
+  arr.insert(2, "france")
   view = Array1View.new(arr, 2:4)
   name = "Array1View"
   Test.test(name + " 1", view[1], "france")
@@ -223,6 +228,16 @@ String()
   Test.test("String.print()", "alphabet", text)
 
   Test.test("String.substitute()", "bababa".substitute("ba", "lai"), "lailailai")
+
+  text = "alpha"
+  text.rotate!(2)
+  Test.test("String.rotate!()", text, "phaal")
+  text.rotate!(-3)
+  Test.test("String.rotate!()", text, "aalph")
+
+  longertext = "0123456789"
+  longertext.rotate!(4)
+  Test.test("String.rotate!()", longertext, "4567890123")
 
 Std()
   Test.test("Integer()", 123, Integer("123"))

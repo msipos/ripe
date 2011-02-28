@@ -117,8 +117,10 @@ namespace Bio
       $
       for record in set
         seq = record.seq
+        mult = record.multiplicity
         $
-          seqs++;
+          int64 mult = val_to_int64(__mult);
+          seqs += mult;
           char* s = val_to_string(__seq);
           const int64 ssize = strlen(s);
           if (ssize != size)
@@ -128,23 +130,23 @@ namespace Bio
             switch(s[i]){
               case '-':
               case '.':
-                @probs_gap[i] += 1.0;
+                @probs_gap[i] += 1.0 * mult;
                 break;
               case 'a':
               case 'A':
-                @probs_A[i] += 1.0;
+                @probs_A[i] += 1.0 * mult;
                 break;
               case 'c':
               case 'C':
-                @probs_C[i] += 1.0;
+                @probs_C[i] += 1.0 * mult;
                 break;
               case 'g':
               case 'G':
-                @probs_G[i] += 1.0;
+                @probs_G[i] += 1.0 * mult;
                 break;
               case 't':
               case 'T':
-                @probs_T[i] += 1.0;
+                @probs_T[i] += 1.0 * mult;
             }
           }
         $
@@ -222,10 +224,12 @@ namespace Bio
   class Record
     writable id
     writable seq
+    writable multiplicity
 
     constructor new(id, seq)
       @id = id
       @seq = seq
+      @multiplicity = 1
 
     virtual_get size()
       s = @seq

@@ -104,6 +104,25 @@ class String
   to_string()
     return self
 
+  # A[x] <- A[x+delta]
+  rotate!(Integer delta)
+    $ const int64 size = strlen(@s.str);
+      int64 delta = unpack_int64(__delta);
+      char *s = @s.str;
+
+      while (delta < 0) delta += size;
+      while (delta >= size) delta -= size;
+      if (delta == 0) return VALUE_NIL;
+
+      char temp[size+1];
+      strcpy(temp, s);
+      for (int64 i = delta; i < size; i++){
+        s[i - delta] = temp[i];
+      }
+      for (int64 i = 0; i < delta; i++){
+        s[size - delta + i] = temp[i];
+      } $
+
   #$ rdoc-name String.strip
   #$ rdoc-header String.strip()
   #$ Strips whitespace from left and right ends of the string.

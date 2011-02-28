@@ -150,6 +150,23 @@ class Array1
       data[idx] = __val;
     $
 
+  #$ rdoc-name Array1.remove
+  #$ rdoc-header Nil Array1.remove(Integer i)
+  #$ Remove anything in position i in the array.  Moves everything in position
+  #$ i and beyond one step.
+  remove(Integer i)
+    $
+      const int64 size = @a.size;
+      int64 idx = util_index("Array1",
+                             val_to_int64(__i),
+                             size);
+      Value* data = @a.data;
+      for (int64 i = idx; i < size; i++){
+        data[i] = data[i+1];
+      }
+      @a.size--;
+    $
+
   #$ rdoc-name Array1.push
   #$ rdoc-header Nil Array1.push(val)
   #$ Appends a Value val onto the end of the array. Returns nil.
