@@ -13,6 +13,9 @@ class Range
     Range range;
   $
 
+  to_string()
+    return "%a:%a".f(self.start, self.finish)
+
   #$ rdoc-name Range.get_iter
   #$ rdoc-header Range.get_iter()
   #$ Returns a RangeIterator over the given Range (possibly unbounded).

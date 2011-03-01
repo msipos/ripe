@@ -47,3 +47,52 @@ class Integer
   #$ Returns true if Integer is even.
   even?()
     return $ pack_bool((unpack_int64(__self) % 2) == 0) $
+
+  # width = 2, loc = 5, total-width = 8
+  # last = loc + width - 1
+  #          * *
+  #  1 2 3 4 5 6 7 8
+  #  1 0 1 0 0 1 1 1
+  #  0 0 0
+  unpack(Integer loc, Integer width)
+    $ int64 loc = unpack_int64(__loc);
+      if (loc < 1 or loc > 62){
+        exc_raise("invalid loc (%"PRId64") in bitfield", loc);
+      }
+      int64 width = unpack_int64(__width);
+      if (width < 1){
+        exc_raise("invalid width (%"PRId64") in bitfield", width);
+      }
+      uint64 self = (uint64) unpack_int64(__self);
+      int64 last = loc + width - 1;
+      if (last > 62){
+        exc_raise("last bit (%"PRId64") outside of bitfield", last);
+      }
+
+      int64 tail = 64 - last;
+      self = self << tail;
+      self = self >> tail;
+      self = self >> (loc - 1);
+      return pack_int64(self); $
+
+  pack(Integer loc, Integer width, Integer i)
+    $ int64 loc = unpack_int64(__loc);
+      if (loc < 1 or loc > 62){
+        exc_raise("invalid loc (%"PRId64") in bitfield", loc);
+      }
+      int64 width = unpack_int64(__width);
+      if (width < 1){
+        exc_raise("invalid width (%"PRId64") in bitfield", width);
+      }
+      uint64 self = (uint64) unpack_int64(__self);
+      int64 last = loc + width - 1;
+      if (last > 62){
+        exc_raise("last bit (%"PRId64") outside of bitfield", last);
+      }
+
+      int64 mask = (1 << width) - 1;
+      loc --;
+      mask = mask << loc;
+      self = self & (~mask);
+      self = self | ((unpack_int64(__i) << loc) & mask);
+      return pack_int64(self); $
