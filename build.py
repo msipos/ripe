@@ -145,8 +145,8 @@ vm_hs = [
         ]
 
 # VM
-vm_srcs = [
-            'vm/vm.c',
+# Vm support files (used by vm and testvm)
+vm_support_srcs = [
             'vm/common.c',
             'vm/sym-table.c',
             'vm/ops.c',
@@ -166,7 +166,17 @@ vm_srcs = [
             'vm/builtin/Range.c',
             'vm/builtin/Tuple.c'
           ]
+vm_support_objs = tools.cons_objs(vm_support_srcs, vm_hs + clib_hs)
+
+# vm objs
+vm_srcs = ['vm/vm.c']
 vm_objs = tools.cons_objs(vm_srcs, vm_hs + clib_hs)
+vm_objs = vm_objs + vm_support_objs
+
+# Construct the convenience test binary
+test_objs = tools.cons_objs(['vm/test.c'], vm_hs + clib_hs)
+test_bin = tools.cons_bin('bin/testvm',
+                          test_objs + vm_support_objs + clib_objs, [])
 
 # Construct VM object
 tools.link_objs(vm_objs + clib_objs, "product/vm.o")

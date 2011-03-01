@@ -136,8 +136,8 @@ def pprint(flag, src, target = None):
     if conf["VERBOSITY"] < 1:
         return
     flag_len = 3
-    src_len = 25
-    target_len = 25
+    src_len = 30
+    target_len = 30
     flag = "[" + flag + "]"
     if target != None:
         print(" " + pad(flag, flag_len + 3) + pad(src, src_len) + ' -> '

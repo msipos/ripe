@@ -85,3 +85,11 @@ char* mem_asprintf2(char* format, ...)
 #ifdef MEMLOG
 FILE* f_memlog;
 #endif
+
+char* mem_strndup(const char* s, uint64 n)
+{
+  char* out = mem_malloc(n + 1);
+  strncpy(out, s, n);
+  out[n-1] = 0;
+  return out;
+}

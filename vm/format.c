@@ -235,9 +235,56 @@ uint64 format(char* out, char* format_string, uint64 num_values, Value* values)
   return sz + 1;
 }
 
-void format_parse(char* fstr, FormatParse* fp)
+char scan_until(const char** s, char terminate)
 {
+  for(;;){
+    if (**s == 0) return 0;
+    if (**s == terminate) return terminate;
+    (*s)++;
+  }
+}
 
+void add_element(FormatParse* fp, int type, const char* str)
+{
+  if (fp->size == 0){
+    fp->size = 1;
+    fp->elements = mem_new(FormatParseElement);
+    fp->elements[0].type = type;
+    fp->elements[0].str = str;
+  } else {
+    fp->size++;
+    fp->elements = mem_realloc(fp->elements,
+                               sizeof(FormatParseElement) * fp->size);
+    fp->elements[fp->size-1].type = type;
+    fp->elements[fp->size-1].str = str;
+  }
+}
 
+int format_parse(const char* fstr, FormatParse* fp)
+{
+  fp->size = 0;
+  fp->elements = NULL;
+  const char* str;
 
+  const char* cur = fstr;
+  for(;;){
+    if (*cur == 0){
+      break;
+    }
+    if (*cur == '{') {
+      str = cur;
+      char c = scan_until(&cur, '}');
+      if (c == 0) return 1; // Error
+      // Now, *cur = '}', and *str = '{'
+      str = mem_strndup(str+1, cur - str);
+      add_element(fp, FORMAT_PARAM, str);
+      cur++;
+    } else {
+      str = cur;
+      char c = scan_until(&cur, '{');
+      str = mem_strndup(str, cur - str + 1);
+      add_element(fp, FORMAT_STRING, str);
+    }
+  }
+  return 0;
 }

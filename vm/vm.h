@@ -261,16 +261,20 @@ typedef struct {
 } Format;
 
 typedef struct {
-  int size;
-  int* types;
-  char** strs;
-} FormatParse;
-
-typedef struct {
   int64 a;
   int64 b;
   int type;
 } FormatElement;
+
+typedef struct {
+  int type;
+  const char* str;
+} FormatParseElement;
+
+typedef struct {
+  int size;
+  FormatParseElement* elements;
+} FormatParse;
 
 #define FORMAT_STRING  1
 #define FORMAT_FLAG    2
@@ -280,6 +284,8 @@ void format_get_text(Format* f, int64 i);
 uint64 format(char* out, char* format_string, uint64 num_values, Value* values);
 uint64 format_simple(char* out, uint64 num_values, Value* values);
 void format_deinit(Format* f);
+
+int format_parse(const char* fstr, FormatParse* fp);
 
 //////////////////////////////////////////////////////////////////////////////
 // Arrays.c

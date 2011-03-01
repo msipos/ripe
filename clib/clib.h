@@ -254,6 +254,7 @@ char* mem_asprintf2(char* format, ...);
 
 // General functions
 #define mem_new(T)    ((T *) mem_malloc(sizeof(T)))
+char* mem_strndup(const char* s, uint64 n);
 
 ///////////////////////////////////////////////////////////////////////
 // path.c
