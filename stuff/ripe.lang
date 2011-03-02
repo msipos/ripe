@@ -66,6 +66,7 @@
           <keyword>self</keyword>
           <keyword>call_func</keyword>
           <keyword>tuple</keyword>
+          <keyword>modulo</keyword>
         </context>
 
         <context ref="def:decimal"/>
