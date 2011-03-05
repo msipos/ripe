@@ -235,6 +235,28 @@ uint64 format(char* out, char* format_string, uint64 num_values, Value* values)
   return sz + 1;
 }
 
+char* format_to_string(const char* fstr, uint64 num_values, Value* values)
+{
+  FormatParse fp;
+  format_parse(fstr, &fp);
+
+  // First convert each value into a string.
+  const char* strings[num_values];
+  for (uint64 i = 0; i < num_values; i++){
+    Value v = values[i];
+    if (is_int64(v)){
+      char buf[50];
+      sprintf(buf, "%"PRId64, unpack_int64(v));
+      strings[i] = mem_strdup(buf);
+    } else if (is_double(v)){
+      char buf[50];
+      sprintf(buf, "%g", unpack_double(v));
+      strings[i] = mem_strdup(buf);
+    }
+
+  }
+}
+
 char scan_until(const char** s, char terminate)
 {
   for(;;){
@@ -277,6 +299,7 @@ int format_parse(const char* fstr, FormatParse* fp)
       if (c == 0) return 1; // Error
       // Now, *cur = '}', and *str = '{'
       str = mem_strndup(str+1, cur - str);
+      strip_whitespace(str);
       add_element(fp, FORMAT_PARAM, str);
       cur++;
     } else {

@@ -31,3 +31,15 @@ void func_set_vararg(Value v_func)
   Func* c_data = obj_c_data(v_func);
   c_data->var_params = 1;
 }
+
+void* func_get_ptr(Value v_func, int16 num_params)
+{
+  obj_verify(v_func, klass_func);
+  Func* c_data = obj_c_data(v_func);
+  if (c_data->num_params != num_params){
+    exc_raise("func_get_ptr() mismatch (Function has %"PRIu16
+              " but called with %"PRIu16")", c_data->num_params,
+              num_params);
+  }
+  return (void*) c_data->func0;
+}

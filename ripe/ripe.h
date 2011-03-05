@@ -40,7 +40,6 @@ const char* conf_query(Conf* conf, const char* key);
 const char* namespace_get_prefix();
 void namespace_pop();
 void namespace_push(const char* name);
-const char* eval_type(Node* type_node);
 
 //////////////////////////////////////////////////////////////////////////////
 // ripe/error.c
@@ -69,6 +68,8 @@ void dump_output(FILE* f, const char* module_name);
 //////////////////////////////////////////////////////////////////////////////
 // ripe/generator.c
 //////////////////////////////////////////////////////////////////////////////
+
+const char* eval_type(Node* type_node);
 
 // Returns non-zero in case of an error.
 int generate(Node* ast, const char* module_name, const char* source_filename);

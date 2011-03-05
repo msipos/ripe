@@ -61,13 +61,26 @@ value_barrier(Tuple t)
   return t[2]
 
 eval_type(node)
-  if node.num_children == 1
-    return node.get_string("name") + "." + eval_type(node[1])
-  else
-    return node.get_string("name")
+  if node == nil
+    return nil
+  type = eval_expr_as_id_simple(node)
+  if type == nil
+    raise "type node failed to evaluate as id (type = %a)".f(node.type)
+  return type
 
-eval_v_expr(node)
-  return value_barrier(eval_expr(node))
+eval_expr_as_id_simple(Ast.Node expr)
+  switch expr.type
+    case Ast.ID
+      return expr.text
+    case Ast.EXPR_FIELD
+      parent = expr[1]
+      field = expr.get_string("name")
+      s = eval_expr_as_id_simple(parent)
+      if s != nil
+        return "%a.%a".f(s, field)
+      else
+        return nil
+  return nil
 
 eval_expr_as_id(Ast.Node expr)
   switch expr.type
@@ -95,15 +108,21 @@ eval_expr_list(expr_list, first_comma)
     else
       txt = txt + ", "
     index = index + 1
-    txt = txt + eval_v_expr(expr)
+    txt = txt + eval_expr_untyped(expr)
   return txt
 
 eval_obj_call(Ast.Node obj, String method_name, args)
   t, e_obj = eval_expr(obj)
-  if t == nil or t == "int64" or t == "bool" or t == "double" or not is_optims?()
+  if t == "int64"
+    t = "Integer"
+  if t == "bool"
+    t = "Bool"
+  if t == "double"
+    t = "Double"
+  if t == nil or not get_optims()[&TYPES]
     return "method_call%a(%a, %a %a)".f(
                         args.size,
-                        eval_v_expr(obj),
+                        eval_expr_untyped(obj),
                         Dsym.get(method_name),
                         eval_expr_list(args, true) )
   else
@@ -137,8 +156,8 @@ eval_static_call(ssym, arg_list)
     if param_types[-1] == "*"
       is_vararg? = true
 
-  txt = "func_call%a(%a".f(num_params, Ssym.get(ssym))
-  # Now generate code.
+  # Generate function call arguments
+  txt_args = ""
   if is_vararg?
     min_args = param_types.size - 1
     if num_args < min_args
@@ -149,37 +168,117 @@ eval_static_call(ssym, arg_list)
     if min_args > 0
       for index in 1:min_args
         arg = arg_list[index]
-        txt = txt + ", %a".f(eval_v_expr(arg))
-    txt = txt + ", tuple_to_val(%a".f(num_args - min_args)
+        param_type = param_types[index]
+
+        if param_type == nil
+          txt_args = "%a, %a".f(txt_args, eval_expr_untyped(arg))
+        else
+          txt_args = "%a, %a".f(txt_args, eval_expr_typesafe(arg, param_type))
+    txt_args = "%a, tuple_to_val(%a".f(txt_args, num_args - min_args)
     if num_args > min_args
       for index in (min_args+1):num_args
         arg = arg_list[index]
-        txt = txt + ", %a".f(eval_v_expr(arg))
-    txt = txt + ")"
+        txt_args = "%a, %a".f(txt_args, eval_expr_untyped(arg))
+    txt_args = "%a)".f(txt_args)
   else
     if num_args != num_params
       raise "'%a' called with %a arguments but expect %a".f(ssym,
                                                             num_args,
                                                             num_params)
-    for arg in arg_list
-      txt = txt + ", %a".f(eval_v_expr(arg))
-  return txt + ")"
+    if num_args > 0
+      for i in 1:num_args
+        arg = arg_list[i]
+        param_type = param_types[i]
+        if param_type == nil
+          txt_args = "%a, %a".f(txt_args, eval_expr_untyped(arg))
+        else
+          txt_args = "%a, %a".f(txt_args, eval_expr_typesafe(arg, param_type))
+
+  if get_optims()[&FUNC_CALLS]
+    if txt_args.size > 0  # Cut off the starting comma
+      txt_args = txt_args[2:]
+    return "FUNC_CALL(%a%a)".f(FuncTable.get(ssym, num_params), txt_args)
+  else
+    return "func_call%a(%a%a)".f(num_params, Ssym.get(ssym), txt_args)
+
+#######################################################################
+# Operator optimizations
+
+numeric_proc(t, e)
+  switch t
+    case "int64"
+      return e
+    case "Integer"
+      return "val_to_int64(%a)".f(e)
+    case "double"
+      return e
+    case "Double"
+      return "val_to_double(%a)".f(e)
+  raise "Assertion error! This line should not be reached"
+
+global numeric_types = ["int64", "double", "Integer", "Double"]
+global double_types = ["double", "Double"]
+numeric_op(tuple1, tuple2, op)
+  t1, e1 = tuple1
+  t2, e2 = tuple2
+
+  if not ((t1 in numeric_types) and (t2 in numeric_types))
+    return nil
+
+  proc1 = numeric_proc(t1, e1)
+  proc2 = numeric_proc(t2, e2)
+  result_t = "int64"
+  if (t1 in double_types) or (t2 in double_types)
+    result_t = "double"
+  return tuple(result_t, "(%a %a %a)".f(proc1, op[3], proc2))
+
+bool_numeric_op(tuple1, tuple2, op)
+  t1, e1 = tuple1
+  t2, e2 = tuple2
+
+  if not ((t1 in numeric_types) and (t2 in numeric_types))
+    return nil
+
+  proc1 = numeric_proc(t1, e1)
+  proc2 = numeric_proc(t2, e2)
+  return tuple("bool", "(%a %a %a)".f(proc1, op[3], proc2))
+
+#######################################################################
+# Convenience functions for eval_expr (most external code will call
+# these)
+
+eval_expr_untyped(Ast.Node node)
+  return value_barrier(eval_expr(node))
+
+eval_expr_typesafe(Ast.Node expr, String type)
+  tup = eval_expr(expr)
+  expr_type, str = tup
+  if type == expr_type
+    return str
+
+  # Handle non-Value types
+  if type == "Bool" and expr_type == "bool"
+    return value_barrier(tup)
+  if type == "Integer" and expr_type == "int64"
+    return value_barrier(tup)
+  if type == "Double" and expr_type == "double"
+    return value_barrier(tup)
+
+  # Here, at most we can do is ensure run-time type safety
+  if expr_type == nil
+    return "obj_verify_assign(%a, %a)".f(str, Type.get(type))
+
+  raise ("expression which evaluated to '%a' has type '%a' "
+         "but is required to have type '%a'".f(str, expr_type, type))
+
+#######################################################################
+# eval_expr
 
 # All expression evaluators that return a Value.
-eval_expr_Value(expr)
+eval_expr_Value(Ast.Node expr)
   switch expr.type
-    case Ast.K_NIL
-      return "VALUE_NIL"
-    case Ast.K_EOF
-      return "VALUE_EOF"
     case Ast.SYMBOL
       return Dsym.get(expr.text[2:])
-    case Ast.STRING
-      return "string_to_val(\"%a\")".f(expr.text)
-    case Ast.EXPR_ARRAY
-      expr_list = expr[1]
-      return "array1_to_val2(%a%a)".f(expr_list.num_children,
-                                      eval_expr_list(expr_list, true))
     case Ast.EXPR_MAP
       m_list = expr[1]
       Bool is_map = false
@@ -191,10 +290,10 @@ eval_expr_Value(expr)
         switch m.size
           case 2
             is_map = true
-            args = "%a, %a, %a".f(args, eval_v_expr(m[1]), eval_v_expr(m[2]))
+            args = "%a, %a, %a".f(args, eval_expr_untyped(m[1]), eval_expr_untyped(m[2]))
           case 1
             is_set = true
-            args = "%a, %a".f(args, eval_v_expr(m[1]))
+            args = "%a, %a".f(args, eval_expr_untyped(m[1]))
 
       if is_map and is_set
         raise "invalid curly braces: is this a set or a map?"
@@ -237,7 +336,7 @@ eval_expr_Value(expr)
       elif locals_query(s) != nil
         dynamic_field = true
       if dynamic_field
-        return "field_get(%a, %a)".f(eval_v_expr(left),
+        return "field_get(%a, %a)".f(eval_expr_untyped(left),
                                      Dsym.get(field))
 
       # For sure it is a static symbol
@@ -256,52 +355,12 @@ eval_expr_Value(expr)
 
   return ""
 
-numeric_proc(t, e)
-  switch t
-    case "int64"
-      return e
-    case "Integer"
-      return "val_to_int64(%a)".f(e)
-    case "double"
-      return e
-    case "Double"
-      return "val_to_double(%a)".f(e)
-  raise "Assertion error! This line should not be reached"
-
-numeric_op(tuple1, tuple2, op)
-  t1, e1 = tuple1
-  t2, e2 = tuple2
-
-  numeric_types = ["int64", "double", "Integer", "Double"]
-  double_types = ["double", "Double"]
-  if not ((t1 in numeric_types) and (t2 in numeric_types))
-    return nil
-
-  proc1 = numeric_proc(t1, e1)
-  proc2 = numeric_proc(t2, e2)
-  result_t = "int64"
-  if (t1 in double_types) or (t2 in double_types)
-    result_t = "double"
-  return tuple(result_t, "(%a %a %a)".f(proc1, op[3], proc2))
-
-bool_numeric_op(tuple1, tuple2, op)
-  t1, e1 = tuple1
-  t2, e2 = tuple2
-
-  numeric_types = ["int64", "double", "Integer", "Double"]
-  if not ((t1 in numeric_types) and (t2 in numeric_types))
-    return nil
-
-  proc1 = numeric_proc(t1, e1)
-  proc2 = numeric_proc(t2, e2)
-  return tuple("bool", "(%a %a %a)".f(proc1, op[3], proc2))
-
 eval_expr(expr)
   if expr.size == 1
     if expr.type in unary_ops
       return tuple(nil, "%a(%a)".f(
                                         unary_ops[expr.type],
-                                        eval_v_expr(expr[1])
+                                        eval_expr_untyped(expr[1])
                                       ))
   if expr.size == 2
     if expr.type in binary_ops
@@ -317,7 +376,7 @@ eval_expr(expr)
       if op[2] == BOOL_NUMERIC
         result = bool_numeric_op(t1, t2, op)
 
-      if not is_optims?()
+      if not get_optims()[&TYPES]
         result = nil
 
       if result == nil
@@ -326,6 +385,10 @@ eval_expr(expr)
         return result
 
   switch expr.type
+    case Ast.K_NIL
+      return tuple("Nil", "VALUE_NIL")
+    case Ast.K_EOF
+      return tuple("Eof", "VALUE_EOF")
     case Ast.K_TRUE
       return tuple("bool", "true")
     case Ast.K_FALSE
@@ -336,9 +399,15 @@ eval_expr(expr)
       return tuple("double", expr.text)
     case Ast.CHARACTER
       return tuple("int64", expr.text[2])
+    case Ast.STRING
+      return tuple("String", "string_to_val(\"%a\")".f(expr.text))
+    case Ast.EXPR_ARRAY
+      expr_list = expr[1]
+      return tuple("Array1", "array1_to_val2(%a%a)".f(expr_list.num_children,
+                                              eval_expr_list(expr_list, true)))
     case Ast.EXPR_IS_TYPE
       return tuple("bool", "(obj_klass(%a) == %a)".f(
-                                  eval_v_expr(expr[1]),
+                                  eval_expr_untyped(expr[1]),
                                   Type.get(eval_type(expr[2]))
                                       ))
     case Ast.ID
@@ -354,17 +423,17 @@ eval_expr(expr)
       # TODO: These val_to_int64s should be handled better...
       return tuple("Range", "range_to_val(RANGE_BOUNDED, "
               "val_to_int64(%a), val_to_int64(%a))".f(
-                                          eval_v_expr(left),
-                                          eval_v_expr(right)
+                                          eval_expr_untyped(left),
+                                          eval_expr_untyped(right)
                                                      ) )
     case Ast.EXPR_RANGE_BOUNDED_LEFT
       left = expr[1]
       return tuple("Range", "range_to_val(RANGE_BOUNDED_LEFT, "
-              "val_to_int64(%a), 0)".f(eval_v_expr(left)))
+              "val_to_int64(%a), 0)".f(eval_expr_untyped(left)))
     case Ast.EXPR_RANGE_BOUNDED_RIGHT
       right = expr[1]
       return tuple("Range", "range_to_val(RANGE_BOUNDED_RIGHT, "
-              "0, val_to_int64(%a))".f(eval_v_expr(right)))
+              "0, val_to_int64(%a))".f(eval_expr_untyped(right)))
     case Ast.EXPR_RANGE_UNBOUNDED
       return tuple("Range", "range_to_val(RANGE_UNBOUNDED, 0, 0)")
 

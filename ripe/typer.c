@@ -146,8 +146,8 @@ static void typer_ast_class(const char* class_name, Node* ast)
       case FUNCTION:
         {
           const char* name = node_get_string(n, "name");
-          Node* param_list = node_get_child(n, 1);
-          const char* rv = eval_type(node_get_child(n, 0));
+          Node* param_list = node_get_child(n, 0);
+          const char* rv = NULL;
           if (node_has_string(n, "annotation")){
             const char* annotation = node_get_string(n, "annotation");
             if (strcmp(annotation, "constructor") == 0){
@@ -177,8 +177,8 @@ void typer_ast(Node* ast)
         {
           const char* name = mem_asprintf("%s%s", namespace_get_prefix(),
                                                   node_get_string(n, "name"));
-          const char* rv = eval_type(node_get_child(n, 0));
-          Node* param_list = node_get_child(n, 1);
+          const char* rv = NULL;
+          Node* param_list = node_get_child(n, 0);
           typer_add3(name, rv, param_list, NULL);
         }
         break;

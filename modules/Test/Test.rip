@@ -40,3 +40,20 @@ namespace Test
     $
       stack_display();
     $
+
+  print(v)
+    $
+      if (is_double(__v)) printf("%g\n", unpack_double(__v));
+    $
+
+  print_bin(v)
+    $
+      for (int64 i = 63; i >= 0 ; i--){
+        if (__v & (uint64) (((uint64) 0b1) << ((uint64) i))){
+          printf("1");
+        } else {
+          printf("0");
+        }
+      }
+      printf("\n");
+    $

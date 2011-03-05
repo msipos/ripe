@@ -346,6 +346,9 @@ void init1_Function();
 void init2_Function();
 #include "vm/func-generated.h"
 void func_set_vararg(Value v_func);
+void* func_get_ptr(Value v_func, int16 num_params);
+// TODO: Change this if you want stack with optimizations
+#define FUNC_CALL(f, ...)   f(__VA_ARGS__)
 
 //////////////////////////////////////////////////////////////////////////////
 // HashTable.c

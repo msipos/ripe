@@ -171,6 +171,11 @@ namespace Ast
       $ *((Node**) obj_c_data(__n)) = node_get_node(@n, val_to_string(__name)); $
       return n
 
+    get_node_optional(name)
+      if not self.has_node?(name)
+        return nil
+      return self.get_node(name)
+
     index(i)
       if i is Integer
         n = Ast.Node.new()

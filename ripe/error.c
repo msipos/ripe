@@ -57,7 +57,7 @@ void err_node(Node* node, const char* format, ...)
   if (error_numbers != NULL){
     fprintf(stderr, "%s:%s: ", err_filename, error_numbers);
   } else {
-    fprintf(stderr, "%s: ", err_filename);
+    fprintf(stderr, "%s:?: ", err_filename);
   }
 
   va_list ap;

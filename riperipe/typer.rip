@@ -50,10 +50,7 @@ namespace Typer
           raise "array parameter is not last parameter"
         out.push("*")
       else
-        if param.num_children == 1
-          out.push(eval_type(param[1]))
-        else
-          out.push(nil)
+        out.push(eval_type(param.get_node_optional("type")))
       index = index + 1
     return out
 
@@ -61,13 +58,13 @@ namespace Typer
     for node in ast
       if node.type == Ast.FUNCTION
         name = class_name + "." + node.get_string("name")
-        rv_type = eval_type(node[1])
-        param_types = Typer.absorb_param_info(node[2])
+        rv_type = eval_type(node.get_node_optional("type"))
+        param_types = Typer.absorb_param_info(node[1])
         if node.has_string?("annotation")
           if node.get_string("annotation") == "constructor"
             Typer.add_function(name, rv_type, param_types)
         else
-          param_types.insert(1, name)
+          param_types.insert(1, class_name)
           Typer.add_function(name, rv_type, param_types)
 
   absorb_info(ast)
@@ -78,9 +75,10 @@ namespace Typer
           Typer.absorb_info(node[1])
           Namespace.pop()
         case Ast.FUNCTION
+          rv_type = eval_type(node.get_node_optional("type"))
           Typer.add_function(Namespace.prefix() + node.get_string("name"),
-                             eval_type(node[1]),
-                             Typer.absorb_param_info(node[2]))
+                             rv_type,
+                             Typer.absorb_param_info(node[1]))
         case Ast.CLASS
           Typer.absorb_class(Namespace.prefix() + node.get_string("name"),
                              node[1])

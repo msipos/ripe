@@ -134,7 +134,7 @@ mid_decls: mid_decls SEP mid_decl
 mid_decls: mid_decl            { $$ = node_new(TOPLEVEL_LIST);
                                  node_add_child($$, $1); };
 
-// "bottom" declarations can appear within classes"
+// "bottom" declarations can appear within classes
 bot_decl: ID optassign_plus   { $$ = node_new(TL_VAR);
                                  node_set_string($$, "annotation", $1->text);
                                  node_add_child($$, $2); };
@@ -143,7 +143,6 @@ bot_decl: annotation ID '(' param_star ')' block
                                  node_set_string($$, "annotation",
                                                      $1->text);
                                  node_set_string($$, "name", $2->text);
-                                 node_add_child($$, node_new_type(NULL));
                                  node_add_child($$, $4);
                                  node_add_child($$, $6); };
 bot_decl:  topmidbot_decl      { $$ = $1; };
@@ -170,7 +169,6 @@ topmid_decl: "const" optassign_plus
 topmidbot_decl: ID '(' param_star ')' block
                                { $$ = node_new(FUNCTION);
                                  node_set_string($$, "name", $1->text);
-                                 node_add_child($$, node_new_type(NULL));
                                  node_add_child($$, $3);
                                  node_add_child($$, $5); };
 
@@ -253,20 +251,22 @@ lvalue:    lr_expr             { $$ = $1; };
 rvalue:    r_expr              { $$ = $1; };
 rvalue:    lr_expr             { $$ = $1; };
 
-l_expr:    type ID             { $$ = node_new(EXPR_TYPED_ID);
+l_expr:    type_like ID        { $$ = node_new(EXPR_TYPED_ID);
                                  node_set_string($$, "name", $2->text);
-                                 node_add_child($$, $1); };
+                                 node_set_node($$, "type", $1); };
 
-lr_expr:   ID                  { $$ = $1; };
 lr_expr:   '@' ID              { $$ = node_new_inherit(EXPR_AT_VAR, $2);
                                  node_set_string($$, "name", $2->text); };
-lr_expr:   rvalue '.' ID       { $$ = node_new(EXPR_FIELD);
-                                 node_add_child($$, $1);
-                                 node_set_string($$, "name", $3->text); };
+lr_expr:   type_like           { $$ = $1; };
 lr_expr:   rvalue '[' rvalue_plus ']'
                                { $$ = node_new(EXPR_INDEX);
                                  node_add_child($$, $1);
                                  node_add_child($$, $3); };
+
+type_like: ID                  { $$ = $1; };
+type_like: rvalue '.' ID       { $$ = node_new(EXPR_FIELD);
+                                 node_add_child($$, $1);
+                                 node_set_string($$, "name", $3->text); };
 
 r_expr:    rvalue '.' ID '(' rvalue_star ')'
                                { $$ = node_new(EXPR_FIELD_CALL);
@@ -342,10 +342,10 @@ string:    string STRING       { $$ = node_new(STRING);
                                  $$->text = mem_strdup(sb_temp.str);
                                  sbuf_deinit(&sb_temp); };
 
-type:      type '.' type       { $$ = $1;
-                                 node_add_child($$, $3); };
-type:      ID                  { $$ = node_new_inherit(TYPE, $1);
-                                 node_set_string($$, "name", $1->text); };
+type:      type '.' ID         { $$ = node_new(EXPR_FIELD);
+                                 node_add_child($$, $1);
+                                 node_set_string($$, "name", $3->text); };
+type:      ID                  { $$ = $1; };
 
 mapping_plus: mapping_plus ',' mapping
                                { $$ = $1;
@@ -391,12 +391,16 @@ optassign: ID                  { $$ = node_new_inherit(OPTASSIGN, $1);
 optassign: ID '=' r_expr       { $$ = node_new_inherit(OPTASSIGN, $1);
                                  node_set_string($$, "name", $1->text);
                                  node_add_child($$, $3); };
+optassign: type ID '=' r_expr  { $$ = node_new_inherit(OPTASSIGN, $2);
+                                 node_set_string($$, "name", $2->text);
+                                 node_set_node($$, "type", $1);
+                                 node_add_child($$, $4); };
 
 param:     '*' ID              { $$ = node_new(PARAM);
                                  node_set_string($$, "array", "array");
                                  node_set_string($$, "name", $2->text); };
 param:     type ID             { $$ = node_new(PARAM);
-                                 node_add_child($$, $1);
+                                 node_set_node($$, "type", $1);
                                  node_set_string($$, "name", $2->text); };
 param:     ID                  { $$ = node_new(PARAM);
                                  node_set_string($$, "name", $1->text); };

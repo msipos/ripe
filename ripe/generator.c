@@ -511,7 +511,7 @@ static void gen_stmt_assign2(Node* lvalue, Node* rvalue)
     case EXPR_TYPED_ID:
       {
         const char* ripe_name = node_get_string(lvalue, "name");
-        const char* type = eval_type(node_get_child(lvalue, 0));
+        const char* type = eval_type(node_get_node(lvalue, "type"));
         Variable* var = query_local_full(ripe_name);
         if (var != NULL){
           err_node(lvalue, "variable '%s' already defined", ripe_name);
@@ -812,8 +812,8 @@ static const char* gen_params(Node* param_list)
 
     const char* type = NULL;
     if (node_has_string(param, "array")) type = "Tuple";
-    if (node_num_children(param) > 0){
-      type = eval_type(node_get_child(param, 0));
+    if (node_has_node(param, "type")){
+      type = eval_type(node_get_node(param, "type"));
     }
     const char* var_name = node_get_string(param, "name");
     const char* c_var_name = register_local(var_name, type);
@@ -847,9 +847,8 @@ static void gen_function(Node* function)
   counter++;
   const char* name = mem_asprintf("%s%s", namespace_get_prefix(),
                                   node_get_string(function, "name"));
-  //Node* rv_type = node_get_child(function, 0);
-  Node* param_list = node_get_child(function, 1);
-  Node* stmt_list = node_get_child(function, 2);
+  Node* param_list = node_get_child(function, 0);
+  Node* stmt_list = node_get_child(function, 1);
   uint num_params = param_list->children.size;
   context2 = CONTEXT_FUNC;
 
@@ -883,9 +882,8 @@ static void gen_constructor(Node* constructor)
   const char* c_constructor_name = mem_asprintf("_cons%d_%s", counter,
                                         util_escape(r_constructor_name));
 
-  //Node* rv_type = node_get_child(constructor, 0);
-  Node* param_list = node_get_child(constructor, 1);
-  Node* stmt_list = node_get_child(constructor, 2);
+  Node* param_list = node_get_child(constructor, 0);
+  Node* stmt_list = node_get_child(constructor, 1);
   int num_params = param_list->children.size;
 
   push_locals();
@@ -1055,9 +1053,9 @@ static void gen_class(Node* klass)
     switch(n->type){
       case FUNCTION:
         {
-          Node* rv_type = node_get_child(n, 0);
-          Node* param_list = node_get_child(n, 1);
-          Node* stmt_list = node_get_child(n, 2);
+          Node* rv_type = NULL;
+          Node* param_list = node_get_child(n, 0);
+          Node* stmt_list = node_get_child(n, 1);
           const char* name = node_get_string(n, "name");
           if (node_has_string(n, "annotation")){
             const char* annotation = node_get_string(n, "annotation");
@@ -1194,6 +1192,13 @@ static void gen_toplevels(Node* ast)
         assert_never();
     }
   }
+}
+
+const char* eval_type(Node* n)
+{
+  const char* type = eval_expr_as_id(n);
+  if (type == NULL) err_node(n, "invalid type (node of type %d)", n->type);
+  return type;
 }
 
 int generate(Node* ast, const char* module_name, const char* i_source_filename)

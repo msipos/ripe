@@ -44,12 +44,14 @@ empty_buffers()
 
 global g_verbose = false
 global g_cflags = "", g_lflags = "", g_omit_typing = false
-global g_optims = true
+global g_optims = { &FOR_LOOPS => true,
+                    &TYPES => true,
+                    &FUNC_CALLS => true }
 
 is_verbose?()
   return g_verbose
 
-is_optims?()
+get_optims()
   return g_optims
 
 #######################################################################
@@ -241,18 +243,20 @@ load_defaults()
 
 main()
   options = [
-    [&BOOTSTRAP,   "-s", "--bootstrap", 0  , "bootstrap build"],
-    [&BUILD,       "-b", "--build", 0, "build program"],
-    [&BUILD_MODULE,"-c", "--build-module", 0, "module build"],
-    [&DUMP,        "-d", "--dump", 0, "dump C code"],
-    [&NAME,        "-n", "--module-name", Opt.ARG, "set module name"],
-    [&MODULE,      "-m", "--module", Opt.ARG, "use a module"],
-    [&OUTFILE,     "-o", "--outfile", Opt.ARG, "set output filename"],
-    [&TYPE,        "-t", "--typer", 0, "create typer output"],
-    [&OMIT_TYPING, nil,  "--omit-typing", 0, "omit typing"],
-    [&NO_OPTIMS,   nil,  "--no-optims", 0, "do not optimize"],
-    [&VERBOSE,     "-v", "--verbose", 0, "verbose"],
-    [&HELP,        "-h", "--help", Opt.HELP, "display help"]
+    [&BOOTSTRAP,    "-s", "--bootstrap", 0  , "bootstrap build"],
+    [&BUILD,        "-b", "--build", 0, "build program"],
+    [&BUILD_MODULE, "-c", "--build-module", 0, "module build"],
+    [&DUMP,         "-d", "--dump", 0, "dump C code"],
+    [&NAME,         "-n", "--module-name", Opt.ARG, "set module name"],
+    [&MODULE,       "-m", "--module", Opt.ARG, "use a module"],
+    [&OUTFILE,      "-o", "--outfile", Opt.ARG, "set output filename"],
+    [&TYPE,         "-t", "--typer", 0, "create typer output"],
+    [&OMIT_TYPING,   nil, "--omit-typing", 0, "omit typing"],
+    [&NO_OPTIMS,     nil, "--no-optims", 0, "do not optimize"],
+    [&NO_FOR_OPTIMS, nil, "--no-for-optims", 0, "do not optimize for loops"],
+    [&NO_FUNC_CALL_OPTIMS, nil, "--no-func-call-optims", 0, "do not optimize function calls"],
+    [&VERBOSE,      "-v", "--verbose", 0, "verbose"],
+    [&HELP,         "-h", "--help", Opt.HELP, "display help"]
   ]
 
   args = Os.get_args()
@@ -282,7 +286,12 @@ main()
       case &OMIT_TYPING
         g_omit_typing = true
       case &NO_OPTIMS
-        g_optims = false
+        for k, v in g_optims
+          g_optims[k] = false
+      case &NO_FOR_OPTIMS
+        g_optims[&FOR_LOOPS] = false
+      case &NO_FUNC_CALL_OPTIMS
+        g_optims[&FUNC_CALLS] = false
       case &TYPE
         mode = &TYPE
       case &MODULE
