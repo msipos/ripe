@@ -59,15 +59,22 @@ static inline bool is_ptr(Value v)
   return (v & MASK_TAIL) == 0b00 and (v & MASK_LONGTAIL) != v;
 }
 
+typedef union {
+  uint64 ui;
+  double d;
+} ValueDoublePacker;
+
 static inline Value pack_double(double d)
 {
-  Value v = *((uint64*) (&d));
-  return v - (v & MASK_TAIL) + 0b10;
+  ValueDoublePacker vdp;
+  vdp.d = d;
+  return vdp.ui - (vdp.ui & MASK_TAIL) + (uint64) 0b10;
 }
 static inline double unpack_double(Value v)
 {
-  v = v - 0b10;
-  return *((double*) (&v));
+  ValueDoublePacker vdp;
+  vdp.ui = v - (uint64) 0b10;
+  return vdp.d;
 }
 
 static inline Value pack_int64(int64 i)
