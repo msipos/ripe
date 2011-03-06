@@ -195,8 +195,6 @@ eval_static_call(ssym, arg_list)
           txt_args = "%a, %a".f(txt_args, eval_expr_typesafe(arg, param_type))
 
   if get_optims()[&FUNC_CALLS]
-    if txt_args.size > 0  # Cut off the starting comma
-      txt_args = txt_args[2:]
     return "FUNC_CALL(%a%a)".f(FuncTable.get(ssym, num_params), txt_args)
   else
     return "func_call%a(%a%a)".f(num_params, Ssym.get(ssym), txt_args)
