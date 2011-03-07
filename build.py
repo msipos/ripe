@@ -23,6 +23,7 @@ conf["LFLAGS"] = ["-lm"]
 conf["YACC"] = ["bison", "--warnings=all", "-v"]
 conf["LEX"] = "flex"
 conf["VERBOSITY"] = 1
+conf["RFLAGS"] = []
 if "valgrind" in sys.argv:
     conf["VALGRIND"] = ["valgrind", "--leak-check=no", "--track-origins=yes"]
 else:
@@ -39,12 +40,15 @@ if "verbose" in sys.argv:
     conf["VERBOSITY"] = 2
 if "profile" in sys.argv:
     conf["CFLAGS"].append("-pg")
+    conf["LFLAGS"].append("-pg")
     conf["CFLAGS"].append("-fno-omit-frame-pointer")
     conf["CFLAGS"].append("-O3")
     conf["CFLAGS"].append("-DNDEBUG")
+    conf["RFLAGS"].append("--optim-verify")
 if "nodebug" in sys.argv:
     conf["CFLAGS"].append("-O3")
     conf["CFLAGS"].append("-DNDEBUG")
+    conf["RFLAGS"].append("--optim-verify")
 else:
     conf["CFLAGS"].append("-g")
 if "nostack" in sys.argv:
@@ -271,7 +275,7 @@ def build_module(module, required):
     src = 'modules/%s/%s.rip' % (module, module)
     if tools.depends(out, module_deps + [src]):
         tools.pprint('MOD', src, out)
-        args = ['product/ripe', '-n', module,
+        args = ['product/ripe', conf["RFLAGS"], '-n', module,
                 '-c', srcs, src, extra_objs, '-o', out]
         # Required (default) packages have already been typed, and are
         # loaded by default.  Hence, they do not need to be typed.

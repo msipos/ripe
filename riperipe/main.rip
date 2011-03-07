@@ -19,7 +19,6 @@
 sys(args)
   txt = String.join(args, " ")
   if g_verbose
-    Err.println(args)
     Err.println(txt)
   if Os.system(args) != 0
     raise "Os.system({}) failed".f(txt)
@@ -46,7 +45,8 @@ global g_verbose = false
 global g_cflags = "", g_lflags = "", g_omit_typing = false
 global g_optims = { &FOR_LOOPS => true,
                     &TYPES => true,
-                    &FUNC_CALLS => true }
+                    &FUNC_CALLS => true,
+                    &TYPE_VERIFY => false }
 
 is_verbose?()
   return g_verbose
@@ -255,6 +255,7 @@ main()
     [&NO_OPTIMS,     nil, "--no-optims", 0, "do not optimize"],
     [&NO_FOR_OPTIMS, nil, "--no-for-optims", 0, "do not optimize for loops"],
     [&NO_FUNC_CALL_OPTIMS, nil, "--no-func-call-optims", 0, "do not optimize function calls"],
+    [&OPTIM_VERIFY,  nil, "--optim-verify", 0, "optimize out type verifications"],
     [&VERBOSE,      "-v", "--verbose", 0, "verbose"],
     [&HELP,         "-h", "--help", Opt.HELP, "display help"]
   ]
@@ -292,6 +293,8 @@ main()
         g_optims[&FOR_LOOPS] = false
       case &NO_FUNC_CALL_OPTIMS
         g_optims[&FUNC_CALLS] = false
+      case &OPTIM_VERIFY
+        g_optims[&TYPE_VERIFY] = true
       case &TYPE
         mode = &TYPE
       case &MODULE

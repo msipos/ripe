@@ -264,7 +264,10 @@ eval_expr_typesafe(Ast.Node expr, String type)
 
   # Here, at most we can do is ensure run-time type safety
   if expr_type == nil
-    return "obj_verify_assign({}, {})".f(str, Type.get(type))
+    if get_optims()[&TYPE_VERIFY]
+      return str
+    else
+      return "obj_verify_assign({}, {})".f(str, Type.get(type))
 
   raise ("expression which evaluated to '{}' has type '{}' "
          "but is required to have type '{}'".f(str, expr_type, type))
