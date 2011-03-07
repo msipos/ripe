@@ -13,4 +13,4 @@ namespace Err
 
   println(*args)
     Err.print_array(args)
-    $ putchar('\n'); $
+    $ putc('\n', stderr); $
