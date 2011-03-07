@@ -9,8 +9,8 @@ namespace Err
         fputs(s, stderr); $
 
   print(*args)
-    Out.print_array(args)
+    Err.print_array(args)
 
   println(*args)
-    Out.print_array(args)
+    Err.print_array(args)
     $ putchar('\n'); $
