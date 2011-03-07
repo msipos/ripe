@@ -33,12 +33,12 @@ namespace Typer
 
   get_function(name)
     if not name in typedb["functions"]
-      raise "function '%a' does not exist in type database".f(name)
+      raise "function '{}' does not exist in type database".f(name)
     return typedb["functions"][name]
 
   add_function(name, rv_type, param_types)
     if name in typedb["functions"]
-      raise "duplicate function '%a'".f(name)
+      raise "duplicate function '{}'".f(name)
     typedb["functions"][name] = [rv_type, param_types]
 
   absorb_param_info(param_list)
@@ -85,7 +85,7 @@ namespace Typer
 
   load_from_file(filename)
     if is_verbose?()
-      Err.println("Loading type information from '%a'".f(filename))
+      Err.println("Loading type information from '{}'".f(filename))
 
     tf = TextFile.new(filename, TextFile.Read)
     text = tf.read_entire()
@@ -93,11 +93,11 @@ namespace Typer
     map = Json.parse(text)
     for k, v in map["functions"]
       if k in typedb["functions"]
-        raise "duplicate function '%a' defined".f(k)
+        raise "duplicate function '{}' defined".f(k)
       typedb["functions"][k] = v
     for k, v in map["classes"]
       if k in typedb["classes"]
-        raise "duplicate class '%a' defined".f(k)
+        raise "duplicate class '{}' defined".f(k)
       typedb["classes"][k] = v
 
   dump()

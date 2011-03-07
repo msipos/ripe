@@ -24,20 +24,20 @@ namespace Module
     tmp_c_file = Path.temp_name("ripe", ".c")
     tf = TextFile.new(tmp_c_file, TextFile.Write)
     for m in module_names
-      tf.println("void init1_%a();".f(m))
-      tf.println("void init2_%a();".f(m))
-      tf.println("void init3_%a();".f(m))
+      tf.println("void init1_{}();".f(m))
+      tf.println("void init2_{}();".f(m))
+      tf.println("void init3_{}();".f(m))
     tf.println("void ripe_module1(){")
     for m in module_names
-      tf.println("  init1_%a();".f(m))
+      tf.println("  init1_{}();".f(m))
     tf.println("}")
     tf.println("void ripe_module2(){")
     for m in module_names
-      tf.println("  init2_%a();".f(m))
+      tf.println("  init2_{}();".f(m))
     tf.println("}")
     tf.println("void ripe_module3(){")
     for m in module_names
-      tf.println("  init3_%a();".f(m))
+      tf.println("  init3_{}();".f(m))
     tf.println("}")
     tf.close()
     sys(["gcc", cflags, "-c", tmp_c_file, "-o", out_file])
@@ -50,7 +50,7 @@ namespace Module
     dir = Path.join(Path.get_program_dir(), "modules", name)
 
     if not Path.exists?(dir)
-      raise "error module '%a' does not exist (looked for '%a')".f(name, dir)
+      raise "error module '{}' does not exist (looked for '{}')".f(name, dir)
 
     # Module object file
     module[&OBJECT] = Path.join(dir, name + ".o")

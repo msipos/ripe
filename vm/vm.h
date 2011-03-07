@@ -254,21 +254,11 @@ Value op_exp(Value a, Value b);
 //////////////////////////////////////////////////////////////////////////////
 // format.c
 //////////////////////////////////////////////////////////////////////////////
-typedef struct {
-  char* string;
-  Array array;
-  StringBuf sb;
-} Format;
-
-typedef struct {
-  int64 a;
-  int64 b;
-  int type;
-} FormatElement;
 
 typedef struct {
   int type;
   const char* str;
+  int64 number;
 } FormatParseElement;
 
 typedef struct {
@@ -277,14 +267,9 @@ typedef struct {
 } FormatParse;
 
 #define FORMAT_STRING  1
-#define FORMAT_FLAG    2
-#define FORMAT_PARAM   3
-void format_init(Format* f, char* string);
-void format_get_text(Format* f, int64 i);
-uint64 format(char* out, char* format_string, uint64 num_values, Value* values);
-uint64 format_simple(char* out, uint64 num_values, Value* values);
-void format_deinit(Format* f);
+#define FORMAT_NUMBER  2
 
+char* format_to_string(const char* fstr, uint64 num_values, Value* values);
 int format_parse(const char* fstr, FormatParse* fp);
 
 //////////////////////////////////////////////////////////////////////////////

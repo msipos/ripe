@@ -3,28 +3,14 @@ $
 $
 
 namespace Err
+  print_array(args)
+    for arg in args
+      $ const char* s = to_string(__arg);
+        fputs(s, stderr); $
+
   print(*args)
-    $
-      Tuple* arr = val_to_tuple(__args);
-      char buf[format_simple(NULL, arr->size, arr->data)];
-      format_simple(buf, arr->size, arr->data);
-      fputs(buf, stderr);
-    $
+    Out.print_array(args)
 
   println(*args)
-    $
-      Tuple* arr = val_to_tuple(__args);
-      char buf[format_simple(NULL, arr->size, arr->data)];
-      format_simple(buf, arr->size, arr->data);
-      fputs(buf, stderr);
-      fputc('\n', stderr);
-    $
-
-  printf(format, *args)
-    $
-      Tuple* arr = val_to_tuple(__args);
-      char* f = val_to_string(__format);
-      char buf[format(NULL, f, arr->size, arr->data)];
-      format(buf, f, arr->size, arr->data);
-      fputs(buf, stderr);
-    $
+    Out.print_array(args)
+    $ putchar('\n'); $

@@ -52,11 +52,11 @@ global binary_ops = { '+'              => ["op_plus", NUMERIC, "+"],
 value_barrier(Tuple t)
   switch t[1]
     case "int64"
-      return "int64_to_val(%a)".f(t[2])
+      return "int64_to_val({})".f(t[2])
     case "double"
-      return "double_to_val(%a)".f(t[2])
+      return "double_to_val({})".f(t[2])
     case "bool"
-      return "pack_bool(%a)".f(t[2])
+      return "pack_bool({})".f(t[2])
   # For anything else (including nil), return itself
   return t[2]
 
@@ -65,7 +65,7 @@ eval_type(node)
     return nil
   type = eval_expr_as_id_simple(node)
   if type == nil
-    raise "type node failed to evaluate as id (type = %a)".f(node.type)
+    raise "type node failed to evaluate as id (type = {})".f(node.type)
   return type
 
 eval_expr_as_id_simple(Ast.Node expr)
@@ -77,7 +77,7 @@ eval_expr_as_id_simple(Ast.Node expr)
       field = expr.get_string("name")
       s = eval_expr_as_id_simple(parent)
       if s != nil
-        return "%a.%a".f(s, field)
+        return "{}.{}".f(s, field)
       else
         return nil
   return nil
@@ -93,7 +93,7 @@ eval_expr_as_id(Ast.Node expr)
       field = expr.get_string("name")
       s = eval_expr_as_id(parent)
       if s != nil
-        return "%a.%a".f(s, field)
+        return "{}.{}".f(s, field)
       else
         return nil
   return nil
@@ -120,7 +120,7 @@ eval_obj_call(Ast.Node obj, String method_name, args)
   if t == "double"
     t = "Double"
   if t == nil or not get_optims()[&TYPES]
-    return "method_call%a(%a, %a %a)".f(
+    return "method_call{}({}, {} {})".f(
                         args.size,
                         eval_expr_untyped(obj),
                         Dsym.get(method_name),
@@ -130,7 +130,7 @@ eval_obj_call(Ast.Node obj, String method_name, args)
     new_args.add_child(obj)
     for arg in args
       new_args.add_child(arg)
-    return eval_static_call("%a.%a".f(t, method_name), new_args)
+    return eval_static_call("{}.{}".f(t, method_name), new_args)
 
 eval_index_set(Ast.Node node_self, index_args, Ast.Node assign)
   args = []
@@ -161,7 +161,7 @@ eval_static_call(ssym, arg_list)
   if is_vararg?
     min_args = param_types.size - 1
     if num_args < min_args
-      raise "'%a' called with %a arguments but expect at least %a".f(
+      raise "'{}' called with {} arguments but expect at least {}".f(
                                                             ssym,
                                                             num_args,
                                                             min_args)
@@ -171,18 +171,18 @@ eval_static_call(ssym, arg_list)
         param_type = param_types[index]
 
         if param_type == nil
-          txt_args = "%a, %a".f(txt_args, eval_expr_untyped(arg))
+          txt_args = "{}, {}".f(txt_args, eval_expr_untyped(arg))
         else
-          txt_args = "%a, %a".f(txt_args, eval_expr_typesafe(arg, param_type))
-    txt_args = "%a, tuple_to_val(%a".f(txt_args, num_args - min_args)
+          txt_args = "{}, {}".f(txt_args, eval_expr_typesafe(arg, param_type))
+    txt_args = "{}, tuple_to_val({}".f(txt_args, num_args - min_args)
     if num_args > min_args
       for index in (min_args+1):num_args
         arg = arg_list[index]
-        txt_args = "%a, %a".f(txt_args, eval_expr_untyped(arg))
-    txt_args = "%a)".f(txt_args)
+        txt_args = "{}, {}".f(txt_args, eval_expr_untyped(arg))
+    txt_args = "{})".f(txt_args)
   else
     if num_args != num_params
-      raise "'%a' called with %a arguments but expect %a".f(ssym,
+      raise "'{}' called with {} arguments but expect {}".f(ssym,
                                                             num_args,
                                                             num_params)
     if num_args > 0
@@ -190,14 +190,14 @@ eval_static_call(ssym, arg_list)
         arg = arg_list[i]
         param_type = param_types[i]
         if param_type == nil
-          txt_args = "%a, %a".f(txt_args, eval_expr_untyped(arg))
+          txt_args = "{}, {}".f(txt_args, eval_expr_untyped(arg))
         else
-          txt_args = "%a, %a".f(txt_args, eval_expr_typesafe(arg, param_type))
+          txt_args = "{}, {}".f(txt_args, eval_expr_typesafe(arg, param_type))
 
   if get_optims()[&FUNC_CALLS]
-    return "FUNC_CALL(%a%a)".f(FuncTable.get(ssym, num_params), txt_args)
+    return "FUNC_CALL({}{})".f(FuncTable.get(ssym, num_params), txt_args)
   else
-    return "func_call%a(%a%a)".f(num_params, Ssym.get(ssym), txt_args)
+    return "func_call{}({}{})".f(num_params, Ssym.get(ssym), txt_args)
 
 #######################################################################
 # Operator optimizations
@@ -207,11 +207,11 @@ numeric_proc(t, e)
     case "int64"
       return e
     case "Integer"
-      return "val_to_int64(%a)".f(e)
+      return "val_to_int64({})".f(e)
     case "double"
       return e
     case "Double"
-      return "val_to_double(%a)".f(e)
+      return "val_to_double({})".f(e)
   raise "Assertion error! This line should not be reached"
 
 global numeric_types = ["int64", "double", "Integer", "Double"]
@@ -228,7 +228,7 @@ numeric_op(tuple1, tuple2, op)
   result_t = "int64"
   if (t1 in double_types) or (t2 in double_types)
     result_t = "double"
-  return tuple(result_t, "(%a %a %a)".f(proc1, op[3], proc2))
+  return tuple(result_t, "({} {} {})".f(proc1, op[3], proc2))
 
 bool_numeric_op(tuple1, tuple2, op)
   t1, e1 = tuple1
@@ -239,7 +239,7 @@ bool_numeric_op(tuple1, tuple2, op)
 
   proc1 = numeric_proc(t1, e1)
   proc2 = numeric_proc(t2, e2)
-  return tuple("bool", "(%a %a %a)".f(proc1, op[3], proc2))
+  return tuple("bool", "({} {} {})".f(proc1, op[3], proc2))
 
 #######################################################################
 # Convenience functions for eval_expr (most external code will call
@@ -264,10 +264,10 @@ eval_expr_typesafe(Ast.Node expr, String type)
 
   # Here, at most we can do is ensure run-time type safety
   if expr_type == nil
-    return "obj_verify_assign(%a, %a)".f(str, Type.get(type))
+    return "obj_verify_assign({}, {})".f(str, Type.get(type))
 
-  raise ("expression which evaluated to '%a' has type '%a' "
-         "but is required to have type '%a'".f(str, expr_type, type))
+  raise ("expression which evaluated to '{}' has type '{}' "
+         "but is required to have type '{}'".f(str, expr_type, type))
 
 #######################################################################
 # eval_expr
@@ -288,17 +288,17 @@ eval_expr_Value(Ast.Node expr)
         switch m.size
           case 2
             is_map = true
-            args = "%a, %a, %a".f(args, eval_expr_untyped(m[1]), eval_expr_untyped(m[2]))
+            args = "{}, {}, {}".f(args, eval_expr_untyped(m[1]), eval_expr_untyped(m[2]))
           case 1
             is_set = true
-            args = "%a, %a".f(args, eval_expr_untyped(m[1]))
+            args = "{}, {}".f(args, eval_expr_untyped(m[1]))
 
       if is_map and is_set
         raise "invalid curly braces: is this a set or a map?"
       if is_map
-        return "ht_new_map(%a%a)".f(num_ms, args)
+        return "ht_new_map({}{})".f(num_ms, args)
       if is_set
-        return "ht_new_set(%a%a)".f(num_ms, args)
+        return "ht_new_set({}{})".f(num_ms, args)
     case Ast.EXPR_INDEX
       return eval_index(expr[1], expr[2])
     case Ast.EXPR_FIELD_CALL
@@ -312,14 +312,14 @@ eval_expr_Value(Ast.Node expr)
       elif locals_query(s) != nil
         return eval_obj_call(parent, field, arg_list)
 
-      return eval_static_call("%a.%a".f(s, field), arg_list)
+      return eval_static_call("{}.{}".f(s, field), arg_list)
     case Ast.EXPR_ID_CALL
       left_id = expr[1].text
       arg_list = expr[2]
       if locals_query(left_id) != nil
-        raise "variable '%a' called like a function".f(left_id)
+        raise "variable '{}' called like a function".f(left_id)
       if left_id == "tuple"
-        return "tuple_to_val(%a%a)".f(arg_list.num_children,
+        return "tuple_to_val({}{})".f(arg_list.num_children,
                                       eval_expr_list(arg_list, true))
       return eval_static_call(left_id, arg_list)
     case Ast.EXPR_FIELD
@@ -334,7 +334,7 @@ eval_expr_Value(Ast.Node expr)
       elif locals_query(s) != nil
         dynamic_field = true
       if dynamic_field
-        return "field_get(%a, %a)".f(eval_expr_untyped(left),
+        return "field_get({}, {})".f(eval_expr_untyped(left),
                                      Dsym.get(field))
 
       # For sure it is a static symbol
@@ -343,8 +343,8 @@ eval_expr_Value(Ast.Node expr)
     case Ast.EXPR_AT_VAR
       name = expr.get_string("name")
       if Ctx.class_type_get() != &FIELD
-        raise "'@%a' in a class that's not a field class".f(name)
-      return "_c_data[%a]".f(Ctx.class_dict_get(name))
+        raise "'@{}' in a class that's not a field class".f(name)
+      return "_c_data[{}]".f(Ctx.class_dict_get(name))
 
     case Ast.C_CODE
       text = expr.text[2:-2]
@@ -356,7 +356,7 @@ eval_expr_Value(Ast.Node expr)
 eval_expr(expr)
   if expr.size == 1
     if expr.type in unary_ops
-      return tuple(nil, "%a(%a)".f(
+      return tuple(nil, "{}({})".f(
                                         unary_ops[expr.type],
                                         eval_expr_untyped(expr[1])
                                       ))
@@ -378,7 +378,7 @@ eval_expr(expr)
         result = nil
 
       if result == nil
-        return tuple(nil, "%a(%a,%a)".f(op[1], v1, v2))
+        return tuple(nil, "{}({},{})".f(op[1], v1, v2))
       else
         return result
 
@@ -398,13 +398,13 @@ eval_expr(expr)
     case Ast.CHARACTER
       return tuple("int64", expr.text[2])
     case Ast.STRING
-      return tuple("String", "string_to_val(\"%a\")".f(expr.text))
+      return tuple("String", "string_to_val(\"{}\")".f(expr.text))
     case Ast.EXPR_ARRAY
       expr_list = expr[1]
-      return tuple("Array1", "array1_to_val2(%a%a)".f(expr_list.num_children,
+      return tuple("Array1", "array1_to_val2({}{})".f(expr_list.num_children,
                                               eval_expr_list(expr_list, true)))
     case Ast.EXPR_IS_TYPE
-      return tuple("bool", "(obj_klass(%a) == %a)".f(
+      return tuple("bool", "(obj_klass({}) == {})".f(
                                   eval_expr_untyped(expr[1]),
                                   Type.get(eval_type(expr[2]))
                                       ))
@@ -420,18 +420,18 @@ eval_expr(expr)
       right = expr[2]
       # TODO: These val_to_int64s should be handled better...
       return tuple("Range", "range_to_val(RANGE_BOUNDED, "
-              "val_to_int64(%a), val_to_int64(%a))".f(
+              "val_to_int64({}), val_to_int64({}))".f(
                                           eval_expr_untyped(left),
                                           eval_expr_untyped(right)
                                                      ) )
     case Ast.EXPR_RANGE_BOUNDED_LEFT
       left = expr[1]
       return tuple("Range", "range_to_val(RANGE_BOUNDED_LEFT, "
-              "val_to_int64(%a), 0)".f(eval_expr_untyped(left)))
+              "val_to_int64({}), 0)".f(eval_expr_untyped(left)))
     case Ast.EXPR_RANGE_BOUNDED_RIGHT
       right = expr[1]
       return tuple("Range", "range_to_val(RANGE_BOUNDED_RIGHT, "
-              "0, val_to_int64(%a))".f(eval_expr_untyped(right)))
+              "0, val_to_int64({}))".f(eval_expr_untyped(right)))
     case Ast.EXPR_RANGE_UNBOUNDED
       return tuple("Range", "range_to_val(RANGE_UNBOUNDED, 0, 0)")
 

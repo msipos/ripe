@@ -67,7 +67,7 @@ namespace Opt
         option = Opt.find(arg, options, 2)
 
       if option == nil
-        Err.printf("error: invalid option '%a'\n", arg)
+        Err.println("error: invalid option '{1}'".f(arg))
         Opt.display_help(options)
         Os.exit(1)
 
@@ -80,7 +80,7 @@ namespace Opt
       optarg = nil
       if flag bit_and Opt.ARG != 0
         if index > args.size
-          Err.printf("error: option '%a' requires an argument", arg)
+          Err.println("error: option '{1}' requires an argument".f(arg))
           Opt.display_help(options)
           Os.exit(1)
 
@@ -88,7 +88,7 @@ namespace Opt
         index = index + 1
         type = Opt.inspect(optarg)
         if type != 0
-          Err.printf("error: option '%a' requires an argument", arg)
+          Err.println("error: option '{1}' requires an argument".f(arg))
           Opt.display_help(options)
           Os.exit(1)
       parsed.push(tuple(option[1], optarg))

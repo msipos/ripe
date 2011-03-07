@@ -270,56 +270,13 @@ class String
       return pack_bool(strcmp(@s.str, val_to_string(__other)) < 0);
     $
 
-  replace(map)
-    key = nil
-    out = nil
-    $
-      StringBuf sb;
-
-      Format f;
-      char* s = @s.str;
-      format_init(&f, s);
-
-      FormatElement* data = (FormatElement*) f.array.data;
-      sbuf_init(&sb, "");
-      for (int64 i = 0; i < f.array.size; i++){
-        FormatElement e = data[i];
-
-        switch (e.type){
-          case FORMAT_STRING:
-            format_get_text(&f, i);
-            sbuf_cat(&sb, f.sb.str);
-            break;
-          case FORMAT_FLAG:
-            exc_raise("format flag not allowed");
-          case FORMAT_PARAM:
-            format_get_text(&f, i);
-            __key = string_to_val(f.sb.str);
-    $
-    str = map[key]
-    $
-            sbuf_cat(&sb, to_string(__str));
-            break;
-          default:
-            assert_never();
-        }
-      }
-
-      format_deinit(&f);
-      __out = string_to_val(sb.str);
-      sbuf_deinit(&sb);
-    $
-    return out
-
   #$ rdoc-name String.f
   #$ rdoc-header String.f(*args)
   #$ Returns a string with given formatting.
   f(*args)
     $
       Tuple* array = val_to_tuple(__args);
-      uint64 len = format(NULL, @s.str, array->size, array->data);
-      char out[len];
-      format(out, @s.str, array->size, array->data);
+      const char* out = format_to_string(@s.str, array->size, array->data);
       return string_to_val(out);
     $
 
@@ -337,11 +294,10 @@ class String
   #$ rdoc-header String.print(*args)
   #$ Append to a string.
   print(*args)
-    $
-      Tuple* array = val_to_tuple(__args);
-      uint64 len = format_simple(NULL, array->size, array->data);
-      char out[len];
-      format_simple(out, array->size, array->data);
-      @s.str = mem_realloc(@s.str, strlen(@s.str) + len);
-      strcat(@s.str, out);
-    $
+    for arg in args
+      s = arg.to_string()
+      $
+        const char* arg = val_to_string(__s);
+        @s.str = mem_realloc(@s.str, strlen(@s.str) + strlen(arg) + 1);
+        strcat(@s.str, arg);
+      $

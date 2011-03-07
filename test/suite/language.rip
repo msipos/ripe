@@ -204,6 +204,6 @@ main()
   arr = Test.get_results()
   correct = arr[1] - arr[2]
   total = arr[1]
-  Err.printf("language test results: %a/%a\n", correct, total)
+  Err.println("language test results: {}/{}".f(correct, total))
   if correct < total
-    Err.printf("there were %a errors\n", total - correct)
+    Err.println("there were {} errors".f(total - correct))

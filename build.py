@@ -5,8 +5,7 @@
 DATA_TYPES = ['Array1', 'Array2', 'Array3', 'Double', 'Flags', 'Integer', 'Map',
               'Range', 'Set', 'String', 'Tuple']
 STDLIB = ['Character', 'DataFormat', 'Err', 'Iterable', 'Math', 'Num', 'Opt',
-          'Os', 'Out', 'Path', 'Std', 'Stream', 'Test', 'Template',
-          'TextFile', 'Time']
+          'Os', 'Out', 'Path', 'Test', 'TextFile', 'Time']
 OPTIONAL_MODULES = ['Ast', 'Bio', 'Curl', 'Gd', 'Gsl', 'Gtk', 'Json',
                     'Povray', 'Pthread', 'Sci', 'Sdl', 'Speech',
                     'Sqlite', 'Xml']

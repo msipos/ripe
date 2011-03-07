@@ -26,10 +26,10 @@ namespace Test
     c_total = c_total + 1
     if a == b
       if verbose
-        Err.printf("%a OK\n", name)
+        Err.println("{1} OK".f(name))
     else
       c_false = c_false + 1
-      Err.printf("%a FAIL (%a != %a)\n", name, a, b)
+      Err.println("{1} FAIL ({2} != {3})".f(name, a, b))
 
   error()
     $

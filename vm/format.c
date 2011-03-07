@@ -13,46 +13,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <ctype.h>
 #include "vm/vm.h"
 
-// Return how many characters you consumed
-static int64 scan(char* s, int* type)
-{
-  char c = *s;
-
-  if (c == '%'){
-    if (s[1] == '{'){
-      *type = FORMAT_PARAM;
-      int64 i = 2;
-      for (;;){
-        if (s[i] == '}'){
-          i++;
-          break;
-        }
-        if (s[i] == 0){
-          break;
-        }
-        i++;
-      }
-      return i;
-    } else {
-      *type = FORMAT_FLAG;
-      return 2;
-    }
-  } else {
-    *type = FORMAT_STRING;
-    int64 i = 0;
-    for (;;){
-      if (s[i] == '%' or s[i] == 0) {
-        break;
-      }
-      i++;
-    }
-    return i;
-  }
-}
-
-// Strip whitespace in place
 static void strip_whitespace(char* s)
 {
   // Go backwards and remove whitespace
@@ -60,7 +23,7 @@ static void strip_whitespace(char* s)
   for(;;){
     if (l == 0) break;
     char c = s[l-1];
-    if (c == ' ' or c == '\t' or c== '\n'){
+    if (c == ' '){
       s[l-1] = 0;
     } else {
       break;
@@ -73,7 +36,7 @@ static void strip_whitespace(char* s)
   for(;;){
     char c = s[l];
     if (c == 0) break;
-    if (c == ' ' or c == '\t' or c== '\n'){
+    if (c == ' '){
       l++;
     } else {
       break;
@@ -88,176 +51,98 @@ static void strip_whitespace(char* s)
   }
 }
 
-void format_get_text(Format* f, int64 i)
+static const char* param_to_string(Value v)
 {
-  FormatElement e = ((FormatElement*) f->array.data)[i];
-  switch (e.type){
-    case FORMAT_STRING:
-      sbuf_ncpy(&(f->sb), f->string + e.a, e.b - e.a + 1);
-      break;
-    case FORMAT_FLAG:
-      sbuf_ncpy(&(f->sb), f->string + e.a + 1, 1);
-      break;
-    case FORMAT_PARAM:
-      sbuf_ncpy(&(f->sb), f->string + e.a + 2, e.b - e.a - 2);
-      strip_whitespace(f->sb.str);
-      break;
+  switch (v & MASK_TAIL){
+    case 0b00:
+      if (v == VALUE_NIL) return "nil";
+      if (v == VALUE_TRUE) return "true";
+      if (v == VALUE_FALSE) return "false";
+      if (v == VALUE_EOF) return "eof";
+      return to_string(v);
+    case 0b01:
+      {
+        char buf[30];
+        sprintf(buf, "%"PRId64, unpack_int64(v));
+        return mem_strdup(buf);
+      }
+    case 0b10:
+      {
+        char buf[30];
+        sprintf(buf, "%g", unpack_double(v));
+        return mem_strdup(buf);
+      }
+    case 0b11:
+      assert_never();
   }
-}
-
-void format_init(Format* f, char* string)
-{
-  f->string = string;
-  array_init(&(f->array), FormatElement);
-  sbuf_init(&(f->sb), "");
-
-  int64 i = 0;
-  for (;;){
-    if (string[i] == 0) break;
-
-    int64 start = i;
-    FormatElement e;
-    i += scan(string + i, &e.type);
-    e.a = start;
-    e.b = i - 1;
-    array_append(&(f->array), e);
-  }
-}
-
-void format_deinit(Format* f)
-{
-  array_deinit(&(f->array));
-  sbuf_deinit(&(f->sb));
-}
-
-static uint64 param(char* out, Value v)
-{
-  if (is_int64(v)){
-    char buf[200];
-    sprintf(buf, "%"PRId64, unpack_int64(v));
-    if (out) strcpy(out, buf);
-    return strlen(buf) + 1;
-  }
-
-  if (is_double(v)){
-    char buf[200];
-    sprintf(buf, "%g", unpack_double(v));
-    if (out) strcpy(out, buf);
-    return strlen(buf) + 1;
-  }
-
-  Klass* k = obj_klass(v);
-  if (k == klass_String){
-    char** s = obj_c_data(v);
-    if (out) strcpy(out, *s);
-    return strlen(*s) + 1;
-  }
-
-  const char* buf = to_string(v);
-  if (out) strcpy(out, buf);
-  return strlen(buf) + 1;
-}
-
-uint64 format_simple(char* out, uint64 num_values, Value* values)
-{
-  uint64 i = 0;
-  for (uint64 idx = 0; idx < num_values; idx++){
-    Value v = values[idx];
-
-    uint64 sz = param(NULL, v);
-    if (out) {
-      char p[sz];
-      param(p, v);
-      strcpy(out + i, p);
-    }
-    i += sz - 1;
-  }
-  if (out) out[i] = 0;
-  i++;
-  return i;
-}
-
-uint64 format(char* out, char* format_string, uint64 num_values, Value* values)
-{
-  Format f;
-  format_init(&f, format_string);
-  uint64 sz = 0;
-  uint64 p = 0;
-  if (out) out[0] = 0;
-
-  FormatElement* data = (FormatElement*) f.array.data;
-  for (int64 i = 0; i < f.array.size; i++){
-    FormatElement e = data[i];
-
-    switch (e.type){
-      case FORMAT_STRING:
-        if (out) {
-          format_get_text(&f, i);
-          strcpy(out + sz, f.sb.str);
-        }
-        sz += e.b - e.a + 1;
-        break;
-      case FORMAT_FLAG:
-        format_get_text(&f, i);
-        char c = f.sb.str[0];
-        switch (c){
-          case '%':
-            if (out) {
-              out[sz] = '%';
-              out[sz + 1] = 0;
-            }
-            sz++;
-            break;
-          case 'a':
-            {
-              if (p >= num_values) exc_raise("not enough parameters given");
-              Value v = values[p];
-              int64 tsz = param(NULL, v);
-              if (out) {
-                char buf[tsz];
-                param(buf, v);
-                strcpy(out + sz, buf);
-              }
-              sz += tsz - 1;
-              p++;
-            }
-            break;
-          default:
-            exc_raise("invalid format flag '%%%c'", c);
-        }
-        break;
-      default:
-        exc_raise("invalid format string");
-    }
-  }
-  format_deinit(&f);
-  if (out) out[sz] = 0;
-  return sz + 1;
+  assert_never();
+  return NULL;
 }
 
 char* format_to_string(const char* fstr, uint64 num_values, Value* values)
 {
   FormatParse fp;
-  format_parse(fstr, &fp);
+  if (format_parse(fstr, &fp)){
+    exc_raise("failed to parse format string '%s'", fstr);
+  }
 
-  // First convert each value into a string.
+
   const char* strings[num_values];
   for (uint64 i = 0; i < num_values; i++){
-    Value v = values[i];
-    if (is_int64(v)){
-      char buf[50];
-      sprintf(buf, "%"PRId64, unpack_int64(v));
-      strings[i] = mem_strdup(buf);
-    } else if (is_double(v)){
-      char buf[50];
-      sprintf(buf, "%g", unpack_double(v));
-      strings[i] = mem_strdup(buf);
-    }
-
+    strings[i] = NULL;
   }
+
+  uint64 out_len = 1; // 1 for NULL
+  for (uint64 i = 0; i < fp.size; i++){
+    switch(fp.elements[i].type) {
+      case FORMAT_STRING:
+        out_len += strlen(fp.elements[i].str);
+        break;
+      case FORMAT_NUMBER:
+        {
+          int64 n = fp.elements[i].number-1;
+
+          if (n < 0){
+            exc_raise("0 or negative argument to format '%s'", fstr);
+          }
+          if (n >= num_values){
+            exc_raise("not enough arguments to format '%s' (looked for "
+                      "argument %"PRId64" but have %"PRId64" arguments)",
+                      fstr, n+1, num_values);
+          }
+
+          if (strings[n] == NULL) {
+            strings[n] = param_to_string(values[n]);
+          }
+          out_len += strlen(strings[n]);
+        }
+        break;
+      default:
+        assert_never();
+    }
+  }
+
+  char out[out_len];
+  out_len = 0;
+  for (uint64 i = 0; i < fp.size; i++){
+    switch(fp.elements[i].type) {
+      case FORMAT_STRING:
+        strcpy(out + out_len, fp.elements[i].str);
+        out_len += strlen(fp.elements[i].str);
+        break;
+      case FORMAT_NUMBER:
+        {
+          int64 n = fp.elements[i].number-1;
+          strcpy(out + out_len, strings[n]);
+          out_len += strlen(strings[n]);
+        }
+        break;
+    }
+  }
+  return mem_strdup(out);
 }
 
-char scan_until(const char** s, char terminate)
+static char scan_until(const char** s, char terminate)
 {
   for(;;){
     if (**s == 0) return 0;
@@ -266,19 +151,15 @@ char scan_until(const char** s, char terminate)
   }
 }
 
-void add_element(FormatParse* fp, int type, const char* str)
+static void add_element(FormatParse* fp)
 {
   if (fp->size == 0){
     fp->size = 1;
     fp->elements = mem_new(FormatParseElement);
-    fp->elements[0].type = type;
-    fp->elements[0].str = str;
   } else {
     fp->size++;
     fp->elements = mem_realloc(fp->elements,
                                sizeof(FormatParseElement) * fp->size);
-    fp->elements[fp->size-1].type = type;
-    fp->elements[fp->size-1].str = str;
   }
 }
 
@@ -286,28 +167,68 @@ int format_parse(const char* fstr, FormatParse* fp)
 {
   fp->size = 0;
   fp->elements = NULL;
-  const char* str;
 
   const char* cur = fstr;
+  uint64 element = 0;
+  int64 autocounter = 1;
   for(;;){
     if (*cur == 0){
       break;
     }
     if (*cur == '{') {
-      str = cur;
+      char* str = (char*) cur;
       char c = scan_until(&cur, '}');
       if (c == 0) return 1; // Error
       // Now, *cur = '}', and *str = '{'
-      str = mem_strndup(str+1, cur - str);
-      strip_whitespace(str);
-      add_element(fp, FORMAT_PARAM, str);
+
+      // Copy over to param_str
+      uint64 tmp_len = cur - str;
+      char param_str[tmp_len];
+      strncpy(param_str, str+1, tmp_len - 1);
+      param_str[tmp_len-1] = 0;
       cur++;
+
+      // Process param_str
+      strip_whitespace(param_str);
+
+      // FORMAT_NUMBER
+      if (isdigit(param_str[0])){
+        char* param_end;
+        int64 n = strtol(param_str, &param_end, 0);
+        if (n == 0 or *param_end != 0){
+          return 1;
+        }
+
+        // Add it
+        add_element(fp);
+        fp->elements[element].type = FORMAT_NUMBER;
+        fp->elements[element].number = n;
+      } else if (param_str[0] == '\0') {
+        add_element(fp);
+        fp->elements[element].type = FORMAT_NUMBER;
+        fp->elements[element].number = autocounter;
+        autocounter++;
+      } else if (param_str[0] == '{') {
+        add_element(fp);
+        fp->elements[element].type = FORMAT_STRING;
+        fp->elements[element].str = "{";
+      } else if (param_str[0] == '}') {
+        add_element(fp);
+        fp->elements[element].type = FORMAT_STRING;
+        fp->elements[element].str = "}";
+      } else {
+        return 1;
+      }
+
     } else {
-      str = cur;
+      char* str = (char*) cur;
       char c = scan_until(&cur, '{');
       str = mem_strndup(str, cur - str + 1);
-      add_element(fp, FORMAT_STRING, str);
+      add_element(fp);
+      fp->elements[element].type = FORMAT_STRING;
+      fp->elements[element].str = str;
     }
+    element++;
   }
   return 0;
 }

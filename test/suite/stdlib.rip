@@ -131,7 +131,7 @@ subarrays()
 
 TextFile()
   tf = TextFile.new("test/suite/textfile", TextFile.Write)
-  tf.printf("line %a\n", 1)
+  tf.println("line {}".f(1))
   tf.println("line 2")
   tf.println("line 3")
   tf.close()
@@ -160,15 +160,6 @@ Tuple()
   m[u] = 147
   Test.test(name, m.size, 2)
   Test.test(name, m[t], 147)
-
-Template()
-  map = Map.new()
-  map[&first_name] = "John"
-  map[&last_name] = "Doe"
-  Test.test("Template.apply()",
-            Template.apply(
-              "hello %{ first_name } %{ last_name }", map),
-            "hello John Doe")
 
 array_iterators()
   arr = [1, 2, 3, 4, 5]
@@ -214,11 +205,6 @@ String()
   Test.test("string +", cat + dog, "catdog")
   Test.test("string +2", 2 + cat, "2cat")
 
-  map = Map.new()
-  map["alpha"] = "beta"
-  map["c"] = "d"
-  Test.test("string.replace", "%{alpha} %{ c }".replace(map), "beta d")
-
   text = "This is a sentence"
   Test.test("String.find()", text.find("is"), 3)
   Test.test("String.find()", text.find("waldo"), nil)
@@ -239,13 +225,13 @@ String()
   longertext.rotate!(4)
   Test.test("String.rotate!()", longertext, "4567890123")
 
+  Test.test("String.f()", "Hello { 1 }!".f("world"), "Hello world!")
+
 Std()
   Test.test("Integer()", 123, Integer("123"))
   Test.test("Integer()", 123, Integer(123.0))
   Test.test("Double()", 123.0, Double("123.0"))
   Test.test("Double()", 123.0, Double(123))
-  Test.test("Std.printf()", Std.sprintf("format %a %a %%", 1, 2),
-                            "format 1 2 %")
 
 Os()
   env = Os.get_environment()
@@ -298,7 +284,6 @@ main()
   Std()
   Os()
   Time()
-  Template()
   Num()
 
   Test.test("Integer.odd?", 7 .odd?(), true)
@@ -310,7 +295,6 @@ main()
   arr = Test.get_results()
   correct = arr[1] - arr[2]
   total = arr[1]
-  Err.printf("stdlib test results: %a/%a\n", correct, total)
+  Err.println("language test results: {}/{}".f(correct, total))
   if correct < total
-    Err.printf("there were %a errors\n", total - correct)
-  Test.test("c-expr", $ int64_to_val(1) $, 1)
+    Err.println("there were {} errors".f(total - correct))

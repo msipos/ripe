@@ -250,7 +250,7 @@ namespace Bio
         return eof
       id_line = id_line.strip()
       if id_line[1] != '>'
-        raise Std.sprintf("invalid id line '%a'", id_line)
+        raise "invalid id line '%a'".f(id_line)
       id = id_line[2:]
       seq = ""
       loop
