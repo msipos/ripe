@@ -4,28 +4,22 @@
 #$ A one-dimensional array object.
 
 $
-  static inline bool cmp(Value cmp_func, Value a, Value b)
-  {
-    if (cmp_func) {
-      return func_call2(cmp_func, a, b) == VALUE_TRUE;
-    } else {
-      return op_lt(a, b) == VALUE_TRUE;
-    }
-  }
+  typedef Value (*CmpFunc) (Value, Value);
 
-  void merge_sort(Value* arr, int64 a, int64 b, Value* tmp, Value cmp_func)
+  void merge_sort2(Value* arr, int64 a, int64 b, Value* tmp,
+                   CmpFunc cfunc)
   {
     if (a == b) return;
     if (b == a + 1){
-      if (cmp(cmp_func, arr[a], arr[b])) return;
+      if (cfunc(arr[a], arr[b]) == VALUE_TRUE) return;
       Value t = arr[b];
       arr[b] = arr[a];
       arr[a] = t;
       return;
     }
     const int64 middle = (a+b)/2;
-    merge_sort(arr, a, middle, tmp, cmp_func);
-    merge_sort(arr, middle+1, b, tmp, cmp_func);
+    merge_sort2(arr, a, middle, tmp, cfunc);
+    merge_sort2(arr, middle+1, b, tmp, cfunc);
 
     // Merging step
     int64 left = a;
@@ -48,7 +42,7 @@ $
         }
         break;
       }
-      if (cmp(cmp_func, arr[left], arr[right])){
+      if (cfunc(arr[left], arr[right]) == VALUE_TRUE) {
         tmp[t] = arr[left];
         left++; t++;
       } else {
@@ -61,6 +55,16 @@ $
     for (t = 0; t < sz; t++){
       arr[a+t] = tmp[t];
     }
+  }
+
+  void merge_sort(Value* arr, int64 a, int64 b, Value* tmp,
+                   Value cmp_func)
+  {
+    CmpFunc cfunc;
+    if (cmp_func == VALUE_NIL) cfunc = &op_lt;
+    else cfunc = (CmpFunc) func_get_ptr(cmp_func, 2);
+
+    merge_sort2(arr, a, b, tmp, cfunc);
   }
 $
 
