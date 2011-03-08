@@ -1,4 +1,65 @@
 namespace Sci
+  class Sampler
+    private arrays
+    readable N
+    private num_arrays
+
+    constructor new(N)
+      @N = N
+      @arrays = []
+      loop
+        if N == 1
+          break
+        arr = Array1.new_const(N, 0.0)
+        @arrays.push(arr)
+        N = (N+1)/2
+      @num_arrays = @arrays.size
+      @arrays.reverse!()
+
+    # Set a probability for j-th outcome.
+    set(Integer j, Double p)
+      arrn = @arrays[-1]
+      Double delta = p - arrn[j]
+      arrn[j] = p
+
+      if @num_arrays > 1
+        for i in (@num_arrays-1):1
+          j = (j+1)/2
+          Array1 arr = @arrays[i]
+          arr[j] = arr[j] + delta
+
+    # x must be a random number between 0.0 and 1.0
+    sample(Double x)
+      Integer a1 = 1
+      Integer a2 = 2
+      Integer b = 1
+
+      # Scale x to be proportional to sum of all the rates
+      Array1 arr1 = @arrays[1]
+      x = (arr1[1] + arr1[2]) * x
+      Out.println(x)
+
+      for i in 1:@num_arrays
+        Array1 arr = @arrays[i]
+        if a2 > arr.size
+          b = a1
+          a1 = 2*b-1
+          a2 = 2*b
+        elif x < arr[a1]
+          b = a1
+          a1 = 2*b-1
+          a2 = 2*b
+        else
+          x = x - arr[a1]
+          b = a2
+          a1 = 2*b-1
+          a2 = 2*b
+      return b
+
+    display()
+      for arr in @arrays
+        Out.println(arr)
+
   namespace Bin
     histogram(A, num_bins)
       min = Iterable.min(A)
