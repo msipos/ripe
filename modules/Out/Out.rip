@@ -3,14 +3,23 @@ $
 $
 
 namespace Out
+  #$ rdoc-name Out.print_array
+  #$ rdoc-header Out.print_array(Array1 or Tuple a)
+  #$ Prints each element of a to stdout.
   print_array(args)
     for arg in args
       $ const char* s = to_string(__arg);
         fputs(s, stdout); $
 
+  #$ rdoc-name Out.print
+  #$ rdoc-header Out.print(...)
+  #$ Prints each argument to stdout.
   print(*args)
     Out.print_array(args)
 
+  #$ rdoc-name Out.println
+  #$ rdoc-header Out.println(...)
+  #$ Prints each argument to stdout, and writes a newline at the end.
   println(*args)
     Out.print_array(args)
     $ putchar('\n'); $

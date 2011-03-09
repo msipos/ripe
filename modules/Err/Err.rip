@@ -3,14 +3,24 @@ $
 $
 
 namespace Err
+
+  #$ rdoc-name Err.print_array
+  #$ rdoc-header Err.print_array(Array1 or Tuple a)
+  #$ Prints each element of a to stderr.
   print_array(args)
     for arg in args
       $ const char* s = to_string(__arg);
         fputs(s, stderr); $
 
+  #$ rdoc-name Err.print
+  #$ rdoc-header Err.print(...)
+  #$ Prints each argument to stderr.
   print(*args)
     Err.print_array(args)
 
+  #$ rdoc-name Err.println
+  #$ rdoc-header Err.println(...)
+  #$ Prints each argument to stderr, and writes a newline at the end.
   println(*args)
     Err.print_array(args)
     $ putc('\n', stderr); $
