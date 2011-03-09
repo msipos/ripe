@@ -63,3 +63,14 @@ namespace Gsl
         if (rv != 1) exc_raise("could not read from '/dev/urandom'");
         gsl_rng_set(@rng, seed);
       $
+
+    # Shuffle the array using the Fisher-Yates-Durstenfeld-Knuth algorithm.
+    shuffle!(array)
+      n = array.size
+
+      for i in 1:(n-1)
+        Integer r = self.uniform_int(i, n)
+        # Swap i-th element with r-th element
+        t = array[r]
+        array[r] = array[i]
+        array[i] = t
