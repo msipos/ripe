@@ -2,6 +2,8 @@ $ #include <math.h> $
 
 namespace Math
   const PI = $ double_to_val(M_PI) $
+  const INF = $ double_to_val(INFINITY) $
+  const NINF = $ double_to_val(-INFINITY) $
 
   hypot(x, y)
     return $ double_to_val(

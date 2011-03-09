@@ -200,6 +200,12 @@ main()
   i = i.pack(1, 4, 0)
   Test.test("integer bitfield packing", i, 16)
 
+  # Special values of Double's
+  inf = Math.INF
+  Test.test("positive infinity", inf.to_string(), "inf")
+  ninf = Math.NINF
+  Test.test("negative infinity", ninf.to_string(), "-inf")
+
   # Tally results
   arr = Test.get_results()
   correct = arr[1] - arr[2]
