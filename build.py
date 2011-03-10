@@ -187,11 +187,22 @@ tools.link_objs(vm_objs + clib_objs, "product/vm.o")
 include_headers = clib_hs + vm_hs + ['modules/modules.h', 'lang/lang.h']
 for header in include_headers:
     tools.copy_file('product/include/' + header, header)
-f = open('product/ripe.meta', 'w')
-f.write('cflags=%s\n' % " ".join(conf["CFLAGS"]))
-f.write('lflags=%s\n' % " ".join(conf["LFLAGS"]))
-f.write('modules=%s\n' % (" ".join(DEF_MODULES)))
+
+##############################################################################
+# WRITE META FILE
+
+meta = 'cflags={0}\nlflags={1}\nmodules={2}\n'.format(
+         " ".join(conf["CFLAGS"]),
+         " ".join(conf["LFLAGS"]),
+         " ".join(DEF_MODULES))
+f = open('product/ripe.meta', 'r')
+contents = f.read()
 f.close()
+
+if contents != meta:
+    f = open('product/ripe.meta', 'w')
+    f.write(meta)
+    f.close()
 
 ##############################################################################
 # BOOTSTRAP STEP 1
