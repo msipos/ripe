@@ -62,12 +62,6 @@ namespace Os
       return array1_to_val(sys_argc - 1, args);
     $
 
-  #$ rdoc-name Os.sleep
-  #$ rdoc-header Os.sleep(Integer seconds)
-  #$ Sleeps for a number of seconds.
-  sleep(Integer seconds)
-    $ sleep(unpack_int64(__seconds)); $
-
   #$ rdoc-name Os.system
   #$ rdoc-header Integer Os.system(String or Array1 arg)
   #$ Executes arg using the system shell.  If arg is an Array1, then the Array1

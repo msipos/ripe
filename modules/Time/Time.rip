@@ -4,17 +4,27 @@ $
 $
 
 namespace Time
+
+  #$ rdoc-name Time.get_current
+  #$ rdoc-header Integer Time.get_current()
+  #$ Returns the time since the epoch.
   get_current()
     $
       time_t t = time(NULL);
       return int64_to_val( (int64) t );
     $
 
+  #$ rdoc-name Time.sleep
+  #$ rdoc-header Time.sleep(Integer seconds)
+  #$ Sleeps for a number of seconds.
   sleep(seconds)
     $
       sleep(val_to_int64(__seconds));
     $
 
+  #$ rdoc-name Time.nanosleep
+  #$ rdoc-header Time.nanosleep(Integer seconds, Integer nanoseconds)
+  #$ Precisely sleep for an amount of time.
   nanosleep(seconds, nanoseconds)
     $
       struct timespec req = { val_to_int64(__seconds),

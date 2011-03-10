@@ -9,6 +9,12 @@ namespace TextFile
   const Read = $ int64_to_val(TEXTFILE_READ) $
   const Write = $ int64_to_val(TEXTFILE_WRITE) $
 
+  read_file(filename)
+    tf = TextFile.new(filename, TextFile.Read)
+    s = tf.read_entire()
+    tf.close()
+    return s
+
 class TextFile
   $ FILE* f; $
 
@@ -50,9 +56,19 @@ class TextFile
     s = nil
     $
       int len;
-      fseek(@f, 0, SEEK_END);
+      if (fseek(@f, 0, SEEK_END) == -1){
+        exc_raise("seeking to end of file failed: %s",
+                  strerror(errno));
+      }
       len = ftell(@f);
-      fseek(@f, 0, SEEK_SET);
+      if (len == -1){
+        exc_raise("getting end-file offset failed: %s",
+                  strerror(errno));
+      }
+      if (fseek(@f, 0, SEEK_SET) == -1){
+        exc_raise("seeking to start of file failed: %s",
+                  strerror(errno));
+      }
       char* buf = alloca(len + 1);
       buf[len] = 0;
       if (fread(buf, len, 1, @f) != 1){

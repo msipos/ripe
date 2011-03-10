@@ -1,11 +1,10 @@
 #$ rdoc-file String
 
 namespace String
-
   #$ rdoc-name String.join
-  #$ rdoc-header String.join(Array1 array, String between)
-  #$ Joins string elements of array into a string.
-  join(array, between)
+  #$ rdoc-header String String.join(Array1 array, String between)
+  #$ Joins string elements of array into a string, separated by between.
+  join(Array1 array, String between)
     if array.size == 0
       return ""
     if array.size == 1
@@ -104,7 +103,9 @@ class String
   to_string()
     return self
 
-  # A[x] <- A[x+delta]
+  #$ rdoc-name String.rotate!
+  #$ rdoc-header String Strong.rotate!(Integer delta)
+  #$ Returns a string S1, a rotation of S2 where S1[x] = S2[x+delta]
   rotate!(Integer delta)
     $ const int64 size = strlen(@s.str);
       int64 delta = unpack_int64(__delta);
@@ -190,11 +191,17 @@ class String
     $
     return arr
 
+  #$ rdoc-name String.clone
+  #$ rdoc-header String String.clone()
+  #$ Clones the string.
   clone()
     $
       return string_to_val(@s.str);
     $
 
+  #$ rdoc-name String.substitute_character!
+  #$ rdoc-header String substitute_character!(Character a, Character b)
+  #$ Replaces each character a in the string by b.
   substitute_character!(Integer c, Integer d)
     $
       int c = unpack_int64(__c);
@@ -204,6 +211,9 @@ class String
       }
     $
 
+  #$ rdoc-name String.substitute
+  #$ rdoc-header String substitute(String s1, String s2)
+  #$ Return the string with each occurence of s1 replaced by s2.
   substitute(String s1, String s2)
     text = self
     len = s1.size
@@ -232,6 +242,9 @@ class String
   split_whitespace()
     return self.split(" \n\t")
 
+  #$ rdoc-name String.plus
+  #$ rdoc-header String.+
+  #$ String concatenation.
   __plus(other)
     $
       const char* other = to_string(__other);
@@ -250,6 +263,9 @@ class String
       return string_to_val(buf);
     $
 
+  #$ rdoc-name String.lt
+  #$ rdoc-header String.<
+  #$ String alphabetic comparison.
   __lt(other)
     $
       return pack_bool(strcmp(@s.str, val_to_string(__other)) < 0);
@@ -260,6 +276,9 @@ class String
       return pack_bool(strcmp(@s.str, val_to_string(__other)) > 0);
     $
 
+  #$ rdoc-name String.lt
+  #$ rdoc-header String.>
+  #$ String alphabetic comparison.
   __gt(other)
     $
       return pack_bool(strcmp(@s.str, val_to_string(__other)) > 0);
@@ -291,8 +310,8 @@ class String
     $
 
   #$ rdoc-name String.print
-  #$ rdoc-header String.print(*args)
-  #$ Append to a string.
+  #$ rdoc-header String.print(...)
+  #$ Append arguments to the string.
   print(*args)
     for arg in args
       s = arg.to_string()

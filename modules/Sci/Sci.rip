@@ -25,26 +25,22 @@ namespace Sci
       if @num_arrays > 1
         for i in (@num_arrays-1):1
           j = (j+1)/2
-          arr = @arrays[i]
+          Array1 arr = @arrays[i]
           arr[j] = arr[j] + delta
 
     # x must be a random number between 0.0 and 1.0
-    sample(x)
-      Out.println()
-      Out.println()
-
-      a1 = 1
-      a2 = 2
-      b = 1
+    sample(Double x)
+      Integer a1 = 1
+      Integer a2 = 2
+      Integer b = 1
 
       # Scale x to be proportional to sum of all the rates
-      arr1 = @arrays[1]
+      Array1 arr1 = @arrays[1]
       x = (arr1[1] + arr1[2]) * x
+      Out.println(x)
 
       for i in 1:@num_arrays
-        arr = @arrays[i]
-        Out.println("x =", x)
-        Out.println(arr[a1:a2])
+        Array1 arr = @arrays[i]
         if a2 > arr.size
           b = a1
           a1 = 2*b-1
@@ -54,13 +50,10 @@ namespace Sci
           a1 = 2*b-1
           a2 = 2*b
         else
+          x = x - arr[a1]
           b = a2
           a1 = 2*b-1
           a2 = 2*b
-          x = x - arr[a1]
-        Out.println("b = ", b)
-        Out.println("a1 = ", a1)
-        Out.println("a2 = ", a2)
       return b
 
     display()

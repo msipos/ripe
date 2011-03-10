@@ -87,6 +87,9 @@ class Array1
       }
     $
 
+  #$ rdoc-name Array1.clone
+  #$ rdoc-header Array1 Array1.clone()
+  #$ Create a clone of an array.
   clone()
     size = self.size
     arr = Array1.new_const(size, nil)

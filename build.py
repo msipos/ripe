@@ -18,7 +18,7 @@ import os, sys, tools
 conf = tools.conf
 conf["CC"] = "gcc"
 conf["LD"] = "ld"
-conf["CFLAGS"] = ["-Wall", "-Wstrict-aliasing=0", "-Wfatal-errors", "-std=gnu99", "-I.", "-Wno-unused"]
+conf["CFLAGS"] = ["-Wall", "-Wfatal-errors", "-std=gnu99", "-I.", "-Wno-unused"]
 conf["LFLAGS"] = ["-lm"]
 conf["YACC"] = ["bison", "--warnings=all", "-v"]
 conf["LEX"] = "flex"

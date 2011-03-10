@@ -150,16 +150,14 @@ do_menu(tf, current)
     files.push(file)
   files.sort!()
 
-  tf.printf("<div class=\"menu\"><ul>\n")
+  tf.println("<div class=\"menu\"><ul>")
   for file in files
     if file == current
-      tf.printf("<li><span class=\"menu\">%a</a></li>\n",
-                file)
+      tf.println("<li><span class=\"menu\">{}</a></li>".f(file))
     else
-      tf.printf("<li><a class=\"menu\" href=\"%a.html\">%a</a></li>\n",
-                file,
-                file)
-  tf.printf("</ul></div>\n")
+      tf.println("<li><a class=\"menu\" href=\"{}.html\">{}</a></li>".f(
+                file, file))
+  tf.println("</ul></div>")
 
 global names_by_size
 do_file(file, set)
@@ -172,23 +170,23 @@ do_file(file, set)
     return
 
   tf = TextFile.new(file+".html", TextFile.Write)
-  tf.printf("<html>\n  <head><title>Ripe Documentation</title>")
-  tf.printf("<link rel=\"stylesheet\" type=\"text/css\" href=\"ripedoc.css\" /></head>\n")
-  tf.printf("<body>\n")
+  tf.print("<html>\n  <head><title>Ripe Documentation</title>")
+  tf.print("<link rel=\"stylesheet\" type=\"text/css\" href=\"ripedoc.css\" /></head>\n")
+  tf.print("<body>\n")
   do_menu(tf, file)
 
-  tf.printf("<div class=\"content\">\n")
+  tf.print("<div class=\"content\">\n")
   for name in names
     doc = doc_map[name]
 
     header = make_links(doc[&header], names_by_size, name)
     text = make_links(doc[&text], names_by_size, name)
-    tf.printf("<div class=\"article\"><a name=\"%a\"></a>\n", name)
-    tf.printf("<div class=\"header\">%a</div>", header)
-    tf.printf("<div class=\"text\">%a</div>", text)
-    tf.print("</div>\n")
-  tf.printf("</div>\n")
-  tf.printf("</body>\n</html>")
+    tf.println("<div class=\"article\"><a name=\"{}\"></a>".f(name))
+    tf.print("<div class=\"header\">{}</div>".f(header))
+    tf.print("<div class=\"text\">{}</div>".f(text))
+    tf.println("</div>")
+  tf.println("</div>")
+  tf.println("</body>\n</html>")
 
 main()
   doc_map = Map.new()
@@ -199,30 +197,29 @@ main()
     process(arg)
 
   Out.println("Line number results:")
-  format = "  %a     %a  %a  %a  %a     %a\n"
-  Out.printf(format, pad("", 7), "total", "empty", "cmmnt", "  doc", "actual")
+  format = "  {}     {}  {}  {}  {}     {}\n"
+  Out.println(format.f(pad("", 7), "total", "empty", "cmmnt", "  doc", "actual"))
   c_actual = c_total - c_empty - c_comment - c_doc
-  Out.printf(format, "C:     ",
+  Out.println(format.f("C:     ",
                      pad(c_total, 5),
                      pad(c_empty, 5),
                      pad(c_comment, 5),
                      pad(c_doc, 5),
-                     pad(c_actual, 6))
+                     pad(c_actual, 6)))
   rip_actual = rip_total - rip_empty - rip_comment - rip_doc
-  Out.printf(format, "Ripe:  ",
+  Out.println(format.f("Ripe:  ",
                      pad(rip_total, 5),
                      pad(rip_empty, 5),
                      pad(rip_comment, 5),
                      pad(rip_doc, 5),
-                     pad(rip_actual, 6))
+                     pad(rip_actual, 6)))
   py_actual = py_total - py_empty - py_comment - py_doc
-  Out.printf(format, "Python:",
+  Out.println(format.f("Python:",
                      pad(py_total, 5),
                      pad(py_empty, 5),
                      pad(py_comment, 5),
                      pad(py_doc, 5),
-                     pad(py_actual, 6))
-
+                     pad(py_actual, 6)))
 
   # Construct names_by_size
   names_by_size = []
@@ -230,8 +227,8 @@ main()
     names_by_size.push(name)
   names_by_size.sort_via!(by_size)
   names_by_size.reverse!()
-  Out.printf("\nNumber of ripedoc elements: %a\n", names_by_size.size)
-  Out.printf("Number of ripedoc files: %a\n", file_map.size)
+  Out.println("\nNumber of ripedoc elements: {}".f(names_by_size.size))
+  Out.println("Number of ripedoc files: {}".f(file_map.size))
 
   for file, set in file_map
     do_file(file, set)

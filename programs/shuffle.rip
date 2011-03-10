@@ -1,0 +1,40 @@
+wrong_shuffle!(array)
+  n = array.size
+
+  for i in 1:n
+    Integer r = rng.uniform_int(1, n)
+    # Swap i-th element with r-th element
+    t = array[r]
+    array[r] = array[i]
+    array[i] = t
+
+global Gsl.Rng rng = Gsl.Rng.new()
+
+usage()
+  Err.println(" Usage:")
+  Err.println()
+  Err.println("   ./shuffle CHOICE | sort | uniq -c")
+  Err.println()
+  Err.println(" where CHOICE is right or wrong.")
+
+main()
+  rng.seed_random()
+  args = Os.get_args()
+
+  if args.size != 1
+    usage()
+    return
+
+  if args[1] != "right" and args[1] != "wrong"
+    usage()
+    return
+
+  Bool right = args[1] == "right"
+
+  for i in 1:200000
+    array = [1, 2, 3, 4]
+    if right
+      rng.shuffle!(array)
+    else
+      wrong_shuffle!(array)
+    Out.println(array)
