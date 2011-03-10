@@ -1,5 +1,7 @@
 #$ rdoc-file Double
 
+$ #include <math.h> $
+
 #$ rdoc-name to_Double
 #$ rdoc-header Double(arg)
 #$ Convert arg to a Double.  arg is allowed to be a Double, Integer, or String.
@@ -38,3 +40,9 @@ class Double
       sprintf(buf, "%f", unpack_double(__self));
       return string_to_val(buf);
     $
+
+  #$ rdoc-name Double.is_nan?
+  #$ rdoc-header Double.is_nan?()
+  #$ Returns true if this Double is a nan.
+  is_nan?()
+    return $ pack_bool(isnan(unpack_double(__self))) $
