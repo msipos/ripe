@@ -179,7 +179,7 @@ gen_params2(param_list, first_comma?)
 gen_params(param_list)
   return gen_params2(param_list, false)
 
-gen_stmt_assign2(lvalue, rvalue)
+gen_stmt_assign2(lvalue, rvalue, warn_if_shadow?)
   switch lvalue.type
     case Ast.ID
       var = locals_query(lvalue.text)
@@ -192,6 +192,9 @@ gen_stmt_assign2(lvalue, rvalue)
         code.print("  Value {} = {};\n".f(c_name,
                                           eval_expr_untyped(rvalue)))
       else
+        if warn_if_shadow?
+          Err.println("warning: possible shadowing of variable {1}".f(
+                      lvalue.text))
         if var.type != nil
           code.print("  {} = {};\n".f(var.c_name,
                                       eval_expr_typesafe(rvalue, var.type)))
@@ -221,17 +224,18 @@ gen_stmt_assign2(lvalue, rvalue)
       code.print("  {} = {};\n".f(eval_expr_untyped(lvalue),
                                   eval_expr_untyped(rvalue)) )
 
-gen_stmt_assign(left, right)
+gen_stmt_assign(left, right, warn_if_shadow?)
   if left.num_children == 1
-    gen_stmt_assign2(left[1], right)
+    gen_stmt_assign2(left[1], right, warn_if_shadow?)
   else
     id_tmp = Ast.Node.new_id("_tmp_assign{}".f(counter()))
-    gen_stmt_assign2(id_tmp, right)
+    gen_stmt_assign2(id_tmp, right, warn_if_shadow?)
 
     index = 1
     for l in left
       gen_stmt_assign2(l,
-                       Ast.Node.new_expr_index(id_tmp, [Ast.Node.new_int(index)]))
+                       Ast.Node.new_expr_index(id_tmp, [Ast.Node.new_int(index)]),
+                       warn_if_shadow?)
       index = index + 1
 
 gen_stmt_for(lvalue_list, expr, block)
@@ -265,7 +269,7 @@ gen_stmt_for(lvalue_list, expr, block)
       lvalue = lvalue_list[1]
       rvalue = Ast.Node.new_typed(Ast.C_CODE)
       rvalue.text = "$int64_to_val({})$".f(text_i)
-      gen_stmt_assign2(lvalue, rvalue)
+      gen_stmt_assign2(lvalue, rvalue, true)
       gen_block(block)
 
       stack.pop()
@@ -280,7 +284,8 @@ gen_stmt_for(lvalue_list, expr, block)
 
   # Write the code to get the iterator object.
   id_iterator = Ast.Node.new_id("_iterator{}".f(counter()))
-  gen_stmt_assign2(id_iterator, Ast.Node.new_field_call(expr, "get_iter"))
+  gen_stmt_assign2(id_iterator, Ast.Node.new_field_call(expr, "get_iter"),
+                   false)
 
   # Construct the AST to call iter() once
   iter_call = Ast.Node.new_field_call(id_iterator, "iter")
@@ -290,9 +295,9 @@ gen_stmt_for(lvalue_list, expr, block)
   code.print("{}:;\n".f(continue_label))
   id_temp = Ast.Node.new_id("_iterator_temp{}".f(counter()))
   locals_push()
-  gen_stmt_assign2(id_temp, iter_call)
+  gen_stmt_assign2(id_temp, iter_call, false)
   code.print("  if ({} == VALUE_EOF) break;\n".f(eval_expr_untyped(id_temp)))
-  gen_stmt_assign(lvalue_list, id_temp)
+  gen_stmt_assign(lvalue_list, id_temp, true)
   stack.push(tuple(break_label, continue_label))
   gen_block(block)
   stack.pop()
@@ -344,7 +349,7 @@ gen_stmt(stmt)
       stc = stack[-1]
       code.print("  goto {};\n".f(stc[2]))
     case Ast.STMT_ASSIGN
-      gen_stmt_assign(stmt[1], stmt[2])
+      gen_stmt_assign(stmt[1], stmt[2], false)
     case Ast.STMT_FOR
       gen_stmt_for(stmt[1], stmt[2], stmt[3])
     case Ast.STMT_PASS

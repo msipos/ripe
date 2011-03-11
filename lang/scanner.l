@@ -68,6 +68,7 @@ modulo                          { return K_MODULO; }
 ":"                             { return ':'; }
 "."                             { return '.'; }
 ","                             { return ','; }
+";"                             { return ';'; }
 "^"                             { return '^'; }
 \@                              { return '@'; }
 return                          { return K_RETURN; }

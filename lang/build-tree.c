@@ -219,12 +219,30 @@ int rc_lex()
       prev_indentation = indentation;
 
       // Dump everything else in raw_line that's not whitespace into line.
+      // While dumping, convert all ';' nodes into SEP.
       for (int i = 0; i < raw_line.size; i++){
         Node* n = array_get(&raw_line, Node*, i);
-        if (n->type != WHITESPACE){
-          array_append(&line, n);
+        switch (n->type){
+          case WHITESPACE:
+            break;
+          case ';':
+            array_append(&line, node_new(SEP));
+            break;
+          default:
+            array_append(&line, n);
         }
       }
+
+      // Remove any ';' at the end of the line
+      for (int i = line.size - 1; i >= 0; i--){
+        Node* n = array_get(&line, Node*, i);
+        if (n->type == SEP){
+          array_pop(&line, Node*);
+        } else {
+          break;
+        }
+      }
+
       break;
     }
   }
