@@ -149,6 +149,17 @@ static int lex_read_line()
         }
         cur_line2 = input_lineno;
         return 0;
+      case ETC:
+        for(;;){
+          n = lex_read();
+          if (n->type == '\n') goto loop;
+          if (n->type == WHITESPACE) continue;
+          build_tree_error = mem_asprintf(
+                               "%s:%d: invalid token following ellipsis",
+                               input->filename, input_lineno);
+          longjmp(jb, 1);
+        }
+        break;
     }
     array_append(&raw_line, n);
   }

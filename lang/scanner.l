@@ -71,6 +71,7 @@ modulo                          { return K_MODULO; }
 ";"                             { return ';'; }
 "^"                             { return '^'; }
 \@                              { return '@'; }
+"..."                           { return ETC; }
 return                          { return K_RETURN; }
 namespace                       { return K_NAMESPACE; }
 true                            { return K_TRUE; }

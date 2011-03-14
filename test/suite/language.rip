@@ -158,6 +158,27 @@ switcher()
   Test.test(name, 2, switch_helper(3))
   Test.test(name, 1, switch_helper(2))
 
+ellipsis()
+  name = ...
+    "ellipsis"
+  x = ...
+      3
+  y = ...
+      4
+  Test.test(name, x+y,
+            7)
+  y = ...
+      4 + ...
+      5
+  Test.test(name, x+y,
+            12)
+  y = ( ...
+      4 + ...
+      6 ...
+      )
+  Test.test(name, x+y,
+            13)
+
 main()
   Test.set_verbose(false)
   operators()
@@ -165,6 +186,7 @@ main()
   parallel()
   types()
   switcher()
+  ellipsis()
 
   obj = Class.new("testfile")
   obj.test_filename("testfile")
