@@ -37,7 +37,6 @@ namespace Sci
       # Scale x to be proportional to sum of all the rates
       Array1 arr1 = @arrays[1]
       x = (arr1[1] + arr1[2]) * x
-      Out.println(x)
 
       for i in 1:@num_arrays
         Array1 arr = @arrays[i]
