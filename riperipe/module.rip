@@ -24,12 +24,17 @@ namespace Module
     tmp_c_file = Path.temp_name("ripe", ".c")
     tf = TextFile.new(tmp_c_file, TextFile.Write)
     for m in module_names
-      tf.println("void init1_{}();".f(m))
+      tf.println("void init1a_{}();".f(m))
+      tf.println("void init1b_{}();".f(m))
       tf.println("void init2_{}();".f(m))
       tf.println("void init3_{}();".f(m))
-    tf.println("void ripe_module1(){")
+    tf.println("void ripe_module1a(){")
     for m in module_names
-      tf.println("  init1_{}();".f(m))
+      tf.println("  init1a_{}();".f(m))
+    tf.println("}")
+    tf.println("void ripe_module1b(){")
+    for m in module_names
+      tf.println("  init1b_{}();".f(m))
     tf.println("}")
     tf.println("void ripe_module2(){")
     for m in module_names

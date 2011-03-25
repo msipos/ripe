@@ -17,7 +17,8 @@
 
 StringBuf* sb_contents;
 StringBuf* sb_header;
-StringBuf* sb_init1;
+StringBuf* sb_init1a;
+StringBuf* sb_init1b;
 StringBuf* sb_init2;
 StringBuf* sb_init3;
 
@@ -25,12 +26,14 @@ void dump_init()
 {
   sb_contents = mem_new(StringBuf);
   sb_header = mem_new(StringBuf);
-  sb_init1 = mem_new(StringBuf);
+  sb_init1a = mem_new(StringBuf);
+  sb_init1b = mem_new(StringBuf);
   sb_init2 = mem_new(StringBuf);
   sb_init3 = mem_new(StringBuf);
   sbuf_init(sb_contents, "");
   sbuf_init(sb_header, "");
-  sbuf_init(sb_init1, "");
+  sbuf_init(sb_init1a, "");
+  sbuf_init(sb_init1b, "");
   sbuf_init(sb_init2, "");
   sbuf_init(sb_init3, "");
 }
@@ -42,8 +45,12 @@ void dump_output(FILE* f, const char* module_name)
   fprintf(f, "%s", sb_header->str);
   fprintf(f, "%s", sb_contents->str);
 
-  fprintf(f, "void init1_%s(){\n", module_name);
-  fprintf(f, "%s", sb_init1->str);
+  fprintf(f, "void init1a_%s(){\n", module_name);
+  fprintf(f, "%s", sb_init1a->str);
+  fprintf(f, "}\n");
+
+  fprintf(f, "void init1b_%s(){\n", module_name);
+  fprintf(f, "%s", sb_init1b->str);
   fprintf(f, "}\n");
 
   fprintf(f, "void init2_%s(){\n", module_name);

@@ -61,7 +61,7 @@ namespace Dsym
       return dsym_table[name]
     c_name = "_dsym{}_{2}".f(counter(), Util.to_c(name))
     header.print("static Value {};\n".f(c_name))
-    init1.print("  {} = dsym_get(\"{2}\");\n".f(c_name, name))
+    init1a.print("  {} = dsym_get(\"{2}\");\n".f(c_name, name))
     dsym_table[name] = c_name
     return c_name
 
@@ -151,7 +151,7 @@ locals_query(ripe_name)
 # Generator
 ##############################################################################
 
-global header, code, init1, init2, init3
+global header, code, init1a, init1b, init2, init3
 global stack
 
 is_vararg?(param_list)
@@ -388,12 +388,12 @@ gen_block(stmt_list)
 gen_function_common2(name, param_num, param_vararg?)
   c_name = "_func{}_{}".f(counter(), Util.to_c(name))
   v_name = "__" + c_name
-  init1.print("  Value {} = func{}_to_val({});\n".f(v_name,
+  init1a.print("  Value {} = func{}_to_val({});\n".f(v_name,
                                                     param_num,
                                                     c_name))
-  init1.print("  ssym_set(\"{}\", {});\n".f(name, v_name))
+  init1a.print("  ssym_set(\"{}\", {});\n".f(name, v_name))
   if param_vararg?
-    init1.print("  func_set_vararg({});\n".f(v_name))
+    init1a.print("  func_set_vararg({});\n".f(v_name))
 
   return tuple(c_name, v_name)
 
@@ -454,7 +454,7 @@ gen_method(String name, Ast.Node ast)
                                         param_list.num_children + 1,
                                         is_vararg?(param_list))
   dsym_name = Dsym.get(name)
-  init1.print("  klass_new_method({}, {}, {});\n".f(
+  init1a.print("  klass_new_method({}, {}, {});\n".f(
                  ctx_class_c_name,
                  dsym_name,
                  v_name))
@@ -505,14 +505,14 @@ gen_class(Ast.Node node)
   ast = node[1]
   ctx_class_type = get_class_type(ast)
 
-  # Get these two dynamic symbols first, because we will be writing to init1
+  # Get these two dynamic symbols first, because we will be writing to init1a
   # as well.
   dsym_class = Dsym.get(ctx_class_name)
 
   # Now, write out class initialization.
   switch ctx_class_type
     case &VIRTUAL
-      init1.print("  {} = klass_new({}, 0);\n".f(
+      init1a.print("  {} = klass_new({}, 0);\n".f(
                   ctx_class_c_name, dsym_class))
     case &CDATA
       ctx_class_typedef = "_KlassCData{}_".f(counter()) + Util.to_c(ctx_class_name)
@@ -521,11 +521,11 @@ gen_class(Ast.Node node)
         if n.type == Ast.C_CODE
           header.print(n.text[2:(-2)])
       header.print("} {};\n".f(ctx_class_typedef))
-      init1.print("  {} = klass_new({}, sizeof({}));\n".f(
+      init1a.print("  {} = klass_new({}, sizeof({}));\n".f(
                   ctx_class_c_name, dsym_class, ctx_class_typedef))
     case &FIELD
       ctx_class_typedef = "Value"
-      init1.print("  {} = klass_new({}, 0);\n".f(
+      init1a.print("  {} = klass_new({}, 0);\n".f(
                   ctx_class_c_name, dsym_class))
 
       # Now iterate over the class AST to find all fields, and initialize them.
@@ -544,7 +544,7 @@ gen_class(Ast.Node node)
           optassign_list = n[1]
           for optassign in optassign_list
             dsym_var = Dsym.get(optassign.get_string("name"))
-            init1.print("  klass_new_field({}, {}, {});\n".f(
+            init1a.print("  klass_new_field({}, {}, {});\n".f(
                              ctx_class_c_name,
                              dsym_var,
                              field_type))
@@ -564,12 +564,12 @@ gen_class(Ast.Node node)
           case "virtual_set"
             val = gen_method("set_" + name, n)
             dsym = Dsym.get(name)
-            init1.print("  klass_new_virtual_writer({}, {}, {});\n".f(
+            init1a.print("  klass_new_virtual_writer({}, {}, {});\n".f(
                            ctx_class_c_name, dsym, val))
           case "virtual_get"
             val = gen_method("get_" + name, n)
             dsym = Dsym.get(name)
-            init1.print("  klass_new_virtual_reader({}, {}, {});\n".f(
+            init1a.print("  klass_new_virtual_reader({}, {}, {});\n".f(
                            ctx_class_c_name, dsym, val))
       else
         gen_method(name, n)
@@ -595,7 +595,7 @@ gen(ast)
         for optassign in node[1]
           name = Namespace.prefix() + optassign.get_string("name")
           expr = optassign[1]
-          init1.print("  ssym_set(\"{}\", {});\n".f(name, eval_expr_untyped(expr)))
+          init1a.print("  ssym_set(\"{}\", {});\n".f(name, eval_expr_untyped(expr)))
       case Ast.CLASS
         gen_class(node)
 
@@ -612,10 +612,11 @@ gen_globals(ast)
         init3.print("  {} = {};\n".f(c_name,
                                      eval_expr_untyped(optassign[1])))
 
-generate(ast, b_header, b_code, b_init1, b_init2, b_init3)
+generate(ast, b_header, b_code, b_init1a, b_init1b, b_init2, b_init3)
   header = b_header
   code = b_code
-  init1 = b_init1
+  init1a = b_init1a
+  init1b = b_init1b
   init2 = b_init2
   init3 = b_init3
   stack = []

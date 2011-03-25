@@ -36,7 +36,7 @@ load_meta(filename)
   tf.close()
 
 empty_buffers()
-  return tuple("", "", "", "", "")
+  return tuple("", "", "", "", "", "")
 
 #######################################################################
 # Globals
@@ -57,12 +57,15 @@ get_optims()
 #######################################################################
 # Actions
 
-dump(header, code, init1, init2, init3, module_name, outfile)
+dump(header, code, init1a, init1b, init2, init3, module_name, outfile)
   outfile.println("#include \"modules/modules.h\"")
   outfile.println(header)
   outfile.println(code)
-  outfile.println("void init1_{}(){{}".f(module_name))
-  outfile.println(init1)
+  outfile.println("void init1a_{}(){{}".f(module_name))
+  outfile.println(init1a)
+  outfile.println("}")
+  outfile.println("void init1b_{}(){{}".f(module_name))
+  outfile.println(init1b)
   outfile.println("}")
   outfile.println("void init2_{}(){{}\n".f(module_name))
   outfile.println(init2)
@@ -72,7 +75,7 @@ dump(header, code, init1, init2, init3, module_name, outfile)
   outfile.println("}\n")
 
 go_dump(files)
-  header, code, init1, init2, init3 = empty_buffers()
+  header, code, init1a, init1b, init2, init3 = empty_buffers()
 
   asts = []
   for file in files
@@ -80,12 +83,15 @@ go_dump(files)
     asts.push(ast)
     Typer.absorb_info(ast)
   for ast in asts
-    generate(ast, header, code, init1, init2, init3)
+    generate(ast, header, code, init1a, init1b, init2, init3)
 
   Out.println(header)
   Out.println(code)
-  Out.println("void init1_User(){")
-  Out.println(init1)
+  Out.println("void init1a_User(){")
+  Out.println(init1a)
+  Out.println("}")
+  Out.println("void init1b_User(){")
+  Out.println(init1b)
   Out.println("}")
   Out.println("void init2_User(){\n")
   Out.println(init2)
@@ -95,7 +101,7 @@ go_dump(files)
   Out.println("}\n")
 
 go_bootstrap(files, outfile)
-  header, code, init1, init2, init3 = empty_buffers()
+  header, code, init1a, init1b, init2, init3 = empty_buffers()
 
   asts = []
   rips = []
@@ -122,12 +128,12 @@ go_bootstrap(files, outfile)
   for ast in asts
     if g_verbose
       Err.println("generating ", rips[index])
-    generate(ast, header, code, init1, init2, init3)
+    generate(ast, header, code, init1a, init1b, init2, init3)
     index = index + 1
 
   tmp_c_file = Path.temp_name("ripe", ".c")
   tf = TextFile.new(tmp_c_file, TextFile.Write)
-  dump(header, code, init1, init2, init3, "User", tf)
+  dump(header, code, init1a, init1b, init2, init3, "User", tf)
   tf.close()
 
   tmp_o_file = Path.temp_name("ripe", ".o")
@@ -137,7 +143,7 @@ go_bootstrap(files, outfile)
   sys(["gcc", g_lflags, objs_txt, tmp_o_file, "-o", outfile])
 
 go_build(files, outfile)
-  header, code, init1, init2, init3 = empty_buffers()
+  header, code, init1a, init1b, init2, init3 = empty_buffers()
 
   asts = []
   rips = []
@@ -155,12 +161,12 @@ go_build(files, outfile)
         objs.push(file)
 
   for ast in asts
-    generate(ast, header, code, init1, init2, init3)
+    generate(ast, header, code, init1a, init1b, init2, init3)
 
   # Compile ripe
   tmp_c_file = Path.temp_name("ripe", ".c")
   tf = TextFile.new(tmp_c_file, TextFile.Write)
-  dump(header, code, init1, init2, init3, "User", tf)
+  dump(header, code, init1a, init1b, init2, init3, "User", tf)
   tf.close()
   tmp_o_file = Path.temp_name("ripe", ".o")
   sys(["gcc", g_cflags, tmp_c_file, "-c", "-o", tmp_o_file])
@@ -184,7 +190,7 @@ go_run(leftover)
   sys([outfile])
 
 go_module(files, module_name, outfile)
-  header, code, init1, init2, init3 = empty_buffers()
+  header, code, init1a, init1b, init2, init3 = empty_buffers()
 
   asts = []
   rips = []
@@ -207,11 +213,11 @@ go_module(files, module_name, outfile)
       case ".typ"
         Typer.load_from_file(file)
   for ast in asts
-    generate(ast, header, code, init1, init2, init3)
+    generate(ast, header, code, init1a, init1b, init2, init3)
 
   tmp_c_file = Path.temp_name("ripe", ".c")
   tf = TextFile.new(tmp_c_file, TextFile.Write)
-  dump(header, code, init1, init2, init3, module_name, tf)
+  dump(header, code, init1a, init1b, init2, init3, module_name, tf)
   tf.close()
 
   tmp_o_file = Path.temp_name("ripe", ".o")

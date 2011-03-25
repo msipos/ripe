@@ -1,10 +1,16 @@
-void init1_User();
+void init1a_User();
+void init1b_User();
 void init2_User();
 void init3_User();
 
-void ripe_module1()
+void ripe_module1a()
 {
-  init1_User();
+  init1a_User();
+}
+
+void ripe_module1b()
+{
+  init1b_User();
 }
 
 void ripe_module2()

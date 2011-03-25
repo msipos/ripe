@@ -16,7 +16,8 @@
 #include "vm/vm.h"
 
 // Prototype for module initializers
-void ripe_module1();
+void ripe_module1a();
+void ripe_module1b();
 void ripe_module2();
 void ripe_module3();
 
@@ -46,7 +47,8 @@ int main(int argc, char** argv)
     init1_Object();
   stack_pop();
 
-  ripe_module1();
+  ripe_module1a();
+  ripe_module1b();
 
   // Phase 1.5
   stack_push_annotation("phase 1.5");

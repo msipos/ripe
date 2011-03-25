@@ -58,7 +58,8 @@ void logging(const char* format, ...);
 
 extern StringBuf* sb_contents;
 extern StringBuf* sb_header;
-extern StringBuf* sb_init1;
+extern StringBuf* sb_init1a;
+extern StringBuf* sb_init1b;
 extern StringBuf* sb_init2;
 extern StringBuf* sb_init3;
 

@@ -859,11 +859,11 @@ static void gen_function(Node* function)
                                     util_escape(name));
   sbuf_printf(sb_contents, "static Value %s(%s){\n",
               c_name, gen_params(param_list));
-  sbuf_printf(sb_init1, "  Value v_%s = func%u_to_val(%s);\n",
+  sbuf_printf(sb_init1a, "  Value v_%s = func%u_to_val(%s);\n",
               c_name, num_params, c_name);
   if (check_vararg(param_list))
-    sbuf_printf(sb_init1, "  func_set_vararg(v_%s);\n", c_name);
-  sbuf_printf(sb_init1, "  ssym_set(\"%s\", v_%s);\n", name, c_name);
+    sbuf_printf(sb_init1a, "  func_set_vararg(v_%s);\n", c_name);
+  sbuf_printf(sb_init1a, "  ssym_set(\"%s\", v_%s);\n", name, c_name);
   gen_func_code(stmt_list);
   pop_locals();
 
@@ -889,11 +889,11 @@ static void gen_constructor(Node* constructor)
   push_locals();
 
   const char* c_value = mem_asprintf("v_constructor%d", counter);
-  sbuf_printf(sb_init1, "  Value %s = func%d_to_val(%s);\n",
+  sbuf_printf(sb_init1a, "  Value %s = func%d_to_val(%s);\n",
               c_value, num_params, c_constructor_name);
   if (check_vararg(param_list))
-    sbuf_printf(sb_init1, "  func_set_vararg(%s);\n", c_value);
-  sbuf_printf(sb_init1, "  ssym_set(\"%s\", %s);\n",
+    sbuf_printf(sb_init1a, "  func_set_vararg(%s);\n", c_value);
+  sbuf_printf(sb_init1a, "  ssym_set(\"%s\", %s);\n",
               r_constructor_name, c_value);
 
   sbuf_printf(sb_contents, "static Value %s(%s){\n",
@@ -930,13 +930,13 @@ static void gen_method(const char* method_name, Node* rv_type,
 
   push_locals();
   context2_method_value_name = mem_asprintf("v_method%d", counter);
-  sbuf_printf(sb_init1, "  Value %s = func%d_to_val(%s);\n",
+  sbuf_printf(sb_init1a, "  Value %s = func%d_to_val(%s);\n",
               context2_method_value_name, num_params, c_method_name);
   if (check_vararg(param_list))
-    sbuf_printf(sb_init1, "  func_set_vararg(%s);\n", context2_method_value_name);
-  sbuf_printf(sb_init1, "  ssym_set(\"%s\", %s);\n",
+    sbuf_printf(sb_init1a, "  func_set_vararg(%s);\n", context2_method_value_name);
+  sbuf_printf(sb_init1a, "  ssym_set(\"%s\", %s);\n",
               r_method_name, context2_method_value_name);
-  sbuf_printf(sb_init1, "  klass_new_method(%s, dsym_get(\"%s\"), "
+  sbuf_printf(sb_init1a, "  klass_new_method(%s, dsym_get(\"%s\"), "
                            "%s);\n", context_class_c_name,
                            method_name,
                            context2_method_value_name);
@@ -1003,7 +1003,7 @@ static void gen_class(Node* klass)
       }
       sbuf_printf(sb_header, "} %s;\n", context_class_typedef);
       // TODO: Class parents
-      sbuf_printf(sb_init1, "  %s = klass_new(dsym_get(\"%s\"), sizeof(%s));\n",
+      sbuf_printf(sb_init1a, "  %s = klass_new(dsym_get(\"%s\"), sizeof(%s));\n",
                   context_class_c_name,
                   context_class_name,
                   context_class_typedef);
@@ -1011,7 +1011,7 @@ static void gen_class(Node* klass)
     case CLASS_FIELD_OBJECT:
       // _c_data is of the type Value* for field objects
       context_class_typedef = "Value";
-      sbuf_printf(sb_init1, "  %s = klass_new(dsym_get(\"%s\"), 0);\n",
+      sbuf_printf(sb_init1a, "  %s = klass_new(dsym_get(\"%s\"), 0);\n",
                   context_class_c_name, context_class_name);
 
       for (int i = 0; i < ast->children.size; i++){
@@ -1034,7 +1034,7 @@ static void gen_class(Node* klass)
           for (int i = 0; i < node_num_children(optassign_list); i++){
             Node* optassign = node_get_child(optassign_list, i);
             const char* var_name = node_get_string(optassign, "name");
-            sbuf_printf(sb_init1, "  klass_new_field(%s, dsym_get(\"%s\"), "
+            sbuf_printf(sb_init1a, "  klass_new_field(%s, dsym_get(\"%s\"), "
                                      "%s);\n", context_class_c_name, var_name,
                                      var_type);
           }
@@ -1043,7 +1043,7 @@ static void gen_class(Node* klass)
       break;
     case CLASS_VIRTUAL_OBJECT:
       context_class_typedef = NULL;
-      sbuf_printf(sb_init1, "  %s = klass_new(dsym_get(\"%s\"), 0);\n",
+      sbuf_printf(sb_init1a, "  %s = klass_new(dsym_get(\"%s\"), 0);\n",
                   context_class_c_name, context_class_name);
   }
 
@@ -1064,7 +1064,7 @@ static void gen_class(Node* klass)
             } else if (strcmp(annotation, "virtual_set")==0){
               gen_method(mem_asprintf("set_%s", name),
                          rv_type, param_list, stmt_list);
-              sbuf_printf(sb_init1,
+              sbuf_printf(sb_init1a,
                           "  klass_new_virtual_writer(%s, dsym_get(\"%s\"), %s);\n",
                           context_class_c_name,
                           name,
@@ -1072,7 +1072,7 @@ static void gen_class(Node* klass)
             } else if (strcmp(annotation, "virtual_get")==0){
               gen_method(mem_asprintf("get_%s", name),
                          rv_type, param_list, stmt_list);
-              sbuf_printf(sb_init1,
+              sbuf_printf(sb_init1a,
                           "  klass_new_virtual_reader(%s, dsym_get(\"%s\"), %s);\n",
                           context_class_c_name,
                           name,
@@ -1138,7 +1138,7 @@ static void gen_globals(Node* ast)
             const char* ripe_name = mem_asprintf("%s%s", namespace_get_prefix(), var_name);
             Node* right = node_get_child(optassign, 0);
 
-            sbuf_printf(sb_init1, "  ssym_set(\"%s\", %s);\n",
+            sbuf_printf(sb_init1a, "  ssym_set(\"%s\", %s);\n",
                         ripe_name,
                         eval_expr(right));
           }
