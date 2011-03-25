@@ -16,6 +16,7 @@
 #include <ctype.h>
 #include "vm/vm.h"
 
+// Strip whitespace in place.
 static void strip_whitespace(char* s)
 {
   // Go backwards and remove whitespace
@@ -79,6 +80,8 @@ static const char* param_to_string(Value v)
   return NULL;
 }
 
+#define FORMAT_REPORT_UNUSED
+
 char* format_to_string(const char* fstr, uint64 num_values, Value* values)
 {
   FormatParse fp;
@@ -91,6 +94,11 @@ char* format_to_string(const char* fstr, uint64 num_values, Value* values)
   for (uint64 i = 0; i < num_values; i++){
     strings[i] = NULL;
   }
+
+  #ifdef FORMAT_REPORT_UNUSED
+  bool param_used[num_values];
+  for (uint64 i = 0; i < num_values; i++) param_used[i] = false;
+  #endif
 
   uint64 out_len = 1; // 1 for NULL
   for (uint64 i = 0; i < fp.size; i++){
@@ -111,6 +119,10 @@ char* format_to_string(const char* fstr, uint64 num_values, Value* values)
                       fstr, n+1, num_values);
           }
 
+          #ifdef FORMAT_REPORT_UNUSED
+          param_used[n] = true;
+          #endif
+
           if (strings[n] == NULL) {
             strings[n] = param_to_string(values[n]);
           }
@@ -121,6 +133,19 @@ char* format_to_string(const char* fstr, uint64 num_values, Value* values)
         assert_never();
     }
   }
+
+  #ifdef FORMAT_REPORT_UNUSED
+  for (uint64 i = 0; i < num_values; i++){
+    if (not param_used[i]){
+      char* tmp_fstr = mem_strdup(fstr);
+      strip_whitespace(tmp_fstr);
+      fprintf(stderr,
+              "WARNING: argument %"PRIu64" ('%s') not used in "
+              "format string '%s'\n",
+              i+1, param_to_string(values[i]), tmp_fstr);
+    }
+  }
+  #endif
 
   char out[out_len];
   out_len = 0;

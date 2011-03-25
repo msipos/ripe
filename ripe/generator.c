@@ -695,7 +695,7 @@ static void gen_stmt(Node* stmt)
     case STMT_PASS:
       break;
     case STMT_RAISE:
-      sbuf_printf(sb_contents, "  exc_raise(val_to_string(%s));\n",
+      sbuf_printf(sb_contents, "  exc_raise(\"%%s\", val_to_string(%s));\n",
                   eval_expr(node_get_child(stmt, 0)));
       break;
     default:

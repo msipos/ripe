@@ -355,7 +355,7 @@ gen_stmt(stmt)
     case Ast.STMT_PASS
       code.print("  ;")
     case Ast.STMT_RAISE
-      code.print("  exc_raise(val_to_string({}));".f(
+      code.print("  exc_raise(\"%s\", val_to_string({}));".f(
                    eval_expr_untyped(stmt[1])))
     case Ast.STMT_SWITCH
       c_expr = "_switch_expr{}".f(counter())
