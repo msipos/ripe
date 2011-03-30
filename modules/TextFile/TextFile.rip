@@ -15,6 +15,11 @@ namespace TextFile
     tf.close()
     return s
 
+  write_file(filename, text)
+    tf = TextFile.new(filename, TextFile.Write)
+    tf.print(text)
+    tf.close()
+
 class TextFile
   $ FILE* f; $
 
