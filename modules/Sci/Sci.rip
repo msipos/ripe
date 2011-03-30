@@ -5,6 +5,8 @@ namespace Sci
     private num_arrays
 
     constructor new(N)
+      if N < 1
+        raise "N must be >= 1 (was {})".f(N)
       @N = N
       @arrays = []
       loop
