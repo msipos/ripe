@@ -107,7 +107,11 @@ class String
   #$ rdoc-header String Strong.rotate!(Integer delta)
   #$ Returns a string S1, a rotation of S2 where S1[x] = S2[x+delta]
   rotate!(Integer delta)
-    $ const int64 size = strlen(@s.str);
+    $ if (@s.type == STRING_CONST){
+        exc_raise("attempted to rotate! a constant string '%s'", @s.str);
+      }
+
+      const int64 size = strlen(@s.str);
       int64 delta = unpack_int64(__delta);
       char *s = @s.str;
 

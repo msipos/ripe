@@ -439,13 +439,17 @@ Range* val_to_range(Value range);
 //////////////////////////////////////////////////////////////////////////////
 // String.c
 //////////////////////////////////////////////////////////////////////////////
+#define STRING_REGULAR  1
+#define STRING_CONST    2
 typedef struct {
+  int type;
   char* str;
 } String;
 
 char* val_to_string(Value v);
 Value string_to_val(const char* str);
 Value stringn_to_val(const char* str, int n);
+Value string_const_to_val(const char* str);
 
 //////////////////////////////////////////////////////////////////////////////
 // Tuple.c

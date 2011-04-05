@@ -17,38 +17,47 @@ namespace Json
     $
     return $v$
 
-  encode(value)
-    output = ""
-    if value is Map
-      output = "{\n"
+  encode(obj)
+    out = StringBuf.new()
+    Json.encode_to_stringbuf(out, obj)
+    return out.to_string()
+
+  encode_to_stringbuf(StringBuf buf, obj)
+    if obj is Map
+      buf.write("{\n")
       index = 1
-      for k, v in value
-        output = output + Json.encode(k) + " : " + Json.encode(v)
-        if index < value.size
-          output = output + ",\n"
+      for k, v in obj
+        Json.encode_to_stringbuf(buf, k)
+        buf.write(" : ")
+        Json.encode_to_stringbuf(buf, v)
+        if index < obj.size
+          buf.write(",\n")
         else
-          output = output + "\n"
+          buf.write("\n")
         index = index + 1
-      output = output + "}"
-    if value is Array1
-      output = "["
+      buf.write("}")
+
+    if obj is Array1
+      buf.write("[")
       index = 1
-      for v in value
-        output = output + Json.encode(v)
-        if index < value.size
-          output = output + ","
+      for v in obj
+        Json.encode_to_stringbuf(buf, v)
+        if index < obj.size
+          buf.write(",")
         index = index + 1
-      output = output + "]"
-    if value is Integer
-      return value.to_string()
-    if value is Double
-      return value.to_string()
-    if value is String
-      return "\"" + value + "\""
-    if value == nil
-      return "null"
-    if value == true
-      return "true"
-    if value == false
-      return "false"
-    return output
+      buf.write("]")
+
+    if obj is Integer
+      buf.write(obj.to_string())
+    if obj is Double
+      buf.write(obj.to_string())
+    if obj is String
+      buf.write("\"")
+      buf.write(obj)
+      buf.write("\"")
+    if obj == nil
+      buf.write("null")
+    if obj == true
+      buf.write("true")
+    if obj == false
+      buf.write("false")

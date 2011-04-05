@@ -1,0 +1,26 @@
+class StringBuf
+  $ char* str;
+    uint64 alloc_size;
+    uint64 size; $
+
+  constructor new()
+    $ @alloc_size = 10;
+      @size = 1;
+      @str = mem_malloc(@alloc_size);
+      @str[0] = 0; $
+
+  write(obj)
+    $ const char* obj = to_string(__obj);
+      uint64 len = strlen(obj);
+      if (len + @size > @alloc_size){
+        @alloc_size *= 2;
+        if (len + @size > @alloc_size){
+          @alloc_size = len + @size + 50;
+        }
+        @str = mem_realloc(@str, @alloc_size);
+      }
+      strcat(@str, obj);
+      @size += len; $
+
+  to_string()
+    $ return string_const_to_val(@str); $

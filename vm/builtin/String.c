@@ -28,6 +28,7 @@ Value string_to_val(const char* str)
   String* obj;
   Value v = obj_new(klass_String, (void**)&obj);
   obj->str = mem_strdup(str);
+  obj->type = STRING_REGULAR;
   return v;
 }
 
@@ -39,5 +40,16 @@ Value stringn_to_val(const char* str, int n)
   obj->str = mem_malloc(n+1);
   strncpy(obj->str, str, n);
   obj->str[n] = 0;
+  obj->type = STRING_REGULAR;
+  return v;
+}
+
+Value string_const_to_val(const char* str)
+{
+  assert(str != NULL);
+  String* obj;
+  Value v = obj_new(klass_String, (void**)&obj);
+  obj->str = str;
+  obj->type = STRING_CONST;
   return v;
 }

@@ -227,6 +227,12 @@ String()
 
   Test.test("String.f()", "Hello { 1 }!".f("world"), "Hello world!")
 
+  sbuf = StringBuf.new()
+  sbuf.write("hello ")
+  sbuf.write("world ")
+  sbuf.write(42)
+  Test.test("StringBuf", sbuf.to_string(), "hello world 42")
+
 Std()
   Test.test("Integer()", 123, Integer("123"))
   Test.test("Integer()", 123, Integer(123.0))
