@@ -16,6 +16,18 @@
 #include "vm/vm.h"
 #include <math.h>
 
+static int64 ipow(int64 b, int64 e)
+{
+  int out = 1;
+  while (e) {
+    if (e & 1) out *= b;
+    e >>= 1;
+    b *= b;
+  }
+
+  return out;
+}
+
 Value op_exp(Value a, Value b)
 {
   switch(a & MASK_TAIL){
@@ -26,7 +38,14 @@ Value op_exp(Value a, Value b)
         case 0b00:
           goto error;
         case 0b01:
-          return pack_double(pow((double) unpack_int64(a), (double) unpack_int64(b)));
+          {
+            int64 e = unpack_int64(b);
+            int64 n = unpack_int64(a);
+            if (e < 0){
+              return pack_double(pow((double) n, (double) e));
+            }
+            return pack_int64(ipow(n, e));
+          }
         case 0b10:
           return pack_double(pow((double) unpack_int64(a), unpack_double(b)));
         default:

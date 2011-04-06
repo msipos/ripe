@@ -5,7 +5,6 @@ $
   #include <SDL_ttf.h>
   #include <SDL_image.h>
 
-
   #define RED(x)   ((x & 0xFF000000) >> 24)
   #define GREEN(x) ((x & 0x00FF0000) >> 16)
   #define BLUE(x)  ((x & 0x0000FF00) >> 8)
@@ -136,9 +135,14 @@ namespace Sdl
 
     put_pixel(x, y, color)
       $
+        int64 x = val_to_int64(__x);
+        int64 y = val_to_int64(__y);
+        if (x < 1 or x > @surf->w or y < 1 or y > @surf->h){
+          exc_raise("put_pixel outside surface boundaries (%"PRId64
+                    ", %"PRId64")", x, y);
+        }
         uint32* p = @surf->pixels;
-        p[val_to_int64(__x) + val_to_int64(__y) * @surf->w] =
-                                                      val_to_int64(__color);
+        p[(x-1) + (y-1) * @surf->w] = val_to_int64(__color);
       $
 
     filled_circle(x, y, r, color)

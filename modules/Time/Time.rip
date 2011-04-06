@@ -22,6 +22,10 @@ namespace Time
       sleep(val_to_int64(__seconds));
     $
 
+  millisleep(ms)
+    $ struct timespec req = { 0, 1000*1000*val_to_int64(__ms) };
+      nanosleep(&req, NULL); $
+
   #$ rdoc-name Time.nanosleep
   #$ rdoc-header Time.nanosleep(Integer seconds, Integer nanoseconds)
   #$ Precisely sleep for an amount of time.
