@@ -109,6 +109,21 @@ counter()
 global cnt = 0
 
 ##############################################################################
+# Strings
+##############################################################################
+global strings_map = Map.new()
+
+namespace Strings
+  get(text)
+    if text in strings_map
+      return strings_map[text]
+    str_name = "_str{}".f(counter())
+    strings_map[text] = str_name
+    header.println("static Value {};".f(str_name))
+    init2.println("  {} = string_const_to_val(\"{}\");".f(str_name, text))
+    return str_name
+
+##############################################################################
 # Locals
 ##############################################################################
 
@@ -612,13 +627,14 @@ gen_globals(ast)
         init3.print("  {} = {};\n".f(c_name,
                                      eval_expr_untyped(optassign[1])))
 
-generate(ast, b_header, b_code, b_init1a, b_init1b, b_init2, b_init3)
-  header = b_header
-  code = b_code
-  init1a = b_init1a
-  init1b = b_init1b
-  init2 = b_init2
-  init3 = b_init3
+generate(ast)
+  m = get_sbufs()
+  header = m[&header]
+  code = m[&code]
+  init1a = m[&init1a]
+  init1b = m[&init1b]
+  init2 = m[&init2]
+  init3 = m[&init3]
   stack = []
 
   # First layer of locals is for global variables

@@ -21,7 +21,7 @@ sys(args)
   if g_verbose
     Err.println(txt)
   if Os.system(args) != 0
-    raise "Os.system({}) failed".f(txt)
+    raise "Os.system(\"{}\") failed".f(txt)
 
 load_meta(filename)
   map = Map.new()
@@ -34,9 +34,6 @@ load_meta(filename)
     map[left] = right
   return map
   tf.close()
-
-empty_buffers()
-  return tuple("", "", "", "", "", "")
 
 #######################################################################
 # Globals
@@ -55,54 +52,53 @@ get_optims()
   return g_optims
 
 #######################################################################
+# String Buffers
+
+global g_sbufs = Map.new()
+get_sbufs()
+  return g_sbufs
+
+init_sbufs()
+  g_sbufs[&header] = StringBuf.new()
+  g_sbufs[&code] = StringBuf.new()
+  g_sbufs[&init1a] = StringBuf.new()
+  g_sbufs[&init1b] = StringBuf.new()
+  g_sbufs[&init2] = StringBuf.new()
+  g_sbufs[&init3] = StringBuf.new()
+
+dump(module_name, out)
+  out.println("#include \"modules/modules.h\"")
+  out.println(g_sbufs[&header].to_string())
+  out.println(g_sbufs[&code].to_string())
+  out.println("void init1a_{}(){{}".f(module_name))
+  out.println(g_sbufs[&init1a].to_string())
+  out.println("}")
+  out.println("void init1b_{}(){{}".f(module_name))
+  out.println(g_sbufs[&init1b].to_string())
+  out.println("}")
+  out.println("void init2_{}(){{}\n".f(module_name))
+  out.println(g_sbufs[&init2].to_string())
+  out.println("}\n")
+  out.println("void init3_{}(){{}\n".f(module_name))
+  out.println(g_sbufs[&init3].to_string())
+  out.println("}\n")
+
+#######################################################################
 # Actions
-
-dump(header, code, init1a, init1b, init2, init3, module_name, outfile)
-  outfile.println("#include \"modules/modules.h\"")
-  outfile.println(header)
-  outfile.println(code)
-  outfile.println("void init1a_{}(){{}".f(module_name))
-  outfile.println(init1a)
-  outfile.println("}")
-  outfile.println("void init1b_{}(){{}".f(module_name))
-  outfile.println(init1b)
-  outfile.println("}")
-  outfile.println("void init2_{}(){{}\n".f(module_name))
-  outfile.println(init2)
-  outfile.println("}\n")
-  outfile.println("void init3_{}(){{}\n".f(module_name))
-  outfile.println(init3)
-  outfile.println("}\n")
-
 go_dump(files)
-  header, code, init1a, init1b, init2, init3 = empty_buffers()
-
   asts = []
   for file in files
     ast = Ast.Node.new_from_file(file)
     asts.push(ast)
     Typer.absorb_info(ast)
   for ast in asts
-    generate(ast, header, code, init1a, init1b, init2, init3)
+    generate(ast)
 
-  Out.println(header)
-  Out.println(code)
-  Out.println("void init1a_User(){")
-  Out.println(init1a)
-  Out.println("}")
-  Out.println("void init1b_User(){")
-  Out.println(init1b)
-  Out.println("}")
-  Out.println("void init2_User(){\n")
-  Out.println(init2)
-  Out.println("}\n")
-  Out.println("void init3_User(){\n")
-  Out.println(init3)
-  Out.println("}\n")
+  out = StringBuf.new()
+  dump("User", out)
+  Out.println(out.to_string())
 
 go_bootstrap(files, outfile)
-  header, code, init1a, init1b, init2, init3 = empty_buffers()
-
   asts = []
   rips = []
   objs = []
@@ -128,23 +124,23 @@ go_bootstrap(files, outfile)
   for ast in asts
     if g_verbose
       Err.println("generating ", rips[index])
-    generate(ast, header, code, init1a, init1b, init2, init3)
+    generate(ast)
     index = index + 1
 
   tmp_c_file = Path.temp_name("ripe", ".c")
   tf = TextFile.new(tmp_c_file, TextFile.Write)
-  dump(header, code, init1a, init1b, init2, init3, "User", tf)
+  dump("User", tf)
   tf.close()
 
   tmp_o_file = Path.temp_name("ripe", ".o")
   sys(["gcc", g_cflags, tmp_c_file, "-c", "-o", tmp_o_file])
+  Path.remove(tmp_c_file)
 
   objs_txt = String.join(objs, " ")
   sys(["gcc", g_lflags, objs_txt, tmp_o_file, "-o", outfile])
+  Path.remove(tmp_o_file)
 
 go_build(files, outfile)
-  header, code, init1a, init1b, init2, init3 = empty_buffers()
-
   asts = []
   rips = []
   objs = []
@@ -161,20 +157,22 @@ go_build(files, outfile)
         objs.push(file)
 
   for ast in asts
-    generate(ast, header, code, init1a, init1b, init2, init3)
+    generate(ast)
 
   # Compile ripe
   tmp_c_file = Path.temp_name("ripe", ".c")
   tf = TextFile.new(tmp_c_file, TextFile.Write)
-  dump(header, code, init1a, init1b, init2, init3, "User", tf)
+  dump("User", tf)
   tf.close()
   tmp_o_file = Path.temp_name("ripe", ".o")
   sys(["gcc", g_cflags, tmp_c_file, "-c", "-o", tmp_o_file])
+  Path.remove(tmp_c_file)
 
   # Generate module loader, append to other objects
   mods = ["User"]
   mods.extend(Module.get_list())
-  objs.push(Module.make_loader(mods, g_cflags))
+  loader = Module.make_loader(mods, g_cflags)
+  objs.push(loader)
   objs.extend(Module.get_objs())
   objs.push(Path.join(Path.get_program_dir(), "vm.o"))
 
@@ -183,15 +181,16 @@ go_build(files, outfile)
   cmdline = ["gcc", g_lflags, objs_txt, tmp_o_file, "-o", outfile]
   cmdline.extend(Module.get_lflags())
   sys(cmdline)
+  Path.remove(tmp_o_file)
+  Path.remove(loader)
 
 go_run(leftover)
   outfile = Path.temp_name("ripe", "")
   go_build(leftover, outfile)
   sys([outfile])
+  Path.remove(outfile)
 
 go_module(files, module_name, outfile)
-  header, code, init1a, init1b, init2, init3 = empty_buffers()
-
   asts = []
   rips = []
   objs = []
@@ -213,18 +212,20 @@ go_module(files, module_name, outfile)
       case ".typ"
         Typer.load_from_file(file)
   for ast in asts
-    generate(ast, header, code, init1a, init1b, init2, init3)
+    generate(ast)
 
   tmp_c_file = Path.temp_name("ripe", ".c")
   tf = TextFile.new(tmp_c_file, TextFile.Write)
-  dump(header, code, init1a, init1b, init2, init3, module_name, tf)
+  dump(module_name, tf)
   tf.close()
 
   tmp_o_file = Path.temp_name("ripe", ".o")
   sys(["gcc", "-c", g_cflags, tmp_c_file, "-o", tmp_o_file])
+  Path.remove(tmp_c_file)
 
   objs_txt = String.join(objs, " ")
   sys(["ld", "-r", objs_txt, tmp_o_file, "-o", outfile])
+  Path.remove(tmp_o_file)
 
 go_type(files)
   for file in files
@@ -239,8 +240,8 @@ go_type(files)
 load_defaults()
   root_dir = Path.get_program_dir()
   meta = load_meta(Path.join(root_dir, "ripe.meta"))
-  g_cflags = meta["cflags"]
-  g_lflags = meta["lflags"]
+  g_cflags = g_cflags + " " + meta["cflags"]
+  g_lflags = g_lflags + " " + meta["lflags"]
   modules = meta["modules"]
   arr = modules.split_whitespace()
   for module in arr
@@ -248,6 +249,8 @@ load_defaults()
   g_cflags = g_cflags + " -I"+Path.join(root_dir, "include")
 
 main()
+  init_sbufs()
+
   options = [
     [&BOOTSTRAP,    "-s", "--bootstrap", 0  , "bootstrap build"],
     [&BUILD,        "-b", "--build", 0, "build program"],
@@ -262,6 +265,8 @@ main()
     [&NO_FOR_OPTIMS, nil, "--no-for-optims", 0, "do not optimize for loops"],
     [&NO_FUNC_CALL_OPTIMS, nil, "--no-func-call-optims", 0, "do not optimize function calls"],
     [&OPTIM_VERIFY,  nil, "--optim-verify", 0, "optimize out type verifications"],
+    [&CFLAGS,        nil, "--cflags", Opt.ARG, "set flags to C compiler"],
+    [&LFLAGS,        nil, "--lflags", Opt.ARG, "set flags to linker"],
     [&VERBOSE,      "-v", "--verbose", 0, "verbose"],
     [&HELP,         "-h", "--help", Opt.HELP, "display help"]
   ]
@@ -303,6 +308,10 @@ main()
         g_optims[&TYPE_VERIFY] = true
       case &TYPE
         mode = &TYPE
+      case &CFLAGS
+        g_cflags = g_cflags + " " + opt[2]
+      case &LFLAGS
+        g_lflags = g_lflags + " " + opt[2]
       case &MODULE
         Module.add(opt[2])
       case &VERBOSE

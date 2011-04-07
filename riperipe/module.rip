@@ -46,6 +46,7 @@ namespace Module
     tf.println("}")
     tf.close()
     sys(["gcc", cflags, "-c", tmp_c_file, "-o", out_file])
+    Path.remove(tmp_c_file)
     return out_file
 
   add(name)

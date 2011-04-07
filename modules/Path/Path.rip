@@ -17,6 +17,14 @@ namespace Path
   exists?(String path)
     return $ pack_bool(path_exists(val_to_string(__path))) $
 
+  #$ rdoc-name Path.remove
+  #$ rdoc-header Bool Path.remove(String path)
+  #$ Remove a path.  Throws an exception on error.
+  remove(String path)
+    $ const char* path = val_to_string(__path);
+      if (remove(path) != 0)
+        exc_raise("Path.remove(\"%s\") failed", path); $
+
   #$ rdoc-name Path.temp_name
   #$ rdoc-header String Path.temp_name(String prefix, String suffix)
   #$ Return a temporary filename with the given prefix and suffix.

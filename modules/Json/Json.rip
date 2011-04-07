@@ -24,40 +24,40 @@ namespace Json
 
   encode_to_stringbuf(StringBuf buf, obj)
     if obj is Map
-      buf.write("{\n")
+      buf.print("{\n")
       index = 1
       for k, v in obj
         Json.encode_to_stringbuf(buf, k)
-        buf.write(" : ")
+        buf.print(" : ")
         Json.encode_to_stringbuf(buf, v)
         if index < obj.size
-          buf.write(",\n")
+          buf.print(",\n")
         else
-          buf.write("\n")
+          buf.print("\n")
         index = index + 1
-      buf.write("}")
+      buf.print("}")
 
     if obj is Array1
-      buf.write("[")
+      buf.print("[")
       index = 1
       for v in obj
         Json.encode_to_stringbuf(buf, v)
         if index < obj.size
-          buf.write(",")
+          buf.print(",")
         index = index + 1
-      buf.write("]")
+      buf.print("]")
 
     if obj is Integer
-      buf.write(obj.to_string())
+      buf.print(obj.to_string())
     if obj is Double
-      buf.write(obj.to_string())
+      buf.print(obj.to_string())
     if obj is String
-      buf.write("\"")
-      buf.write(obj)
-      buf.write("\"")
+      buf.print("\"")
+      buf.print(obj)
+      buf.print("\"")
     if obj == nil
-      buf.write("null")
+      buf.print("null")
     if obj == true
-      buf.write("true")
+      buf.print("true")
     if obj == false
-      buf.write("false")
+      buf.print("false")

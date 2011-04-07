@@ -49,7 +49,7 @@ Value string_const_to_val(const char* str)
   assert(str != NULL);
   String* obj;
   Value v = obj_new(klass_String, (void**)&obj);
-  obj->str = str;
+  obj->str = (char*) str;
   obj->type = STRING_CONST;
   return v;
 }

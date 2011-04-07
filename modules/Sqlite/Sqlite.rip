@@ -20,7 +20,7 @@ namespace Sqlite
 
     prepare(String str)
       stmt = Sqlite.Statement.new_empty()
-      $ sqlite3_stmt** stmt = obj_c_dptr(__stmt);
+      $ sqlite3_stmt** stmt = (sqlite3_stmt**) obj_c_dptr(__stmt);
         const char* str = val_to_string(__str);
         int rv = sqlite3_prepare_v2(@db, str, -1, stmt, NULL);
         if (rv != SQLITE_OK){
@@ -88,7 +88,7 @@ namespace Sqlite
                                ); $
         case Sqlite.TEXT
           $ return string_to_val(
-                     sqlite3_column_text(@stmt, col)
+                     (const char*) sqlite3_column_text(@stmt, col)
                                ); $
 
     finalize()

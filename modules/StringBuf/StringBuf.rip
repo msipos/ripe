@@ -9,7 +9,7 @@ class StringBuf
       @str = mem_malloc(@alloc_size);
       @str[0] = 0; $
 
-  write(obj)
+  print(obj)
     $ const char* obj = to_string(__obj);
       uint64 len = strlen(obj);
       if (len + @size > @alloc_size){
@@ -21,6 +21,10 @@ class StringBuf
       }
       strcat(@str, obj);
       @size += len; $
+
+  println(obj)
+    self.print(obj)
+    self.print("\n")
 
   to_string()
     $ return string_const_to_val(@str); $

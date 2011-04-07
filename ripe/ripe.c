@@ -79,6 +79,7 @@ void bootstrap(const char* out_filename, int arg1, int argc, char* const* argv)
   if (system(cmd_line)){
     err("failed running '%s'", cmd_line);
   }
+  remove(tmp_c_path);
 
   // Finally compile into the output file
   char* objs_txt = "";
@@ -95,6 +96,7 @@ void bootstrap(const char* out_filename, int arg1, int argc, char* const* argv)
   if (system(cmd_line)){
     err("failed running '%s'", cmd_line);
   }
+  remove(tmp_o_path);
 }
 
 

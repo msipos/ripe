@@ -401,7 +401,7 @@ eval_expr(expr)
     case Ast.CHARACTER
       return tuple("int64", expr.text[2])
     case Ast.STRING
-      return tuple("String", "string_to_val(\"{}\")".f(expr.text))
+      return tuple("String", Strings.get(expr.text))
     case Ast.EXPR_ARRAY
       expr_list = expr[1]
       return tuple("Array1", "array1_to_val2({}{})".f(expr_list.num_children,
