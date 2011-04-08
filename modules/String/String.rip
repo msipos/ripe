@@ -83,6 +83,9 @@ class String
   #$ Sets the i-th character of a string to c.
   index_set(i, v)
     $
+      if (@s.type == STRING_CONST){
+        exc_raise("attempted to modify a constant string '%s'", @s.str);
+      }
       @s.str[util_index("String", val_to_int64(__i), strlen(@s.str))] = (char) val_to_int64(__v);
     $
 
@@ -129,22 +132,32 @@ class String
       } $
 
   #$ rdoc-name String.strip
-  #$ rdoc-header String.strip()
-  #$ Strips whitespace from left and right ends of the string.
-  strip()
-    $
-      char* s = @s.str;
-      while (*s == ' ' or *s == '\t' or *s == '\n') s++;
+  #$ rdoc-header String String.strip(String chars)
+  #$ Strips any of the given chars off the end of the array.
+  strip(chars)
+    $ char* s = @s.str;
+      const char* chars = val_to_string(__chars);
+
+      // Strip away the front
+      while (*s != 0 and strchr(chars, *s) != NULL) s++;
       int64 n = strlen(s);
-      char d[n + 1];
-      strcpy(d, s);
-      char* p = d + n - 1;
-      while (*p == ' ' or *p == '\t' or *p == '\n'){
-        *p = 0;
-        p--;
+      if (n == 0) return string_to_val(s);
+
+      // Strip away the tail
+      char tmp[n + 1];
+      strcpy(tmp, s);
+      s = tmp + n - 1;
+      while (strchr(chars, *s) != NULL) {
+        *s = 0;
+        s--;
       }
-    $
-    return $ string_to_val(d) $
+      return string_to_val(tmp); $
+
+  #$ rdoc-name String.strip_whitespace
+  #$ rdoc-header String.strip_whitespace()
+  #$ Strips whitespace from left and right ends of the string.
+  strip_whitespace()
+    return self.strip(" \t\n")
 
   #$ rdoc-name String.split
   #$ rdoc-header String.split(chars)
@@ -317,6 +330,9 @@ class String
   #$ rdoc-header String.print(...)
   #$ Append arguments to the string.
   print(*args)
+    $ if (@s.type == STRING_CONST){
+        exc_raise("attempted to print to a constant string '%s'", @s.str);
+      } $
     for arg in args
       s = arg.to_string()
       $

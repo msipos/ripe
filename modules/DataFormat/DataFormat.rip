@@ -7,33 +7,33 @@ namespace DataFormat
       line = tf.read_line()
       if line == eof
         return map
-      name = line.strip()
+      name = line.strip_whitespace()
 
       line = tf.read_line()
-      classname = line.strip()
+      classname = line.strip_whitespace()
       switch classname
         case "Array2"
-          nx = Integer(tf.read_line().strip())
-          ny = Integer(tf.read_line().strip())
+          nx = Integer(tf.read_line().strip_whitespace())
+          ny = Integer(tf.read_line().strip_whitespace())
 
           arr = Array2.new_const(nx, ny, 0)
           for x in 1:nx
             for y in 1:ny
-              text = tf.read_line().strip()
+              text = tf.read_line().strip_whitespace()
               if text.find(".") != nil
                 arr[x,y] = Double(text)
               else
                 arr[x,y] = Integer(text)
           map[name] = arr
         case "Num.Array2"
-          type = Integer(tf.read_line().strip())
-          nx = Integer(tf.read_line().strip())
-          ny = Integer(tf.read_line().strip())
+          type = Integer(tf.read_line().strip_whitespace())
+          nx = Integer(tf.read_line().strip_whitespace())
+          ny = Integer(tf.read_line().strip_whitespace())
 
           arr = Num.Array2.zeros(nx, ny, type)
           for x in 1:nx
             for y in 1:ny
-              text = tf.read_line().strip()
+              text = tf.read_line().strip_whitespace()
               if text.find(".") != nil
                 arr[x,y] = Double(text)
               else

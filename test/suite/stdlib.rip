@@ -181,7 +181,9 @@ range_iterators()
 
 String()
   s = "  test \t \n"
-  Test.test("String.strip()", s.strip(), "test")
+  Test.test("String.strip_whitespace()", s.strip_whitespace(), "test")
+  s = "\"\"test\"\"\""
+  #Test.test("String.strip()", s.strip("\""), "test")
   Test.test(
              "String.split()",
              ["red", "riding", "hood"].to_string(),
@@ -189,6 +191,7 @@ String()
            )
   cat = "cat"
   Test.test("String.index()", cat[2], 'a')
+  cat = cat.clone()
   cat[1] = 'm'
   Test.test("String.index_set()", cat, "mat")
 
@@ -209,28 +212,28 @@ String()
   Test.test("String.find()", text.find("is"), 3)
   Test.test("String.find()", text.find("waldo"), nil)
 
-  text = "alpha"
+  text = "alpha".clone()
   text.print("bet")
   Test.test("String.print()", "alphabet", text)
 
   Test.test("String.substitute()", "bababa".substitute("ba", "lai"), "lailailai")
 
-  text = "alpha"
+  text = "alpha".clone()
   text.rotate!(2)
   Test.test("String.rotate!()", text, "phaal")
   text.rotate!(-3)
   Test.test("String.rotate!()", text, "aalph")
 
-  longertext = "0123456789"
+  longertext = "0123456789".clone()
   longertext.rotate!(4)
   Test.test("String.rotate!()", longertext, "4567890123")
 
   Test.test("String.f()", "Hello { 1 }!".f("world"), "Hello world!")
 
   sbuf = StringBuf.new()
-  sbuf.write("hello ")
-  sbuf.write("world ")
-  sbuf.write(42)
+  sbuf.print("hello ")
+  sbuf.print("world ")
+  sbuf.print(42)
   Test.test("StringBuf", sbuf.to_string(), "hello world 42")
 
 Std()
@@ -290,7 +293,7 @@ main()
   Std()
   Os()
   Time()
-  Num()
+  # Num()
 
   Test.test("Integer.odd?", 7 .odd?(), true)
   Test.test("Integer.odd?", 8 .odd?(), false)

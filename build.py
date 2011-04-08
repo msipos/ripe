@@ -195,11 +195,18 @@ meta = 'cflags={0}\nlflags={1}\nmodules={2}\n'.format(
          " ".join(conf["CFLAGS"]),
          " ".join(conf["LFLAGS"]),
          " ".join(DEF_MODULES))
-f = open('product/ripe.meta', 'r')
-contents = f.read()
-f.close()
 
-if contents != meta:
+rewrite_meta = False
+if not os.path.exists('product/ripe.meta'):
+    rewrite_meta = True
+else:
+    f = open('product/ripe.meta', 'r')
+    contents = f.read()
+    f.close()
+    if contents != meta:
+        rewrite_meta = True
+
+if rewrite_meta:
     f = open('product/ripe.meta', 'w')
     f.write(meta)
     f.close()

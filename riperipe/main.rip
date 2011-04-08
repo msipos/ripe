@@ -27,10 +27,10 @@ load_meta(filename)
   map = Map.new()
   tf = TextFile.new(filename, TextFile.Read)
   for line in tf
-    line = line.strip()
+    line = line.strip_whitespace()
     n = line.find("=")
-    left = line[:(n-1)].strip()
-    right = line[(n+1):].strip()
+    left = line[:(n-1)].strip_whitespace()
+    right = line[(n+1):].strip_whitespace()
     map[left] = right
   return map
   tf.close()
@@ -309,9 +309,9 @@ main()
       case &TYPE
         mode = &TYPE
       case &CFLAGS
-        g_cflags = g_cflags + " " + opt[2]
+        g_cflags = g_cflags + " " + opt[2].strip("\"")
       case &LFLAGS
-        g_lflags = g_lflags + " " + opt[2]
+        g_lflags = g_lflags + " " + opt[2].strip("\"")
       case &MODULE
         Module.add(opt[2])
       case &VERBOSE

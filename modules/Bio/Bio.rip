@@ -248,7 +248,7 @@ namespace Bio
       id_line = @buf_file.read_line()
       if id_line == eof
         return eof
-      id_line = id_line.strip()
+      id_line = id_line.strip_whitespace()
       if id_line[1] != '>'
         raise "invalid id line '%a'".f(id_line)
       id = id_line[2:]
@@ -257,7 +257,7 @@ namespace Bio
         line = @buf_file.read_line()
         if line == eof
           break
-        line = line.strip()
+        line = line.strip_whitespace()
         if line[1] == '>'
           @buf_file.back_up()
           break

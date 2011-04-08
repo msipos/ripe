@@ -19,7 +19,7 @@ class StringBuf
         }
         @str = mem_realloc(@str, @alloc_size);
       }
-      strcat(@str, obj);
+      strcat(@str + @size - 1, obj);
       @size += len; $
 
   println(obj)

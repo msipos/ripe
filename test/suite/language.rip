@@ -54,7 +54,7 @@ operators()
   Test.test(name, 7 modulo 3, 1)
   Test.test(name, 8 modulo 3, 2)
   name = "exponent"
-  Test.test(name, 3^3, 27.0)
+  Test.test(name, 3^3, 27)
   Test.test(name, 2.0^4.0, 4.0^2.0)
   name = "exponent assoc"
   Test.test(name, 3.0^3.0^3.0, 3.0^27.0)
