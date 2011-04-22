@@ -64,6 +64,12 @@ namespace Gsl
         gsl_rng_set(@rng, seed);
       $
 
+    # Choose a random element of the array
+    choose(Array1 array)
+      n = array.size
+      Integer i = self.uniform_int(1, n)
+      return array[i]
+
     # Shuffle the array using the Fisher-Yates-Durstenfeld-Knuth algorithm.
     shuffle!(array)
       n = array.size
