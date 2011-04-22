@@ -146,6 +146,8 @@ eval_static_call(ssym, arg_list)
   func_info = Stran.get_function(ssym)
   if func_info == nil
     raise "failed to find '{}' in Stran database".f(ssym)
+  Stran.prototype(ssym)
+
   #rv_type = tr[1]
   param_types = func_info.params
 
@@ -173,10 +175,20 @@ eval_static_call(ssym, arg_list)
         param_type = param_types[index]
 
         if param_type == "?"
-          txt_args = "{}, {}".f(txt_args, eval_expr_untyped(arg))
+          if index == 1
+            txt_args = eval_expr_untyped(arg)
+          else
+            txt_args = "{}, {}".f(txt_args, eval_expr_untyped(arg))
         else
-          txt_args = "{}, {}".f(txt_args, eval_expr_typesafe(arg, param_type))
-    txt_args = "{}, tuple_to_val({}".f(txt_args, num_args - min_args)
+          if index == 1
+            txt_args = eval_expr_typesafe(arg, param_type)
+          else
+            txt_args = "{}, {}".f(txt_args, eval_expr_typesafe(arg, param_type))
+    if min_args == 0
+      txt_args = "tuple_to_val({}".f(num_args - min_args)
+    else
+      txt_args = "{}, tuple_to_val({}".f(txt_args, num_args - min_args)
+
     if num_args > min_args
       for index in (min_args+1):num_args
         arg = arg_list.get_child(index)
@@ -192,12 +204,19 @@ eval_static_call(ssym, arg_list)
         arg = arg_list.get_child(i)
         param_type = param_types[i]
         if param_type == "?"
-          txt_args = "{}, {}".f(txt_args, eval_expr_untyped(arg))
+          if i == 1
+            txt_args = eval_expr_untyped(arg)
+          else
+            txt_args = "{}, {}".f(txt_args, eval_expr_untyped(arg))
         else
-          txt_args = "{}, {}".f(txt_args, eval_expr_typesafe(arg, param_type))
+          if i == 1
+            txt_args = eval_expr_typesafe(arg, param_type)
+          else
+            txt_args = "{}, {}".f(txt_args, eval_expr_typesafe(arg, param_type))
 
   if get_optims()[&FUNC_CALLS]
-    return "FUNC_CALL({}{})".f(FuncTable.get(ssym, num_params), txt_args)
+    #return "FUNC_CALL({}{})".f(FuncTable.get(ssym, num_params), txt_args)
+    return "{}({})".f(func_info.c_name, txt_args)
   else
     return "func_call{}({}{})".f(num_params, Ssym.get(ssym), txt_args)
 

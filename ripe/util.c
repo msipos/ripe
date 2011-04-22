@@ -41,21 +41,7 @@ const char* util_replace(const char* str, const char c, const char* replace)
   return out;
 }
 
-const char* util_escape(const char* input)
-{
-  char* output = mem_strdup(input);
-  char* s = output;
-  while (*s != 0){
-    if (*s == '?' or *s == '!' or *s == '.'){
-      *s = '_';
-    }
-    s++;
-  }
-  return output;
-}
-
 const char* util_make_c_name(const char* ripe_name)
 {
-  char* c_name = mem_asprintf("__%s", ripe_name);
-  return util_escape(c_name);
+  return util_c_name(ripe_name);
 }

@@ -405,7 +405,11 @@ gen_block(stmt_list)
   locals_pop()
 
 gen_function_common2(name, param_num, param_vararg?)
-  c_name = "_func{}_{}".f(counter(), Util.to_c(name))
+  fi = Stran.get_function(name)
+  if fi == nil
+    raise "Assertion error in gen_function_common2: {}".f(name)
+  
+  c_name = fi.c_name
   v_name = "__" + c_name
   Wr.init1a("  Value {} = func{}_to_val({});\n".f(v_name,
                                                     param_num,
@@ -429,7 +433,7 @@ gen_function(ast)
 
   # Generate code
   locals_push()
-  Wr.code("static Value {}(".f(c_name))
+  Wr.code("Value {}(".f(c_name))
   gen_params(param_list)
   Wr.code("){\n")
   gen_block(stmt_list)
@@ -446,7 +450,7 @@ gen_constructor(Node ast)
 
   # Generate constructor code
   locals_push()
-  Wr.code("static Value {}(".f(c_name))
+  Wr.code("Value {}(".f(c_name))
   gen_params(param_list)
   Wr.code("){\n")
   locals_add("__self", "self", ctx_class_name)
@@ -477,7 +481,7 @@ gen_method(String name, Node ast)
 
   # Generate method declaration:
   locals_push()
-  Wr.code("static Value {}(".f(c_name))
+  Wr.code("Value {}(".f(c_name))
   # One special parameter -- self
   locals_add("__self", "self", ctx_class_name)
   Wr.code("Value __self")

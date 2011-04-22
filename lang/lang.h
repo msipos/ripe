@@ -85,12 +85,14 @@ typedef struct {
   Dict classes;
   Dict functions;
   Dict strings;
+  Dict prototypes;
 } Stran;
 
 typedef struct {
   const char* ret;
   int num_params;
   const char** params;
+  const char* c_name;
 } FuncInfo;
 
 typedef struct {
@@ -101,6 +103,7 @@ void stran_init();
 // Returns non-zero for error. (see stran_error.text)
 int stran_absorb_ast(Node* ast);
 int stran_absorb_file(const char* filename);
+void stran_prototype(const char* name);
 void stran_dump_to_file(FILE* f);
 
 // Returns NULL for error.
@@ -195,6 +198,8 @@ int input_read(char* buf, int max_size); // Used by flex to do reading
 // lang/util.c
 //////////////////////////////////////////////////////////////////////////////
 
+const char* util_escape(const char* ripe_name);
+const char* util_c_name(const char* ripe_name);
 const char* util_dot_id(Node* expr);
 bool annot_check_simple(Node* annot_list, int num, const char* args[]);
 bool annot_check(Node* annot_list, int num, ...);

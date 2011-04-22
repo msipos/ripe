@@ -225,6 +225,9 @@ class FuncInfo
       arr.push(self.get_param(i))
     return arr
 
+  c_name() | virtual_get
+    return $ string_to_val(@fi->c_name) $
+
 namespace Annot
   has?(Node annot_list, String text)
     ptr = annot_list.ptr
@@ -234,6 +237,9 @@ namespace Lang
   init()
     $ stran_init();
       wr_init(); $
+
+  c_name(text)
+    return $ string_to_val(util_c_name(val_to_string(__text))) $
 
 namespace Stran
   absorb_ast(Node ast, String filename)
@@ -249,6 +255,9 @@ namespace Stran
 
   dump()
     $ stran_dump_to_file(stdout); $
+
+  prototype(name)
+    $ stran_prototype(val_to_string(__name)); $
 
   get_function(name)
     $ FuncInfo* fi = stran_get_function(val_to_string(__name));

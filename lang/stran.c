@@ -54,6 +54,7 @@ static FuncInfo* stran_func(Node* param_list, bool method, const char* func_name
   FuncInfo* fi = mem_new(FuncInfo);
   // TODO: fi->ret
   fi->ret = stran_string("?");
+  fi->c_name = stran_string(mem_asprintf("ripe_%s", util_escape(func_name)));
 
   // Populate parameters
   fi->num_params = node_num_children(param_list);
@@ -219,7 +220,7 @@ void stran_dump_to_file(FILE* f)
     if (dict_has_bucket(&(stran.functions), i)){
       char* func_name = *((char**) dict_get_bucket_key(&(stran.functions), i));
       FuncInfo* fi = *((FuncInfo**) dict_get_bucket_value(&(stran.functions), i));
-      fprintf(f, "function %s %s %d", func_name, fi->ret, fi->num_params);
+      fprintf(f, "function %s %s %s %d", func_name, fi->c_name, fi->ret, fi->num_params);
       for (int j = 0; j < fi->num_params; j++){
         fprintf(f, " %s", fi->params[j]);
       }
@@ -245,21 +246,22 @@ int stran_absorb_file(const char* filename)
     if (tok.num == 0) continue;
     if (strequal(tok.words[0], "function")){
       // Function record:
-      // function func_name return_type num_params param1_type param2_type...
-      if (tok.num < 4) {
+      // function func_name c_name return_type num_params param1_type param2_type...
+      if (tok.num < 5) {
         err_throw(stran_error, "invalid type data: %s", line);
       }
       FuncInfo* fi = mem_new(FuncInfo);
       const char* func_name = stran_string(tok.words[1]);
-      fi->ret = stran_string(tok.words[2]);
-      fi->num_params = atoi(tok.words[3]);
+      fi->c_name = stran_string(tok.words[2]);
+      fi->ret = stran_string(tok.words[3]);
+      fi->num_params = atoi(tok.words[4]);
 
-      if (tok.num != 4 + fi->num_params){
+      if (tok.num != 5 + fi->num_params){
         err_throw(stran_error, "invalid type data: %s", line);
       }
       fi->params = (const char**) mem_malloc(sizeof(char*) * fi->num_params);
       for (int i = 0; i < fi->num_params; i++){
-        fi->params[i] = stran_string(tok.words[4+i]);
+        fi->params[i] = stran_string(tok.words[5+i]);
       }
       dict_set(&(stran.functions), &func_name, &fi);
     } else {
@@ -288,6 +290,25 @@ FuncInfo* stran_get_function(const char* name)
   return fi;
 }
 
+void stran_prototype(const char* name)
+{
+  if (dict_query(&(stran.prototypes), &name, NULL)) return;
+  int i = 1;
+  dict_set(&(stran.prototypes), &name, &i);
+
+  FuncInfo* fi = stran_get_function(name);
+  assert(fi != NULL);
+
+  wr_print(WR_HEADER, "Value %s(", fi->c_name);
+  for (int i = 0; i < fi->num_params; i++){
+    wr_print(WR_HEADER, "Value");
+    if (i != fi->num_params - 1){
+      wr_print(WR_HEADER, ", ");
+    }
+  }
+  wr_print(WR_HEADER, ");\n");
+}
+
 void stran_dump()
 {
   printf("FUNCTIONS:\n");
@@ -304,4 +325,5 @@ void stran_init()
   dict_init_string(&(stran.classes), sizeof(ClassInfo*));
   dict_init_string(&(stran.functions), sizeof(FuncInfo*));
   dict_init_string(&(stran.strings), sizeof(char*));
+  dict_init_string(&(stran.prototypes), sizeof(int));
 }

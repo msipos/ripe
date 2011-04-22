@@ -814,11 +814,12 @@ static void gen_func_code(Node* stmt_list)
 
 static void gen_function(Node* function)
 {
-  // Deal with counter
-  static uint counter = 0;
-  counter++;
   const char* name = mem_asprintf("%s%s", namespace_get_prefix(),
                                   node_get_string(function, "name"));
+  FuncInfo* fi = stran_get_function(name);
+  assert(fi != NULL);
+  const char* c_name = fi->c_name;
+  
   Node* param_list = node_get_child(function, 0);
   Node* stmt_list = node_get_child(function, 1);
   uint num_params = param_list->children.size;
@@ -826,9 +827,6 @@ static void gen_function(Node* function)
 
   // Generate
   push_locals();
-  const char* c_name = mem_asprintf("_func%u_%s",
-                                    counter,
-                                    util_escape(name));
   wr_print(WR_CODE, "static Value %s(%s){\n",
               c_name, gen_params(param_list));
   wr_print(WR_INIT1A, "  Value v_%s = func%u_to_val(%s);\n",
@@ -851,8 +849,9 @@ static void gen_constructor(Node* constructor)
   counter++;
   const char* r_constructor_name = mem_asprintf("%s.%s",
              context_class_name, node_get_string(constructor, "name"));
-  const char* c_constructor_name = mem_asprintf("_cons%d_%s", counter,
-                                        util_escape(r_constructor_name));
+  FuncInfo* fi = stran_get_function(r_constructor_name);
+  assert(fi != NULL);
+  const char* c_constructor_name = fi->c_name;
 
   Node* param_list = node_get_child(constructor, 0);
   Node* stmt_list = node_get_child(constructor, 1);
@@ -885,13 +884,14 @@ static void gen_method(const char* method_name, Node* rv_type,
                        Node* param_list, Node* stmt_list)
 {
   context2 = CONTEXT_METHOD;
-
   static int counter = 0;
   counter++;
+
   const char* r_method_name = mem_asprintf("%s.%s",
                                            context_class_name, method_name);
-  const char* c_method_name = mem_asprintf("_met%d_%s", counter,
-                                util_escape(r_method_name));
+  FuncInfo* fi = stran_get_function(r_method_name);
+  assert(fi != NULL);
+  const char* c_method_name = fi->c_name;
 
   // Prepend a node for "self"
   Node* node_self = node_new(PARAM);

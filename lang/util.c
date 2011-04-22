@@ -15,6 +15,35 @@
 
 #include "lang/lang.h"
 
+const char* util_escape(const char* ripe_name)
+{
+  char tmp[strlen(ripe_name)*2 + 4];
+  const char* s = ripe_name;
+  strcpy(tmp, "");
+
+  // Not efficient, but who cares...
+  while(*s != 0){
+    if (*s == '.') {
+      strcat(tmp, "_");
+    } else if (*s == '?') {
+      strcat(tmp, "_Q");
+    } else if (*s == '!') {
+      strcat(tmp, "_E");
+    } else {
+      char tmps[2] = {*s, 0};
+      strcat(tmp, tmps);
+    }
+    s++;
+  }
+
+  return mem_strdup(tmp);
+}
+
+const char* util_c_name(const char* ripe_name)
+{
+  return mem_asprintf("__%s", util_escape(ripe_name));
+}
+
 const char* util_dot_id(Node* expr)
 {
   switch(expr->type){
