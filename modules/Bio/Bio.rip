@@ -66,7 +66,7 @@ namespace Bio
     private line_last
     private line_buffer
 
-    constructor new(filename)
+    new(filename) | constructor
       @tf = TextFile.new(filename, TextFile.Read)
       @line_last = nil
       @line_buffer = nil
@@ -93,7 +93,7 @@ namespace Bio
       float* probs_gap;
     $
 
-    constructor new(size)
+    new(size) | constructor
       $
         @size = val_to_int64(__size);
         @probs_A = mem_malloc(@size * sizeof(float));
@@ -226,19 +226,19 @@ namespace Bio
     writable seq
     writable multiplicity
 
-    constructor new(id, seq)
+    new(id, seq) | constructor
       @id = id
       @seq = seq
       @multiplicity = 1
 
-    virtual_get size()
+    size() | virtual_get
       s = @seq
       return $ int64_to_val(strlen(val_to_string(__s))) $
 
   class FastaFile
     private buf_file
 
-    constructor new_from_file(filename)
+    new_from_file(filename) | constructor
       @buf_file = Bio.BufferedFile.new(filename)
 
     get_iter()

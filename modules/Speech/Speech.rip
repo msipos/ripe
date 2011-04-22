@@ -18,7 +18,7 @@ class Speech
   $
     SPDConnection* c;
   $
-  constructor new(client_name, connection_name)
+  new(client_name, connection_name) | constructor
     $
       @c = spd_open(val_to_string(__client_name),
                     val_to_string(__connection_name),
@@ -57,7 +57,7 @@ class Speech
       }
     $
 
-  virtual_set on_end(func)
+  on_end(func) | virtual_set
     $
       v_end = __func;
       @c->callback_end = func_end;

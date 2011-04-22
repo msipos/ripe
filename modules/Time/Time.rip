@@ -41,33 +41,33 @@ namespace Time
       struct tm t;
     $
 
-    constructor new(time)
+    new(time) | constructor
       $
         time_t t = val_to_int64(__time);
         localtime_r(&t, &(@t));
       $
 
-    virtual_get hour()
+    hour() | virtual_get
       $
         return int64_to_val( (int64) @t.tm_hour );
       $
 
-    virtual_get minute()
+    minute() | virtual_get
       $
         return int64_to_val( (int64) @t.tm_min );
       $
 
-    virtual_get weekday()
+    weekday() | virtual_get
       $
         return int64_to_val( (int64) @t.tm_wday + 1 );
       $
 
-    virtual_get month()
+    month() | virtual_get
       $
         return int64_to_val( (int64) @t.tm_mon + 1 );
       $
 
-    virtual_get day()
+    day() | virtual_get
       $
         return int64_to_val( (int64) @t.tm_mday );
       $

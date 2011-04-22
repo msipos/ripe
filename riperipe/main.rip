@@ -51,46 +51,17 @@ is_verbose?()
 get_optims()
   return g_optims
 
-#######################################################################
-# String Buffers
-
-global g_sbufs = Map.new()
-get_sbufs()
-  return g_sbufs
-
-init_sbufs()
-  g_sbufs[&header] = StringBuf.new()
-  g_sbufs[&code] = StringBuf.new()
-  g_sbufs[&init1a] = StringBuf.new()
-  g_sbufs[&init1b] = StringBuf.new()
-  g_sbufs[&init2] = StringBuf.new()
-  g_sbufs[&init3] = StringBuf.new()
-
 dump(module_name, out)
-  out.println("#include \"modules/modules.h\"")
-  out.println(g_sbufs[&header].to_string())
-  out.println(g_sbufs[&code].to_string())
-  out.println("void init1a_{}(){{}".f(module_name))
-  out.println(g_sbufs[&init1a].to_string())
-  out.println("}")
-  out.println("void init1b_{}(){{}".f(module_name))
-  out.println(g_sbufs[&init1b].to_string())
-  out.println("}")
-  out.println("void init2_{}(){{}\n".f(module_name))
-  out.println(g_sbufs[&init2].to_string())
-  out.println("}\n")
-  out.println("void init3_{}(){{}\n".f(module_name))
-  out.println(g_sbufs[&init3].to_string())
-  out.println("}\n")
+  out.println(Wr.dump(module_name))
 
 #######################################################################
 # Actions
 go_dump(files)
   asts = []
   for file in files
-    ast = Ast.Node.new_from_file(file)
+    ast = Node.new_from_file(file)
     asts.push(ast)
-    Typer.absorb_info(ast)
+    Stran.absorb_ast(ast, file)
   for ast in asts
     generate(ast)
 
@@ -108,9 +79,9 @@ go_bootstrap(files, outfile)
       case ".rip"
         rips.push(file)
 
-        ast = Ast.Node.new_from_file(file)
+        ast = Node.new_from_file(file)
         asts.push(ast)
-        Typer.absorb_info(ast)
+        Stran.absorb_ast(ast, file)
       case ".o"
         objs.push(file)
       case ".meta"
@@ -150,9 +121,9 @@ go_build(files, outfile)
       case ".rip"
         rips.push(file)
 
-        ast = Ast.Node.new_from_file(file)
+        ast = Node.new_from_file(file)
         asts.push(ast)
-        Typer.absorb_info(ast)
+        Stran.absorb_ast(ast, file)
       case ".o"
         objs.push(file)
 
@@ -199,10 +170,10 @@ go_module(files, module_name, outfile)
     switch ext
       case ".rip"
         rips.push(file)
-        ast = Ast.Node.new_from_file(file)
+        ast = Node.new_from_file(file)
         asts.push(ast)
         if not g_omit_typing
-          Typer.absorb_info(ast)
+          Stran.absorb_ast(ast, file)
       case ".o"
         objs.push(file)
       case ".meta"
@@ -210,7 +181,7 @@ go_module(files, module_name, outfile)
         if "cflags" in meta
           g_cflags = g_cflags + " " + meta["cflags"]
       case ".typ"
-        Typer.load_from_file(file)
+        Stran.absorb_file(file)
   for ast in asts
     generate(ast)
 
@@ -231,11 +202,11 @@ go_type(files)
   for file in files
     root, ext = Path.split_extension(file)
     if ext == ".rip"
-      ast = Ast.Node.new_from_file(file)
-      Typer.absorb_info(ast)
+      ast = Node.new_from_file(file)
+      Stran.absorb_ast(ast, file)
     else
       raise "Can only read .rip files in typer mode"
-  Typer.dump()
+  Stran.dump()
 
 load_defaults()
   root_dir = Path.get_program_dir()
@@ -246,10 +217,10 @@ load_defaults()
   arr = modules.split_whitespace()
   for module in arr
     Module.add(module)
-  g_cflags = g_cflags + " -I"+Path.join(root_dir, "include")
+  g_cflags = g_cflags + " -I" + Path.join(root_dir, "include")
 
 main()
-  init_sbufs()
+  Lang.init()
 
   options = [
     [&BOOTSTRAP,    "-s", "--bootstrap", 0  , "bootstrap build"],

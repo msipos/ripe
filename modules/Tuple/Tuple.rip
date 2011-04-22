@@ -49,7 +49,7 @@ class Tuple
       }
     $
 
-  virtual_get size()
+  size() | virtual_get
     return $ int64_to_val(@t.size) $
 
 #$ rdoc-name TupleIterator
@@ -61,7 +61,7 @@ class TupleIterator
   private idx
   private sz
 
-  constructor new(t)
+  new(t) | constructor
     @t = t
     @idx = 1
     @sz = t.size

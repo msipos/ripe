@@ -12,10 +12,10 @@ namespace Num
   class Array1
     $ NumArray1 a; $
 
-    virtual_get size()
+    size() | virtual_get
       return $ int64_to_val(@a.size) $
 
-    constructor zeros(Integer sz, Integer type)
+    zeros(Integer sz, Integer type) | constructor
       if sz < 1
         raise "Invalid size in Num.Array1.zeros(sz=%a)".f(sz)
       Num.check_type(type)
@@ -122,7 +122,7 @@ namespace Num
   class Array2
     $ NumArray2 a; $
 
-    constructor zeros(Integer x, Integer y, Integer type)
+    zeros(Integer x, Integer y, Integer type) | constructor
       if x < 1 or y < 1
         raise "Invalid size in Num.Array2.zeros (%ax%a)".f(x, y)
       Num.check_type(type)
@@ -189,11 +189,11 @@ namespace Num
             assert_never();
         }$
 
-    virtual_get size_x()
+    size_x() | virtual_get
       return $ int64_to_val(@a.size_x) $
 
-    virtual_get size_y()
+    size_y() | virtual_get
       return $ int64_to_val(@a.size_y) $
 
-    virtual_get type()
+    type() | virtual_get
       return $ int64_to_val(@a.type) $

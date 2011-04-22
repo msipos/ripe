@@ -3,21 +3,21 @@ class CDataClass
     int64 i;
   $
 
-  constructor new()
+  new() | constructor
     $
       @i = 1;
     $
 
-  virtual_get i()
+  i() | virtual_get
     return $ int64_to_val(@i) $
 
-  virtual_set i(i)
+  i(i) | virtual_set
     $ @i = val_to_int64(__i); $
 
 class Class
   writable filename
 
-  constructor new(filename)
+  new(filename) | constructor
     @filename = filename
 
   test_filename(test)

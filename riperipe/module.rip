@@ -60,9 +60,6 @@ namespace Module
 
     # Module object file
     module[&OBJECT] = Path.join(dir, name + ".o")
-    if not Path.exists?(module[&OBJECT])
-      raise "error: module object '{}' does not exist (looked for '{}')".f(name,
-                                                                module[&OBJECT])
 
     # Check for a meta file
     meta_path = Path.join(dir, name + ".meta")
@@ -72,7 +69,7 @@ namespace Module
     # Absorb type file
     type_path = Path.join(dir, name + ".typ")
     if Path.exists?(type_path)
-      Typer.load_from_file(type_path)
+      Stran.absorb_file(type_path)
     else
       raise "error: module type info '{}' does not exist (looked for '{}')".f(
                                                                  name,
@@ -89,7 +86,11 @@ namespace Module
   get_objs()
     arr = []
     for k, v in g_modules
-      arr.push(v[&OBJECT])
+      obj = v[&OBJECT]
+      if not Path.exists?(obj)
+        raise "error: module object '{}' does not exist (looked for '{}')".f(k,
+                                                                             obj)
+      arr.push(obj)
     return arr
 
   get_lflags()

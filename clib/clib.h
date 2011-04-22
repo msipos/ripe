@@ -116,6 +116,9 @@ typedef struct {
 
 void dict_init(Dict* d, uint16 key_size, uint16 value_size,
                DictHashFunc hash_func, DictEqualFunc equal_func);
+#define dict_init_string(d, v_size)  dict_init(d, sizeof(char*), v_size, \
+                                               dict_hash_string, \
+                                               dict_equal_string)
 Dict* dict_new(uint16 key_size, uint16 value_size, DictHashFunc hash_func,
                DictEqualFunc equal_func);
 
@@ -285,6 +288,17 @@ void sbuf_clear(StringBuf* sbuf);
 void sbuf_deinit(StringBuf* sbuf);
 
 ///////////////////////////////////////////////////////////////////////
+// tok.c
+///////////////////////////////////////////////////////////////////////
+typedef struct {
+  int num;
+  const char** words;
+} Tok;
+void tok_init(Tok* tok, const char* str, const char* delim);
+void tok_init_white(Tok* tok, const char* str);
+void tok_destroy(Tok* tok);
+
+///////////////////////////////////////////////////////////////////////
 // utf8.c
 ///////////////////////////////////////////////////////////////////////
 
@@ -302,5 +316,20 @@ error utf8_read(const char** str, const char* limit, unichar* out);
 // If successful, it updates *str_to point to the next codepoint (if any).
 // If it fails, *str is left unchanged.
 error utf8_write(char** str, const char* limit, unichar c);
+
+
+///////////////////////////////////////////////////////////////////////
+// util.c
+///////////////////////////////////////////////////////////////////////
+
+#include <setjmp.h>
+typedef struct {
+  jmp_buf jb;
+  const char* text;
+} Error;
+#define err_check(e)   ({(e) = mem_new(Error); setjmp((e)->jb); })
+//#define err_throw(e, ...); ({(e)->text = mem_asprintf(__VA_ARGS__); longjmp((e)->jb, 1);})
+void err_throw(Error* e, const char* format, ...);
+
 
 #endif

@@ -71,7 +71,7 @@ namespace Path
       DIR* d;
     $
 
-    constructor new(name)
+    new(name) | constructor
       $
         @d = opendir(val_to_string(__name));
         if (@d == NULL) {
@@ -103,7 +103,7 @@ namespace Path
     private stack
     private names
 
-    constructor new(name)
+    new(name) | constructor
       @stack = [Path.Dir.new(name)]
       @names = [name]
 

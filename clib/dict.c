@@ -123,6 +123,8 @@ static void set(Dict* d, void* key, void* value, void* buckets,
 
 void dict_set(Dict* d, void* key, void* value)
 {
+  assert(d != NULL);
+
   if (dict_query(d, key, NULL)){
     set(d, key, value, d->data, d->alloc_size);
   }
@@ -178,42 +180,51 @@ bool dict_query(Dict* d, void* key, void* value)
 
 bool dict_has_bucket(Dict* d, int64 place)
 {
+  assert(d != NULL);
   return (*get_flag(d, d->data, place)) == BUCKET_FULL;
 }
 
 void* dict_get_bucket_key(Dict* d, int64 place)
 {
+  assert(d != NULL);
   return get_key(d, d->data, place);
 }
 
 void* dict_get_bucket_value(Dict* d, int64 place)
 {
+  assert(d != NULL);
   return get_value(d, d->data, place);
 }
 
 uint64 dict_hash_string(void* key)
 {
+  assert(key != NULL); assert(*((char**) key) != NULL);
   return hash_string(*((char**) key));
 }
 
 bool dict_equal_string(void* key1, void* key2)
 {
+  assert(key1 != NULL); assert(*((char**) key1) != NULL);
+  assert(key2 != NULL); assert(*((char**) key2) != NULL);
   return strcmp( *((char**) key1), *((char**) key2)) == 0;
 }
 
 uint64 dict_hash_uint32(void* key)
 {
+  assert(key != NULL);
   uint32* p = (uint32*) key;
   return (uint64) *p;
 }
 
 bool dict_equal_uint32(void* key1, void* key2)
 {
+  assert(key1 != NULL); assert(key2 != NULL);
   return (*((uint32*) key1)) == (*((uint32*) key2));
 }
 
 uint64 dict_hash_uint64(void* key)
 {
+  assert(key != NULL);
   return *((uint64*) key);
 }
 

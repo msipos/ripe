@@ -11,7 +11,7 @@ $
 namespace Gd
   class Image
     $ gdImagePtr image; $
-    constructor new(x, y)
+    new(x, y) | constructor
       $
         @image = gdImageCreateTrueColor(val_to_int64(__x),
                                         val_to_int64(__y));
@@ -20,7 +20,7 @@ namespace Gd
         }
       $
 
-    constructor new_from_file(filename)
+    new_from_file(filename) | constructor
       name, ext = Path.split_extension(filename)
       if ext == ".png"
         $
@@ -93,10 +93,10 @@ namespace Gd
         fclose(f);
       $
 
-    virtual_get size_x()
+    size_x() | virtual_get
       return $ int64_to_val(gdImageSX(@image)) $
 
-    virtual_get size_y()
+    size_y() | virtual_get
       return $ int64_to_val(gdImageSY(@image)) $
 
     destroy()

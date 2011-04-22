@@ -11,7 +11,7 @@ class Array3
   #$ rdoc-name Array3.new_const
   #$ rdoc-header Array3.new_const(Integer x, Integer y, Integer z, v)
   #$ Create a new Array3 of dimensions x*y*z, and populated with elements v.
-  constructor new_const(x, y, z, v)
+  new_const(x, y, z, v) | constructor
     $
       int64 x = val_to_int64(__x);
       int64 y = val_to_int64(__y);

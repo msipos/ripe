@@ -23,7 +23,7 @@ namespace TextFile
 class TextFile
   $ FILE* f; $
 
-  constructor new(filename, mode)
+  new(filename, mode) | constructor
     $
       int64 mode = val_to_int64(__mode);
       const char* smode;

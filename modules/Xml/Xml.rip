@@ -10,7 +10,7 @@ namespace Xml
       xmlDoc *doc;
     $
 
-    constructor new_from_text(text)
+    new_from_text(text) | constructor
       $
         const char* text = val_to_string(__text);
         @doc = xmlReadMemory(text,
@@ -66,21 +66,21 @@ namespace Xml
       xmlNode* node;
     $
 
-    constructor new()
+    new() | constructor
       pass
 
-    virtual_get name()
+    name() | virtual_get
       $ if (!@node->name) return VALUE_NIL; $
       return $ string_to_val((const char*) @node->name) $
 
-    virtual_get type()
+    type() | virtual_get
       return $ int64_to_val(@node->type) $
 
-    virtual_get content()
+    content() | virtual_get
       $ if (!@node->content) return VALUE_NIL; $
       return $ string_to_val((const char*) @node->content) $
 
-    virtual_get child()
+    child() | virtual_get
       $
         xmlNode* child = @node->children;
         if (child == NULL) return VALUE_NIL;
@@ -92,7 +92,7 @@ namespace Xml
       $
       return node
 
-    virtual_get next()
+    next() | virtual_get
       $
         xmlNode* next = @node->next;
         if (next == NULL) return VALUE_NIL;

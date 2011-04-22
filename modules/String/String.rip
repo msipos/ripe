@@ -26,7 +26,7 @@ class String
   #$ rdoc-name String.new_uniform
   #$ rdoc-header String.new_uniform(Integer c, Integer reps)
   #$ Creates a string of length reps, filled with characters c.
-  constructor new_uniform(c, reps)
+  new_uniform(c, reps) | constructor
     $
       int64 reps = val_to_int64(__reps);
       int c = val_to_int64(__c);
@@ -319,7 +319,7 @@ class String
   #$ rdoc-name String.size
   #$ rdoc-header String.size
   #$ Returns the size (length) of the string.
-  virtual_get size()
+  size() | virtual_get
     $
       char* s = @s.str;
 			int l = strlen(s);

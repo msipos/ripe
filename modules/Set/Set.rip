@@ -18,7 +18,7 @@ class Set
   #$ rdoc-name Set.new
   #$ rdoc-header Set.new()
   #$ Constructs a new empty Set.
-  constructor new()
+  new() | constructor
     $
       ht_init(&(@ht), 0);
     $
@@ -100,13 +100,13 @@ class Set
   #$ rdoc-name Set.size
   #$ rdoc-header Set.size
   #$ Number of objects in the Set.
-  virtual_get size()
+  size() | virtual_get
     return $ int64_to_val(@ht.size) $
 
   #$ rdoc-name Set.alloc_size
   #$ rdoc-header Set.alloc_size
   #$ Number of buckets in the Set.
-  virtual_get alloc_size()
+  alloc_size() | virtual_get
     return $ int64_to_val(@ht.alloc_size) $
 
 #$ rdoc-name SetIterator
@@ -121,7 +121,7 @@ class SetIterator
   #$ rdoc-name SetIterator.new
   #$ rdoc-header SetIterator.new(Set set)
   #$ Constructs a new iterator over a set.
-  constructor new(set)
+  new(set) | constructor
     $
       @ht = obj_c_data(__set);
       @cur = 0;

@@ -76,7 +76,7 @@ class Array1
   #$ rdoc-name Array1.new_const
   #$ rdoc-header Array1 Array1.new_const(Integer n, val)
   #$ Create an array of n elements, all of them val.
-  constructor new_const(n, val)
+  new_const(n, val) | constructor
     $
       int64 n = val_to_int64(__n);
       @a.size = n;
@@ -280,7 +280,7 @@ class Array1
   #$ rdoc-name Array1.size
   #$ rdoc-header Array1.size
   #$ Returns the size (length) of the Array1.
-  virtual_get size()
+  size() | virtual_get
     return $ int64_to_val(@a.size) $
 
 #$ rdoc-name Array1View
@@ -297,7 +297,7 @@ class Array1View
   readable size
   private ascending
 
-  constructor new(array, range)
+  new(array, range) | constructor
     @array = array
     array_size = array.size
     @start = ArrayUtil.index_start(array_size, range)
@@ -350,7 +350,7 @@ class Array1Iterator
   private array
   private idx
 
-  constructor new(array)
+  new(array) | constructor
     @array = array
     @idx = 1
 

@@ -9,7 +9,7 @@ namespace Gsl
       gsl_rng* rng;
     $
 
-    constructor new()
+    new() | constructor
       $
         @rng = gsl_rng_alloc(gsl_rng_default);
       $

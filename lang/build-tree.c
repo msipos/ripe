@@ -102,9 +102,8 @@ static Node* lex_read()
   }
   const char* token_text = yytext;
   if (tok == STRING) token_text = buf_sb.str;
-  return node_new_token(tok, mem_strdup(token_text), NULL, input_lineno);
+  return node_new_token(tok, mem_strdup(token_text), input->filename, input_lineno);
 }
-
 
 // Returns non-zero if EOF reached.
 static int lex_read_line()

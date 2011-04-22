@@ -10,7 +10,7 @@ namespace Sqlite
 
   class Db
     $ sqlite3* db; $
-    constructor new(String filename)
+    new(String filename) | constructor
       $ const char* filename = val_to_string(__filename);
         int rv = sqlite3_open(filename, &(@db));
         if (rv != SQLITE_OK){
@@ -49,7 +49,7 @@ namespace Sqlite
   class Statement
     $ sqlite3_stmt* stmt; $
 
-    constructor new_empty()
+    new_empty() | constructor
       $ @stmt = NULL; $
 
     step()
