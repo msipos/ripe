@@ -78,7 +78,38 @@ int input_from_file(RipeInput* input, const char* filename);
 int preprocess(RipeInput* input);
 
 //////////////////////////////////////////////////////////////////////////////
-// ripe/build-tree.c
+// lang/stran.c
+//////////////////////////////////////////////////////////////////////////////
+
+typedef struct {
+  Dict classes;
+  Dict functions;
+  Dict strings;
+} Stran;
+
+typedef struct {
+  const char* ret;
+  int num_params;
+  const char** params;
+} FuncInfo;
+
+typedef struct {
+  Dict methods;
+} ClassInfo;
+
+void stran_init();
+// Returns non-zero for error. (see stran_error.text)
+int stran_absorb_ast(Node* ast);
+int stran_absorb_file(const char* filename);
+void stran_dump_to_file(FILE* f);
+
+// Returns NULL for error.
+FuncInfo* stran_get_function(const char* name);
+void stran_dump();
+extern Error* stran_error;
+
+//////////////////////////////////////////////////////////////////////////////
+// lang/build-tree.c
 //////////////////////////////////////////////////////////////////////////////
 
 // Error in case build_tree returns NULL (no new line).
@@ -154,6 +185,17 @@ int input_read(char* buf, int max_size); // Used by flex to do reading
 #define CASE              1057
 #define MAPPING_LIST      1058
 #define MAPPING           1059
+#define ANNOT_LIST        1060
+#define ANNOT             1061
+
+//////////////////////////////////////////////////////////////////////////////
+// lang/util.c
+//////////////////////////////////////////////////////////////////////////////
+
+const char* util_dot_id(Node* expr);
+bool annot_check_simple(Node* annot_list, int num, const char* args[]);
+bool annot_check(Node* annot_list, int num, ...);
+bool annot_has(Node* annot_list, const char* s);
 
 #include "lang/parser.h"
 #include "lang/scanner.h"

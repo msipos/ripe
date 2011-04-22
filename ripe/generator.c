@@ -145,44 +145,36 @@ static const char* eval_expr_list(Node* expr_list, bool first_comma)
 
 static const char* eval_static_call(const char* ssym, Node* arg_list)
 {
-  TyperRecord* tr = typer_query(ssym);
+  FuncInfo* fi = stran_get_function(ssym);
   // In case this is a call to a method '#' must be replaced with '.' from here
   // on.
   ssym = util_replace(ssym, '#', ".");
 
-  assert(tr != NULL);
+  if (fi == NULL){
+    err_node(arg_list, "unknown static call to '%s'", ssym);
+  }
   int num_args = node_num_children(arg_list);
   int min_params = num_args;
-  int num_params = tr->num_params;
+  int num_params = fi->num_params;
   bool is_vararg = false;
 
   // Check if vararg
-  if (tr->num_params > 0 and
-      tr->param_types[tr->num_params-1] != NULL
-       and strequal("*", tr->param_types[tr->num_params-1])){
+  if (num_params > 0 and strequal("*", fi->params[num_params-1])){
     is_vararg = true;
-    min_params = tr->num_params - 1;
+    min_params = num_params - 1;
     if (num_args < min_params)
       err_node(arg_list, "'%s' called with %d arguments but expect at least %d",
                ssym, num_args, min_params);
   } else {
-    if (tr->num_params != num_args)
+    if (num_params != num_args)
       err_node(arg_list, "'%s' called with %d arguments but expect %d", ssym,
-               num_args, tr->num_params);
+               num_args, num_params);
   }
   const char* buf = mem_asprintf("func_call%d(%s", num_params,
                                  tbl_get_ssym(ssym));
   for (int i = 0; i < min_params; i++){
-    const char* param_type = tr->param_types[i];
     Node* arg = node_get_child(arg_list, i);
-    const char* arg_type = typer_infer(arg);
-
-    if (typer_needs_check(param_type, arg_type)){
-      buf = mem_asprintf("%s, obj_verify_assign(%s, %s)", buf, eval_expr(arg),
-                         tbl_get_type(param_type));
-    } else {
-      buf = mem_asprintf("%s, %s", buf, eval_expr(arg));
-    }
+    buf = mem_asprintf("%s, %s", buf, eval_expr(arg));
   }
   if (is_vararg){
     buf = mem_asprintf("%s, tuple_to_val(%d", buf, num_args - min_params);
@@ -200,20 +192,11 @@ static const char* eval_static_call(const char* ssym, Node* arg_list)
 static const char* eval_obj_call(Node* obj, const char* method_name,
                              Node* expr_list)
 {
-    const char* type = typer_infer(obj);
-    if (type == NULL) {
-      return mem_asprintf("method_call%d(%s, %s %s)",
-                          node_num_children(expr_list),
-                          eval_expr(obj),
-                          tbl_get_dsym(method_name),
-                          eval_expr_list(expr_list, true));
-    } else {
-      Node* arg_list = node_new_expr_list();
-      node_add_child(arg_list, obj);
-      node_extend_children(arg_list, expr_list);
-      return eval_static_call(mem_asprintf("%s#%s", type, method_name),
-                              arg_list);
-    }
+  return mem_asprintf("method_call%d(%s, %s %s)",
+                      node_num_children(expr_list),
+                      eval_expr(obj),
+                      tbl_get_dsym(method_name),
+                      eval_expr_list(expr_list, true));
 }
 
 // Returns code for accessing index (if assign = NULL), or setting index
@@ -488,7 +471,6 @@ static void gen_stmtlist_no_locals(Node* stmtlist);
 static void gen_stmt_assign2(Node* lvalue, Node* rvalue)
 {
   const char* right = eval_expr(rvalue);
-  const char* rtype = typer_infer(rvalue);
   switch(lvalue->type){
     case ID:
       {
@@ -500,12 +482,7 @@ static void gen_stmt_assign2(Node* lvalue, Node* rvalue)
           break;
         }
 
-        if (not typer_needs_check(var->type, rtype)){
-          sbuf_printf(sb_contents, "  %s = %s;\n", var->c_name, right);
-        } else {
-          sbuf_printf(sb_contents, "  %s = obj_verify_assign(%s, %s);\n",
-                      var->c_name, right, tbl_get_type(var->type));
-        }
+        sbuf_printf(sb_contents, "  %s = %s;\n", var->c_name, right);
       }
       break;
     case EXPR_TYPED_ID:
@@ -517,13 +494,8 @@ static void gen_stmt_assign2(Node* lvalue, Node* rvalue)
           err_node(lvalue, "variable '%s' already defined", ripe_name);
         }
         const char* c_name = register_local(ripe_name, type);
-        if (not typer_needs_check(type, rtype)){
-          sbuf_printf(sb_contents, "  Value %s = %s;\n",
-                      c_name, right);
-        } else {
-          sbuf_printf(sb_contents, "  Value %s = obj_verify_assign(%s, %s);\n",
-                      c_name, right, tbl_get_type(type));
-        }
+        sbuf_printf(sb_contents, "  Value %s = %s;\n",
+                    c_name, right);
       }
       break;
     case EXPR_INDEX:
@@ -1057,29 +1029,40 @@ static void gen_class(Node* klass)
           Node* param_list = node_get_child(n, 0);
           Node* stmt_list = node_get_child(n, 1);
           const char* name = node_get_string(n, "name");
-          if (node_has_string(n, "annotation")){
-            const char* annotation = node_get_string(n, "annotation");
-            if (strcmp(annotation, "constructor")==0){
+          if (node_has_node(n, "annotation")){
+            Node* annotation = node_get_node(n, "annotation");
+            if (node_num_children(annotation) != 1){
+              err_node(n, "invalid annotations for function '%s'", name);
+            }
+            Node* annot = node_get_child(annotation, 0);
+            if (node_num_children(annot) != 1){
+              err_node(n, "invalid annotations for function '%s'", name);
+            }
+
+            const char* annot_text = node_get_child(annot, 0)->text;
+            if (strequal(annot_text, "constructor")){
               gen_constructor(n);
-            } else if (strcmp(annotation, "virtual_set")==0){
+            } else if (strequal(annot_text, "virtual_set")) {
               gen_method(mem_asprintf("set_%s", name),
                          rv_type, param_list, stmt_list);
               sbuf_printf(sb_init1a,
-                          "  klass_new_virtual_writer(%s, dsym_get(\"%s\"), %s);\n",
+                          "  klass_new_virtual_writer"
+                          "(%s, dsym_get(\"%s\"), %s);\n",
                           context_class_c_name,
                           name,
                           context2_method_value_name);
-            } else if (strcmp(annotation, "virtual_get")==0){
+            } else if (strequal(annot_text, "virtual_get")) {
               gen_method(mem_asprintf("get_%s", name),
                          rv_type, param_list, stmt_list);
               sbuf_printf(sb_init1a,
-                          "  klass_new_virtual_reader(%s, dsym_get(\"%s\"), %s);\n",
+                          "  klass_new_virtual_reader"
+                          "(%s, dsym_get(\"%s\"), %s);\n",
                           context_class_c_name,
                           name,
                           context2_method_value_name);
             } else {
               err_node(n, "function annotated with '%s'"
-                          " not allowed inside a class", annotation);
+                          " not allowed inside a class", annot_text);
             }
           } else {
             gen_method(name, rv_type, param_list, stmt_list);

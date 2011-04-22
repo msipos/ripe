@@ -71,7 +71,7 @@ namespace Module
     # Absorb type file
     type_path = Path.join(dir, name + ".typ")
     if Path.exists?(type_path)
-      Typer.load_from_file(type_path)
+      Stran.absorb_file(type_path)
 
     g_modules[name] = module
 

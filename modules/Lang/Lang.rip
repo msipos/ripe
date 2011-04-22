@@ -1,0 +1,258 @@
+$
+  #include "lang/lang.h"
+$
+
+namespace Node
+  const K_NIL                     = $ int64_to_val(K_NIL) $
+  const K_TRUE                    = $ int64_to_val(K_TRUE) $
+  const K_FALSE                   = $ int64_to_val(K_FALSE) $
+  const K_EOF                     = $ int64_to_val(K_EOF) $
+  const K_AND                     = $ int64_to_val(K_AND) $
+  const K_OR                      = $ int64_to_val(K_OR) $
+  const K_BIT_AND                 = $ int64_to_val(K_BIT_AND) $
+  const K_BIT_OR                  = $ int64_to_val(K_BIT_OR) $
+  const K_BIT_XOR                 = $ int64_to_val(K_BIT_XOR) $
+  const K_BIT_NOT                 = $ int64_to_val(K_BIT_NOT) $
+  const K_MODULO                  = $ int64_to_val(K_MODULO) $
+  const K_NOT                     = $ int64_to_val(K_NOT) $
+  const K_IN                      = $ int64_to_val(K_IN) $
+  const OP_EQUAL                  = $ int64_to_val(OP_EQUAL) $
+  const OP_NOT_EQUAL              = $ int64_to_val(OP_NOT_EQUAL) $
+  const OP_LTE                    = $ int64_to_val(OP_LTE) $
+  const OP_GTE                    = $ int64_to_val(OP_GTE) $
+  const ID                        = $ int64_to_val(ID) $
+  const INT                       = $ int64_to_val(INT) $
+  const DOUBLE                    = $ int64_to_val(DOUBLE) $
+  const STRING                    = $ int64_to_val(STRING) $
+  const SYMBOL                    = $ int64_to_val(SYMBOL) $
+  const C_CODE                    = $ int64_to_val(C_CODE) $
+  const CHARACTER                 = $ int64_to_val(CHARACTER) $
+  const TOPLEVEL_LIST             = $ int64_to_val(TOPLEVEL_LIST) $
+  const NAMESPACE                 = $ int64_to_val(NAMESPACE) $
+  const FUNCTION                  = $ int64_to_val(FUNCTION) $
+  const STMT_LIST                 = $ int64_to_val(STMT_LIST) $
+  const CLASS                     = $ int64_to_val(CLASS) $
+  const PARAM                     = $ int64_to_val(PARAM) $
+  const TL_VAR                    = $ int64_to_val(TL_VAR) $
+  const GLOBAL_VAR                = $ int64_to_val(GLOBAL_VAR) $
+  const CONST_VAR                 = $ int64_to_val(CONST_VAR) $
+  const STMT_EXPR                 = $ int64_to_val(STMT_EXPR) $
+  const STMT_RETURN               = $ int64_to_val(STMT_RETURN) $
+  const STMT_IF                   = $ int64_to_val(STMT_IF) $
+  const STMT_ELIF                 = $ int64_to_val(STMT_ELIF) $
+  const STMT_ELSE                 = $ int64_to_val(STMT_ELSE) $
+  const STMT_PASS                 = $ int64_to_val(STMT_PASS) $
+  const STMT_ASSIGN               = $ int64_to_val(STMT_ASSIGN) $
+  const STMT_WHILE                = $ int64_to_val(STMT_WHILE) $
+  const STMT_BREAK                = $ int64_to_val(STMT_BREAK) $
+  const STMT_CONTINUE             = $ int64_to_val(STMT_CONTINUE) $
+  const STMT_FOR                  = $ int64_to_val(STMT_FOR) $
+  const STMT_LOOP                 = $ int64_to_val(STMT_LOOP) $
+  const STMT_SWITCH               = $ int64_to_val(STMT_SWITCH) $
+  const STMT_TRY                  = $ int64_to_val(STMT_TRY) $
+  const STMT_CATCH_ALL            = $ int64_to_val(STMT_CATCH_ALL) $
+  const STMT_FINALLY              = $ int64_to_val(STMT_FINALLY) $
+  const STMT_RAISE                = $ int64_to_val(STMT_RAISE) $
+  const EXPR_ID_CALL              = $ int64_to_val(EXPR_ID_CALL) $
+  const EXPR_FIELD_CALL           = $ int64_to_val(EXPR_FIELD_CALL) $
+  const EXPR_INDEX                = $ int64_to_val(EXPR_INDEX) $
+  const EXPR_ARRAY                = $ int64_to_val(EXPR_ARRAY) $
+  const EXPR_MAP                  = $ int64_to_val(EXPR_MAP) $
+  const EXPR_FIELD                = $ int64_to_val(EXPR_FIELD) $
+  const EXPR_AT_VAR               = $ int64_to_val(EXPR_AT_VAR) $
+  const EXPR_RANGE_BOUNDED        = $ int64_to_val(EXPR_RANGE_BOUNDED) $
+  const EXPR_RANGE_BOUNDED_LEFT   = $ int64_to_val(EXPR_RANGE_BOUNDED_LEFT) $
+  const EXPR_RANGE_BOUNDED_RIGHT  = $ int64_to_val(EXPR_RANGE_BOUNDED_RIGHT) $
+  const EXPR_RANGE_UNBOUNDED      = $ int64_to_val(EXPR_RANGE_UNBOUNDED) $
+  const EXPR_IS_TYPE              = $ int64_to_val(EXPR_IS_TYPE) $
+  const EXPR_TYPED_ID             = $ int64_to_val(EXPR_TYPED_ID) $
+  const ID_LIST                   = $ int64_to_val( ID_LIST) $
+  const EXPR_LIST                 = $ int64_to_val(EXPR_LIST) $
+  const PARAM_LIST                = $ int64_to_val(PARAM_LIST) $
+  const OPTASSIGN_LIST            = $ int64_to_val(OPTASSIGN_LIST) $
+  const OPTASSIGN                 = $ int64_to_val(OPTASSIGN) $
+  const TYPE                      = $ int64_to_val(TYPE) $
+
+class Node
+  $ Node* n; $
+
+  new_from_ptr(Integer ptr) | constructor
+    $ @n = val_to_ptr_unsafe(__ptr); $
+
+  ptr() | virtual_get
+    return $ ptr_to_val(@n) $
+
+  new_from_file(String filename) | constructor
+    $
+      RipeInput input;
+      if (input_from_file(&input, val_to_string(__filename))){
+    $
+    raise "failed to load input from '{}'".f(filename)
+    $
+      }
+      @n = build_tree(&input);
+      if (@n == NULL){
+    $
+    raise $ string_to_val(build_tree_error) $
+    $
+      }
+    $
+
+  new_inherit(Node other) | constructor
+    ptr = other.ptr
+    $ @n = node_new_inherit(0, val_to_ptr_unsafe(__ptr)); $
+
+  new_typed(type) | constructor
+    $ @n = node_new(val_to_int64(__type)); $
+
+  new_id(text) | constructor
+    $ @n = node_new(ID); $
+    self.text = text
+
+  new_int(int) | constructor
+    $ @n = node_new(INT); $
+    self.text = int.to_string()
+
+  new_field_call(Node node, String field) | constructor
+    $ @n = node_new(EXPR_FIELD_CALL); $
+    self.add_child(node)
+    self.set_string("name", field)
+    self.add_child(Node.new_expr_list([]))
+
+  new_expr_index(Node left, Array1 indices) | constructor
+    $ @n = node_new(EXPR_INDEX); $
+    self.add_child(left)
+    self.add_child(Node.new_expr_list(indices))
+
+  new_expr_list(Array1 exprs) | constructor
+    $ @n = node_new(EXPR_LIST); $
+    for expr in exprs
+      self.add_child(expr)
+
+  type() | virtual_get
+    return $ int64_to_val(@n->type) $
+
+  type(t) | virtual_set
+    $ @n->type = val_to_int64(__t); $
+
+  num_children() | virtual_get
+    return $ int64_to_val(node_num_children(@n)) $
+
+  text() | virtual_get
+    $ if (@n->text == NULL) return VALUE_NIL; $
+    return $ string_to_val(@n->text) $
+
+  text(t) | virtual_set
+    $ @n->text = mem_strdup(val_to_string(__t)); $
+
+  line() | virtual_get
+    return $ int64_to_val(@n->line); $
+
+  filename() | virtual_get
+    $ if (@n->filename == NULL) return VALUE_NIL; $
+    return $ string_const_to_val(@n->filename); $
+
+  add_child(Node n)
+    ptr = n.ptr
+    $ node_add_child(@n, val_to_ptr_unsafe(__ptr)); $
+
+  has_string?(name)
+    return $ pack_bool(node_has_string(@n, val_to_string(__name))) $
+
+  get_string(name)
+    if not self.has_string?(name)
+      raise "node does not have string '{}'".f(name)
+    $ const char * s = node_get_string(@n, val_to_string(__name)); $
+    $ if (s == NULL) return VALUE_NIL; $
+    return $ string_to_val(s) $
+
+  set_string(name, val)
+    $ node_set_string(@n, val_to_string(__name), val_to_string(__val)); $
+
+  has_node?(name)
+    return $ pack_bool(node_has_node(@n, val_to_string(__name))) $
+
+  get_node(name)
+    if not self.has_node?(name)
+      raise "node does not have node property '{}'".f(name)
+    return Node.new_from_ptr($ ptr_to_val(
+                                 node_get_node(@n, val_to_string(__name))
+                                         ) $)
+
+  get_node_optional(name)
+    if not self.has_node?(name)
+      return nil
+    return self.get_node(name)
+
+  get_child(Integer i)
+    $ int64 i = util_index("Node", unpack_int64(__i), @n->children.size); $
+    return Node.new_from_ptr($ ptr_to_val(
+                                 node_get_child(@n, i)
+                                         ) $)
+
+  children() | virtual_get
+    arr = []
+    if self.num_children == 0
+      return arr
+    for i in 1:self.num_children
+      arr.push(self.get_child(i))
+    return arr
+
+class FuncInfo
+  $ FuncInfo* fi; $
+
+  new_from_ptr(Integer ptr) | constructor
+    $ @fi = val_to_ptr_unsafe(__ptr); $
+
+  num_params() | virtual_get
+    return $ int64_to_val(@fi->num_params) $
+
+  get_param(Integer i)
+    if i < 1
+      raise "attempted to FuncInfo.get_param({})".f(i)
+    num_params = self.num_params
+    if i > num_params
+      raise "attempted to FuncInfo.get_param({}) (has {} params)".f(i, num_params)
+    return $ string_to_val(
+               @fi->params[val_to_int64(__i) - 1]
+             ) $
+
+  params() | virtual_get
+    arr = []
+    if self.num_params == 0
+      return arr
+    for i in 1:self.num_params
+      arr.push(self.get_param(i))
+    return arr
+
+namespace Annot
+  has?(Node annot_list, String text)
+    ptr = annot_list.ptr
+    return $ pack_bool(annot_has(val_to_ptr(__ptr), val_to_string(__text))) $
+
+namespace Stran
+  init()
+    $ stran_init(); $
+
+  absorb_ast(Node ast, String filename)
+    ptr = ast.ptr
+    $ if (stran_absorb_ast(val_to_ptr_unsafe(__ptr))) { $
+    raise "during structural analysis of '{}': {}".f(filename, Stran.get_error())
+    $ } $
+
+  absorb_file(String filename)
+    $ if (stran_absorb_file(val_to_string(__filename))) { $
+    raise "loading structure analysis of '{}' failed: {}".f(filename, Stran.get_error())
+    $ } $
+
+  dump()
+    $ stran_dump_to_file(stdout); $
+
+  get_function(name)
+    $ FuncInfo* fi = stran_get_function(val_to_string(__name));
+      if (fi == NULL) return VALUE_NIL; $
+    return FuncInfo.new_from_ptr($ ptr_to_val(fi) $)
+
+  get_error()
+    $ assert(stran_error->text != NULL); $
+    return $ string_to_val(stran_error->text) $

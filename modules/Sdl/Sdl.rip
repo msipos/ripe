@@ -22,7 +22,7 @@ namespace Sdl
         TTF_Font *f;
       $
 
-      constructor new(file, ptsize)
+      new(file, ptsize) | constructor
         $
           @f = TTF_OpenFont(val_to_string(__file), val_to_int64(__ptsize));
           if (!@f){
@@ -49,13 +49,13 @@ namespace Sdl
   class Event
     $ SDL_Event event; $
 
-    constructor new()
+    new() | constructor
       pass
 
     poll()
       return $ pack_bool(SDL_PollEvent(&(@event))) $
 
-    virtual_get type()
+    type() | virtual_get
       return $ int64_to_val(@event.type) $
 
   init()
@@ -92,17 +92,17 @@ namespace Sdl
       SDL_Surface *surf;
     $
 
-    virtual_get width()
+    width() | virtual_get
       $
         return int64_to_val(@surf->w);
       $
 
-    virtual_get height()
+    height() | virtual_get
       $
         return int64_to_val(@surf->h);
       $
 
-    constructor new_screen(w, h, flags)
+    new_screen(w, h, flags) | constructor
       $
         @surf = SDL_SetVideoMode(val_to_int64(__w),
                                  val_to_int64(__h),
@@ -110,7 +110,7 @@ namespace Sdl
                                  val_to_int64(__flags));
       $
 
-    constructor new_from_file(filename)
+    new_from_file(filename) | constructor
       $ const char* filename = val_to_string(__filename);
         @surf = IMG_Load(filename);
         if (!@surf){
@@ -118,7 +118,7 @@ namespace Sdl
                                                           IMG_GetError());
         } $
 
-    constructor new(w, h, flags)
+    new(w, h, flags) | constructor
       $
         @surf = SDL_CreateRGBSurface(val_to_int64(__flags),
                                      val_to_int64(__w),
@@ -130,7 +130,7 @@ namespace Sdl
                                      0x000000FF);
       $
 
-    constructor new_uninitialized()
+    new_uninitialized() | constructor
       pass
 
     put_pixel(x, y, color)

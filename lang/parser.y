@@ -139,12 +139,11 @@ mid_decls: mid_decl            { $$ = node_new(TOPLEVEL_LIST);
 bot_decl: ID optassign_plus   { $$ = node_new(TL_VAR);
                                  node_set_string($$, "annotation", $1->text);
                                  node_add_child($$, $2); };
-bot_decl: annotation ID '(' param_star ')' block
+bot_decl: ID '(' param_star ')' annotation block
                                { $$ = node_new(FUNCTION);
-                                 node_set_string($$, "annotation",
-                                                     $1->text);
-                                 node_set_string($$, "name", $2->text);
-                                 node_add_child($$, $4);
+                                 node_set_node($$, "annotation", $5);
+                                 node_set_string($$, "name", $1->text);
+                                 node_add_child($$, $3);
                                  node_add_child($$, $6); };
 bot_decl:  topmidbot_decl      { $$ = $1; };
 bot_decl:  C_CODE              { $$ = $1; };
@@ -172,10 +171,6 @@ topmidbot_decl: ID '(' param_star ')' block
                                  node_set_string($$, "name", $1->text);
                                  node_add_child($$, $3);
                                  node_add_child($$, $5); };
-
-annotation: "constructor"      { $$ = $1; };
-annotation: "virtual_get"      { $$ = $1; };
-annotation: "virtual_set"      { $$ = $1; };
 
 block:     START stmt_list END { $$ = $2; };
 
@@ -342,6 +337,18 @@ string:    string STRING       { $$ = node_new(STRING);
                                  sbuf_cat(&sb_temp, $2->text);
                                  $$->text = mem_strdup(sb_temp.str);
                                  sbuf_deinit(&sb_temp); };
+
+annotation:   '|' annot_plus   { $$ = $2; };
+annot_plus:   annot_plus ',' annot
+                               { $$ = $1;
+                                 node_add_child($$, $3); };
+annot_plus:   annot            { $$ = node_new(ANNOT_LIST);
+                                 node_add_child($$, $1); };
+annot:     ID                  { $$ = node_new(ANNOT);
+                                 node_add_child($$, $1); };
+annot:     ID '=' type         { $$ = node_new(ANNOT);
+                                 node_add_child($$, $1);
+                                 node_add_child($$, $3); };
 
 type:      type '.' ID         { $$ = node_new(EXPR_FIELD);
                                  node_add_child($$, $1);

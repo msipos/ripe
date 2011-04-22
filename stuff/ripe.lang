@@ -8,33 +8,47 @@
   <styles>
     <style id="comment" _name="Comment" map-to="def:comment"/>
     <style id="string" _name="String" map-to="def:string"/>
+    <style id="escaped-char" _name="String-Esc-Char" map-to="def:special-constant"/>
     <style id="keyword" _name="Keyword" map-to="def:keyword"/>
-    <style id="ccode" _name="Ccode" map-to="def:comment"/>
+    <style id="ccode" _name="Ccode" map-to="def:preprocessor"/>
+    <style id="type"  _name="Type" map-to="def:type"/>
+    <style id="symbol" _name="Ampersand-Symbol" map-to="def:special-constant"/>
+    <style id="boolean" _name="Booleans" map-to="def:builtin"/>
   </styles>
 
   <definitions>
     <context id="ripe">
       <include>
+        <context id="escaped-char" style-ref="escaped-char" extend-parent="true">
+          <match extended="true">
+            \\(                 # leading backslash
+            [\\'"abfnrtv]     | # single escaped char
+            )
+          </match>
+        </context>
+
         <context id="comment" style-ref="comment">
           <start>\#</start>
           <end>$</end>
         </context>
+
         <context id="string" style-ref="string" end-at-line-end="true">
           <start>"</start>
           <end>"</end>
+          <include>
+            <context ref="escaped-char"/>
+          </include>
         </context>
+
         <context id="ccode" style-ref="ccode" end-at-line-end="false">
           <start>\$</start>
           <end>\$</end>
         </context>
+
         <context id="keywords" style-ref="keyword">
           <keyword>if</keyword>
           <keyword>elif</keyword>
           <keyword>else</keyword>
-          <keyword>true</keyword>
-          <keyword>false</keyword>
-          <keyword>nil</keyword>
-          <keyword>eof</keyword>
           <keyword>and</keyword>
           <keyword>or</keyword>
           <keyword>not</keyword>
@@ -55,18 +69,37 @@
           <keyword>raise</keyword>
           <keyword>namespace</keyword>
           <keyword>class</keyword>
+          <keyword>self</keyword>
+          <keyword>tuple</keyword>
+          <keyword>modulo</keyword>
+          <keyword>bit_or</keyword>
+          <keyword>bit_and</keyword>
+        </context>
+
+        <context id="booleans" style-ref="boolean">
+          <keyword>nil</keyword>
+          <keyword>true</keyword>
+          <keyword>false</keyword>
+          <keyword>eof</keyword>
+        </context>
+
+        <context id="annotations" style-ref="boolean">
           <keyword>constructor</keyword>
+          <keyword>virtual_get</keyword>
+          <keyword>virtual_set</keyword>
           <keyword>global</keyword>
           <keyword>const</keyword>
           <keyword>private</keyword>
           <keyword>readable</keyword>
           <keyword>writable</keyword>
-          <keyword>virtual_get</keyword>
-          <keyword>virtual_set</keyword>
-          <keyword>self</keyword>
-          <keyword>call_func</keyword>
-          <keyword>tuple</keyword>
-          <keyword>modulo</keyword>
+        </context>
+
+        <context id="symbols" style-ref="symbol">
+          <match>\&amp;[A-Za-z0-9_]+</match>
+        </context>
+
+        <context id="types" style-ref="type">
+          <match>\b[A-Z][A-Za-z0-9_]*\b</match>
         </context>
 
         <context ref="def:decimal"/>

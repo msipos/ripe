@@ -88,9 +88,9 @@ dump(module_name, out)
 go_dump(files)
   asts = []
   for file in files
-    ast = Ast.Node.new_from_file(file)
+    ast = Node.new_from_file(file)
     asts.push(ast)
-    Typer.absorb_info(ast)
+    Stran.absorb_ast(ast, file)
   for ast in asts
     generate(ast)
 
@@ -108,9 +108,9 @@ go_bootstrap(files, outfile)
       case ".rip"
         rips.push(file)
 
-        ast = Ast.Node.new_from_file(file)
+        ast = Node.new_from_file(file)
         asts.push(ast)
-        Typer.absorb_info(ast)
+        Stran.absorb_ast(ast, file)
       case ".o"
         objs.push(file)
       case ".meta"
@@ -150,9 +150,9 @@ go_build(files, outfile)
       case ".rip"
         rips.push(file)
 
-        ast = Ast.Node.new_from_file(file)
+        ast = Node.new_from_file(file)
         asts.push(ast)
-        Typer.absorb_info(ast)
+        Stran.absorb_ast(ast, file)
       case ".o"
         objs.push(file)
 
@@ -199,10 +199,10 @@ go_module(files, module_name, outfile)
     switch ext
       case ".rip"
         rips.push(file)
-        ast = Ast.Node.new_from_file(file)
+        ast = Node.new_from_file(file)
         asts.push(ast)
         if not g_omit_typing
-          Typer.absorb_info(ast)
+          Stran.absorb_ast(ast, file)
       case ".o"
         objs.push(file)
       case ".meta"
@@ -210,7 +210,7 @@ go_module(files, module_name, outfile)
         if "cflags" in meta
           g_cflags = g_cflags + " " + meta["cflags"]
       case ".typ"
-        Typer.load_from_file(file)
+        Stran.absorb_file(file)
   for ast in asts
     generate(ast)
 
@@ -231,11 +231,11 @@ go_type(files)
   for file in files
     root, ext = Path.split_extension(file)
     if ext == ".rip"
-      ast = Ast.Node.new_from_file(file)
-      Typer.absorb_info(ast)
+      ast = Node.new_from_file(file)
+      Stran.absorb_ast(ast, file)
     else
       raise "Can only read .rip files in typer mode"
-  Typer.dump()
+  Stran.dump()
 
 load_defaults()
   root_dir = Path.get_program_dir()
@@ -246,10 +246,11 @@ load_defaults()
   arr = modules.split_whitespace()
   for module in arr
     Module.add(module)
-  g_cflags = g_cflags + " -I"+Path.join(root_dir, "include")
+  g_cflags = g_cflags + " -I" + Path.join(root_dir, "include")
 
 main()
   init_sbufs()
+  Stran.init()
 
   options = [
     [&BOOTSTRAP,    "-s", "--bootstrap", 0  , "bootstrap build"],

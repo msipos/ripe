@@ -6,7 +6,7 @@ DATA_TYPES = ['Array1', 'Array2', 'Array3', 'Double', 'Flags', 'Integer', 'Map',
               'Range', 'Set', 'String', 'StringBuf', 'Tuple']
 STDLIB = ['Character', 'DataFormat', 'Err', 'Iterable', 'Math', 'Num', 'Opt',
           'Os', 'Out', 'Path', 'Test', 'TextFile', 'Time']
-OPTIONAL_MODULES = ['Ast', 'Bio', 'Curl', 'Gd', 'Gsl', 'Gtk', 'Json',
+OPTIONAL_MODULES = ['Bio', 'Curl', 'Gd', 'Gsl', 'Gtk', 'Json', 'Lang',
                     'Povray', 'Pthread', 'Sci', 'Sdl', 'Speech',
                     'Sqlite', 'Xml']
 MODULES = DATA_TYPES + STDLIB
@@ -78,7 +78,9 @@ clib_srcs = [
               'clib/mem.c',
               'clib/path.c',
               'clib/stringbuf.c',
+              'clib/tok.c',
               'clib/utf8.c',
+              'clib/util.c',
             ]
 clib_objs = tools.cons_objs(clib_srcs, clib_hs)
 
@@ -101,6 +103,8 @@ lang_srcs = [
               'lang/input.c',
               'lang/scanner.c',
               'lang/parser.c',
+              'lang/stran.c',
+              'lang/util.c'
             ]
 lang_objs = tools.cons_objs(lang_srcs, lang_hs + clib_hs)
 # Construct VM object
@@ -120,7 +124,6 @@ ripe_srcs = [
                'ripe/generator.c',
                'ripe/operator.c',
                'ripe/ripe.c',
-               'ripe/typer.c',
                'ripe/util.c',
                'ripe/vars.c'
              ]
@@ -221,7 +224,6 @@ riperipesrcs = [
                 'riperipe/main.rip',
                 'riperipe/module.rip',
                 'riperipe/namespace.rip',
-                'riperipe/typer.rip',
                ]
 
 bootstrap_srcs = ['product/vm.o', 'lang/lang.o', 'product/ripe.meta']
@@ -232,8 +234,7 @@ for module in DEF_MODULES:
         bootstrap_srcs.append(name)
     name = 'modules/%s/%s.rip' % (module, module)
     bootstrap_srcs.append(name)
-bootstrap_srcs.append('modules/Ast/Ast.rip')
-bootstrap_srcs.append('modules/Json/Json.rip')
+bootstrap_srcs.append('modules/Lang/Lang.rip')
 
 tools.cons_obj('riperipe/bootstrap.o', 'riperipe/bootstrap.c', [])
 bootstrap_srcs.append('riperipe/bootstrap.o')

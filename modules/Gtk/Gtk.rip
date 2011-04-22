@@ -12,7 +12,7 @@ namespace Gtk
 
   class Builder
     $ GtkBuilder* builder; $
-    constructor new_from_file(filename)
+    new_from_file(filename) | constructor
       $ @builder = gtk_builder_new();
         const char* filename = val_to_string(__filename);
         if (!gtk_builder_add_from_file(@builder,
@@ -30,7 +30,7 @@ namespace Gtk
 
   class Object
     $ GObject* obj; $
-    constructor new()
+    new() | constructor
       $ @obj = NULL; $
 
     show_widget()

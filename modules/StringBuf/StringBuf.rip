@@ -3,7 +3,7 @@ class StringBuf
     uint64 alloc_size;
     uint64 size; $
 
-  constructor new()
+  new() | constructor
     $ @alloc_size = 10;
       @size = 1;
       @str = mem_malloc(@alloc_size);

@@ -21,7 +21,7 @@ namespace Pthread
       pthread_mutex_t mutex;
     $
 
-    constructor new()
+    new() | constructor
       $
         if (pthread_mutex_init(&(@mutex), NULL)){
           exc_raise("could not initialize pthread mutex");
@@ -52,7 +52,7 @@ namespace Pthread
       pthread_t thread;
     $
 
-    constructor new(func, extra)
+    new(func, extra) | constructor
       $
         ThreadHelper* th = mem_new(ThreadHelper);
         th->func = __func;

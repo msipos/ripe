@@ -371,6 +371,20 @@ void init2_Integer();
 #define int64_to_val(a) pack_int64(a)
 #define val_to_int64(v)  ({ obj_verify(v, klass_Integer); unpack_int64(v); })
 int64 val_to_int64_soft(Value v);
+// Put a pointer into an Integer.
+static inline Value ptr_to_val(void* p)
+{
+  return (Value) ((uintptr) p) + 1;
+}
+static void* val_to_ptr(Value v)
+{
+  obj_verify(v, klass_Integer);
+  return (void*) (((uintptr) v) - 1);
+}
+static inline void* val_to_ptr_unsafe(Value v)
+{
+  return (void*) (((uintptr) v) - 1);
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // Num.c

@@ -14,8 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 global unary_ops =  { '-'              => "op_unary_minus",
-                      Ast.K_NOT        => "op_unary_not",
-                      Ast.K_BIT_NOT    => "op_unary_bit_not" }
+                      Node.K_NOT        => "op_unary_not",
+                      Node.K_BIT_NOT    => "op_unary_bit_not" }
 
 # When to optimize out the binary operator?
 const NEVER = 0
@@ -35,19 +35,19 @@ global binary_ops = { '+'              => ["op_plus", NUMERIC, "+"],
                       '*'              => ["op_star", NUMERIC, "*"],
                       '/'              => ["op_slash", NUMERIC, "/"],
                       '^'              => ["op_exp", NEVER, nil],
-                      Ast.K_AND        => ["op_and", NEVER, nil],
-                      Ast.K_OR         => ["op_or", NEVER, nil],
-                      Ast.K_IN         => ["op_in", NEVER, nil],
-                      Ast.K_BIT_AND    => ["op_bit_and", NEVER, nil],
-                      Ast.K_BIT_OR     => ["op_bit_or", NEVER, nil],
-                      Ast.K_BIT_XOR    => ["op_bit_xor", NEVER, nil],
-                      Ast.K_MODULO     => ["op_modulo", NEVER, nil],
-                      Ast.OP_EQUAL     => ["op_equal", NEVER, nil],
-                      Ast.OP_NOT_EQUAL => ["op_not_equal", NEVER, nil],
+                      Node.K_AND        => ["op_and", NEVER, nil],
+                      Node.K_OR         => ["op_or", NEVER, nil],
+                      Node.K_IN         => ["op_in", NEVER, nil],
+                      Node.K_BIT_AND    => ["op_bit_and", NEVER, nil],
+                      Node.K_BIT_OR     => ["op_bit_or", NEVER, nil],
+                      Node.K_BIT_XOR    => ["op_bit_xor", NEVER, nil],
+                      Node.K_MODULO     => ["op_modulo", NEVER, nil],
+                      Node.OP_EQUAL     => ["op_equal", NEVER, nil],
+                      Node.OP_NOT_EQUAL => ["op_not_equal", NEVER, nil],
                       '>'              => ["op_gt", BOOL_NUMERIC, ">"],
                       '<'              => ["op_lt", BOOL_NUMERIC, "<"],
-                      Ast.OP_LTE       => ["op_lte", BOOL_NUMERIC, "<="],
-                      Ast.OP_GTE       => ["op_gte", BOOL_NUMERIC, ">="] }
+                      Node.OP_LTE       => ["op_lte", BOOL_NUMERIC, "<="],
+                      Node.OP_GTE       => ["op_gte", BOOL_NUMERIC, ">="] }
 
 value_barrier(Tuple t)
   switch t[1]
@@ -62,18 +62,18 @@ value_barrier(Tuple t)
 
 eval_type(node)
   if node == nil
-    return nil
+    return "?"
   type = eval_expr_as_id_simple(node)
   if type == nil
     raise "type node failed to evaluate as id (type = {})".f(node.type)
   return type
 
-eval_expr_as_id_simple(Ast.Node expr)
+eval_expr_as_id_simple(Node expr)
   switch expr.type
-    case Ast.ID
+    case Node.ID
       return expr.text
-    case Ast.EXPR_FIELD
-      parent = expr[1]
+    case Node.EXPR_FIELD
+      parent = expr.get_child(1)
       field = expr.get_string("name")
       s = eval_expr_as_id_simple(parent)
       if s != nil
@@ -82,14 +82,14 @@ eval_expr_as_id_simple(Ast.Node expr)
         return nil
   return nil
 
-eval_expr_as_id(Ast.Node expr)
+eval_expr_as_id(Node expr)
   switch expr.type
-    case Ast.ID
+    case Node.ID
       if locals_query(expr.text) != nil
         return nil
       return expr.text
-    case Ast.EXPR_FIELD
-      parent = expr[1]
+    case Node.EXPR_FIELD
+      parent = expr.get_child(1)
       field = expr.get_string("name")
       s = eval_expr_as_id(parent)
       if s != nil
@@ -98,7 +98,7 @@ eval_expr_as_id(Ast.Node expr)
         return nil
   return nil
 
-eval_expr_list(expr_list, first_comma)
+eval_expr_list(Array1 expr_list, first_comma)
   txt = ""
   index = 1
   for expr in expr_list
@@ -111,7 +111,7 @@ eval_expr_list(expr_list, first_comma)
     txt = txt + eval_expr_untyped(expr)
   return txt
 
-eval_obj_call(Ast.Node obj, String method_name, args)
+eval_obj_call(Node obj, String method_name, Array1 args)
   t, e_obj = eval_expr(obj)
   if t == "int64"
     t = "Integer"
@@ -119,33 +119,35 @@ eval_obj_call(Ast.Node obj, String method_name, args)
     t = "Bool"
   if t == "double"
     t = "Double"
-  if t == nil or not get_optims()[&TYPES]
+  if t == "?" or not get_optims()[&TYPES]
     return "method_call{}({}, {} {})".f(
                         args.size,
                         eval_expr_untyped(obj),
                         Dsym.get(method_name),
                         eval_expr_list(args, true) )
   else
-    new_args = Ast.Node.new_typed(Ast.EXPR_LIST)
+    new_args = Node.new_typed(Node.EXPR_LIST)
     new_args.add_child(obj)
     for arg in args
       new_args.add_child(arg)
     return eval_static_call("{}.{}".f(t, method_name), new_args)
 
-eval_index_set(Ast.Node node_self, index_args, Ast.Node assign)
+eval_index_set(Node node_self, Node index_args, Node assign)
   args = []
-  for arg in index_args
+  for arg in index_args.children
     args.push(arg)
   args.push(assign)
   return eval_obj_call(node_self, "index_set", args)
 
-eval_index(Ast.Node node_self, index_args)
+eval_index(Node node_self, Array1 index_args)
   return eval_obj_call(node_self, "index", index_args)
 
 eval_static_call(ssym, arg_list)
-  tr = Typer.get_function(ssym)
+  func_info = Stran.get_function(ssym)
+  if func_info == nil
+    raise "failed to find '{}' in Stran database".f(ssym)
   #rv_type = tr[1]
-  param_types = tr[2]
+  param_types = func_info.params
 
   num_args = arg_list.num_children
   num_params = param_types.size
@@ -167,17 +169,17 @@ eval_static_call(ssym, arg_list)
                                                             min_args)
     if min_args > 0
       for index in 1:min_args
-        arg = arg_list[index]
+        arg = arg_list.get_child(index)
         param_type = param_types[index]
 
-        if param_type == nil
+        if param_type == "?"
           txt_args = "{}, {}".f(txt_args, eval_expr_untyped(arg))
         else
           txt_args = "{}, {}".f(txt_args, eval_expr_typesafe(arg, param_type))
     txt_args = "{}, tuple_to_val({}".f(txt_args, num_args - min_args)
     if num_args > min_args
       for index in (min_args+1):num_args
-        arg = arg_list[index]
+        arg = arg_list.get_child(index)
         txt_args = "{}, {}".f(txt_args, eval_expr_untyped(arg))
     txt_args = "{})".f(txt_args)
   else
@@ -187,9 +189,9 @@ eval_static_call(ssym, arg_list)
                                                             num_params)
     if num_args > 0
       for i in 1:num_args
-        arg = arg_list[i]
+        arg = arg_list.get_child(i)
         param_type = param_types[i]
-        if param_type == nil
+        if param_type == "?"
           txt_args = "{}, {}".f(txt_args, eval_expr_untyped(arg))
         else
           txt_args = "{}, {}".f(txt_args, eval_expr_typesafe(arg, param_type))
@@ -245,10 +247,10 @@ bool_numeric_op(tuple1, tuple2, op)
 # Convenience functions for eval_expr (most external code will call
 # these)
 
-eval_expr_untyped(Ast.Node node)
+eval_expr_untyped(Node node)
   return value_barrier(eval_expr(node))
 
-eval_expr_typesafe(Ast.Node expr, String type)
+eval_expr_typesafe(Node expr, String type)
   tup = eval_expr(expr)
   expr_type, str = tup
   if type == expr_type
@@ -263,7 +265,7 @@ eval_expr_typesafe(Ast.Node expr, String type)
     return value_barrier(tup)
 
   # Here, at most we can do is ensure run-time type safety
-  if expr_type == nil
+  if expr_type == "?"
     if get_optims()[&TYPE_VERIFY]
       return str
     else
@@ -276,25 +278,27 @@ eval_expr_typesafe(Ast.Node expr, String type)
 # eval_expr
 
 # All expression evaluators that return a Value.
-eval_expr_Value(Ast.Node expr)
+eval_expr_Value(Node expr)
   switch expr.type
-    case Ast.SYMBOL
+    case Node.SYMBOL
       return Dsym.get(expr.text[2:])
-    case Ast.EXPR_MAP
-      m_list = expr[1]
+    case Node.EXPR_MAP
+      m_list = expr.get_child(1)
       Bool is_map = false
       Bool is_set = false
       args = ""
 
-      num_ms = m_list.size
-      for m in m_list
-        switch m.size
+      num_ms = m_list.num_children
+      for m in m_list.children
+        switch m.num_children
           case 2
             is_map = true
-            args = "{}, {}, {}".f(args, eval_expr_untyped(m[1]), eval_expr_untyped(m[2]))
+            args = "{}, {}, {}".f(args,
+                                  eval_expr_untyped(m.get_child(1)),
+                                  eval_expr_untyped(m.get_child(2)))
           case 1
             is_set = true
-            args = "{}, {}".f(args, eval_expr_untyped(m[1]))
+            args = "{}, {}".f(args, eval_expr_untyped(m.get_child(1)))
 
       if is_map and is_set
         raise "invalid curly braces: is this a set or a map?"
@@ -302,31 +306,30 @@ eval_expr_Value(Ast.Node expr)
         return "ht_new_map({}{})".f(num_ms, args)
       if is_set
         return "ht_new_set({}{})".f(num_ms, args)
-    case Ast.EXPR_INDEX
-      return eval_index(expr[1], expr[2])
-    case Ast.EXPR_FIELD_CALL
-      parent = expr[1]
+    case Node.EXPR_INDEX
+      return eval_index(expr.get_child(1), expr.get_child(2).children)
+    case Node.EXPR_FIELD_CALL
+      parent, arg_list = expr.children
       field = expr.get_string("name")
-      arg_list = expr[2]
 
       s = eval_expr_as_id(parent)
       if s == nil
-        return eval_obj_call(parent, field, arg_list)
+        return eval_obj_call(parent, field, arg_list.children)
       elif locals_query(s) != nil
-        return eval_obj_call(parent, field, arg_list)
+        return eval_obj_call(parent, field, arg_list.children)
 
       return eval_static_call("{}.{}".f(s, field), arg_list)
-    case Ast.EXPR_ID_CALL
-      left_id = expr[1].text
-      arg_list = expr[2]
+    case Node.EXPR_ID_CALL
+      left_id = expr.get_child(1).text
+      arg_list = expr.get_child(2)
       if locals_query(left_id) != nil
         raise "variable '{}' called like a function".f(left_id)
       if left_id == "tuple"
         return "tuple_to_val({}{})".f(arg_list.num_children,
-                                      eval_expr_list(arg_list, true))
+                                      eval_expr_list(arg_list.children, true))
       return eval_static_call(left_id, arg_list)
-    case Ast.EXPR_FIELD
-      left = expr[1]
+    case Node.EXPR_FIELD
+      left = expr.get_child(1)
       field = expr.get_string("name")
       s = eval_expr_as_id(left)
 
@@ -342,31 +345,30 @@ eval_expr_Value(Ast.Node expr)
 
       # For sure it is a static symbol
       return Ssym.get(eval_expr_as_id(expr))
-
-    case Ast.EXPR_AT_VAR
+    case Node.EXPR_AT_VAR
       name = expr.get_string("name")
       if Ctx.class_type_get() != &FIELD
         raise "'@{}' in a class that's not a field class".f(name)
       return "_c_data[{}]".f(Ctx.class_dict_get(name))
-
-    case Ast.C_CODE
-      text = expr.text[2:-2]
+    case Node.C_CODE
+      text = expr.text.strip("$")
       text = text.substitute("@", "_c_data->")
+      if expr.line > 0
+        text = "\n#line {} \"{}\"\n{}".f(expr.line - 1, expr.filename, text)
       return text
-
-  return ""
+  raise "Assertion error: invalid expression type"
 
 eval_expr(expr)
-  if expr.size == 1
+  if expr.num_children == 1
     if expr.type in unary_ops
-      return tuple(nil, "{}({})".f(
+      return tuple("?", "{}({})".f(
                                         unary_ops[expr.type],
-                                        eval_expr_untyped(expr[1])
+                                        eval_expr_untyped(expr.get_child(1))
                                       ))
-  if expr.size == 2
+  if expr.num_children == 2
     if expr.type in binary_ops
-      t1 = eval_expr(expr[1])
-      t2 = eval_expr(expr[2])
+      t1 = eval_expr(expr.get_child(1))
+      t2 = eval_expr(expr.get_child(2))
       v1 = value_barrier(t1)
       v2 = value_barrier(t2)
 
@@ -381,61 +383,60 @@ eval_expr(expr)
         result = nil
 
       if result == nil
-        return tuple(nil, "{}({},{})".f(op[1], v1, v2))
+        return tuple("?", "{}({},{})".f(op[1], v1, v2))
       else
         return result
 
   switch expr.type
-    case Ast.K_NIL
+    case Node.K_NIL
       return tuple("Nil", "VALUE_NIL")
-    case Ast.K_EOF
+    case Node.K_EOF
       return tuple("Eof", "VALUE_EOF")
-    case Ast.K_TRUE
+    case Node.K_TRUE
       return tuple("bool", "true")
-    case Ast.K_FALSE
+    case Node.K_FALSE
       return tuple("bool", "false")
-    case Ast.INT
+    case Node.INT
       return tuple("int64", expr.text)
-    case Ast.DOUBLE
+    case Node.DOUBLE
       return tuple("double", expr.text)
-    case Ast.CHARACTER
+    case Node.CHARACTER
       return tuple("int64", expr.text[2])
-    case Ast.STRING
+    case Node.STRING
       return tuple("String", Strings.get(expr.text))
-    case Ast.EXPR_ARRAY
-      expr_list = expr[1]
+    case Node.EXPR_ARRAY
+      expr_list = expr.get_child(1)
       return tuple("Array1", "array1_to_val2({}{})".f(expr_list.num_children,
-                                              eval_expr_list(expr_list, true)))
-    case Ast.EXPR_IS_TYPE
+                                              eval_expr_list(expr_list.children, true)))
+    case Node.EXPR_IS_TYPE
       return tuple("bool", "(obj_klass({}) == {})".f(
-                                  eval_expr_untyped(expr[1]),
-                                  Type.get(eval_type(expr[2]))
+                                  eval_expr_untyped(expr.get_child(1)),
+                                  Type.get(eval_type(expr.get_child(2)))
                                       ))
-    case Ast.ID
+    case Node.ID
       local_var = locals_query(expr.text)
       if local_var == nil
-        return tuple(nil, Ssym.get(expr.text))
+        return tuple("?", Ssym.get(expr.text))
       else
         return tuple(local_var.type, local_var.c_name)
 
-    case Ast.EXPR_RANGE_BOUNDED
-      left = expr[1]
-      right = expr[2]
+    case Node.EXPR_RANGE_BOUNDED
+      left, right = expr.children
       # TODO: These val_to_int64s should be handled better...
       return tuple("Range", "range_to_val(RANGE_BOUNDED, "
               "val_to_int64({}), val_to_int64({}))".f(
                                           eval_expr_untyped(left),
                                           eval_expr_untyped(right)
                                                      ) )
-    case Ast.EXPR_RANGE_BOUNDED_LEFT
-      left = expr[1]
+    case Node.EXPR_RANGE_BOUNDED_LEFT
+      left = expr.get_child(1)
       return tuple("Range", "range_to_val(RANGE_BOUNDED_LEFT, "
               "val_to_int64({}), 0)".f(eval_expr_untyped(left)))
-    case Ast.EXPR_RANGE_BOUNDED_RIGHT
-      right = expr[1]
+    case Node.EXPR_RANGE_BOUNDED_RIGHT
+      right = expr.get_child(1)
       return tuple("Range", "range_to_val(RANGE_BOUNDED_RIGHT, "
               "0, val_to_int64({}))".f(eval_expr_untyped(right)))
-    case Ast.EXPR_RANGE_UNBOUNDED
+    case Node.EXPR_RANGE_UNBOUNDED
       return tuple("Range", "range_to_val(RANGE_UNBOUNDED, 0, 0)")
 
-  return tuple(nil, eval_expr_Value(expr))
+  return tuple("?", eval_expr_Value(expr))

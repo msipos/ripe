@@ -47,7 +47,7 @@ class Range
       }
     $
 
-  virtual_get start()
+  start() | virtual_get
     $
       switch(@range.type){
         case RANGE_BOUNDED:
@@ -58,7 +58,7 @@ class Range
       }
     $
 
-  virtual_get finish()
+  finish() | virtual_get
     $
       switch(@range.type){
         case RANGE_BOUNDED:
@@ -90,7 +90,7 @@ class RangeIterator
   #$ rdoc-header RangeIterator.new(range_type, start, finish, iter_type)
   #$ Creates a new RangeIterator object. You shouldn't use this directly.
   #$ Instead use Range.get_iter().
-  constructor new(range_type, start, finish, iter_type)
+  new(range_type, start, finish, iter_type) | constructor
     $
       @range_type = val_to_int64(__range_type);
       @start = val_to_int64(__start);

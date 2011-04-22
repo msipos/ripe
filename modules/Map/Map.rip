@@ -11,7 +11,7 @@ class Map
   #$ rdoc-name Map.new
   #$ rdoc-header Map.new()
   #$ Create a new empty Map.
-  constructor new()
+  new() | constructor
     $
       ht_init2(&(@ht), 0);
     $
@@ -80,7 +80,7 @@ class Map
   #$ rdoc-name Map.size
   #$ rdoc-header Map.size
   #$ Number of key-value pairs in the Map.
-  virtual_get size()
+  size() | virtual_get
     return $ int64_to_val(@ht.size) $
 
 
@@ -89,7 +89,7 @@ class MapIterator
     HashTable* ht;
     int64 cur;
   $
-  constructor new(map)
+  new(map) | constructor
     $
       @ht = obj_c_data(__map);
       @cur = 0;

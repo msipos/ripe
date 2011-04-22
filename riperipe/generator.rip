@@ -134,7 +134,7 @@ class Variable
   writable c_name
   writable type
 
-  constructor new()
+  new() | constructor
     pass
 
 locals_push()
@@ -143,7 +143,7 @@ locals_push()
 locals_pop()
   locals.pop()
 
-locals_add(c_name, ripe_name, type)
+locals_add(c_name, ripe_name, String type)
   if locals_query(ripe_name) != nil
     raise "local variable '{}' already registered".f(ripe_name)
   var = Variable.new()
@@ -170,14 +170,14 @@ global header, code, init1a, init1b, init2, init3
 global stack
 
 is_vararg?(param_list)
-  for param in param_list
+  for param in param_list.children
     if param.has_string?("array")
       return true
   return false
 
 gen_params2(param_list, first_comma?)
   index = 1
-  for param in param_list
+  for param in param_list.children
     type = eval_type(param.get_node_optional("type"))
     if param.has_string?("array")
       type = "Tuple"
@@ -196,13 +196,13 @@ gen_params(param_list)
 
 gen_stmt_assign2(lvalue, rvalue, warn_if_shadow?)
   switch lvalue.type
-    case Ast.ID
+    case Node.ID
       var = locals_query(lvalue.text)
       if var == nil
         # Register a new typeless variable
         ripe_name = lvalue.text
         c_name = "__{}".f(Util.to_c(ripe_name))
-        locals_add(c_name, ripe_name, nil)
+        locals_add(c_name, ripe_name, "?")
 
         code.print("  Value {} = {};\n".f(c_name,
                                           eval_expr_untyped(rvalue)))
@@ -210,13 +210,13 @@ gen_stmt_assign2(lvalue, rvalue, warn_if_shadow?)
         if warn_if_shadow?
           Err.println("warning: possible shadowing of variable {1}".f(
                       lvalue.text))
-        if var.type != nil
+        if var.type != "?"
           code.print("  {} = {};\n".f(var.c_name,
                                       eval_expr_typesafe(rvalue, var.type)))
         else
           code.print("  {} = {};\n".f(var.c_name,
                                       eval_expr_untyped(rvalue)))
-    case Ast.EXPR_TYPED_ID
+    case Node.EXPR_TYPED_ID
       ripe_name = lvalue.get_string("name")
       var = locals_query(ripe_name)
       if var != nil
@@ -226,30 +226,30 @@ gen_stmt_assign2(lvalue, rvalue, warn_if_shadow?)
       code.print("  Value {} = {};\n".f(c_name,
                                         eval_expr_typesafe(rvalue, type)))
       locals_add(c_name, ripe_name, type)
-    case Ast.EXPR_INDEX
-      code.print("  {};\n".f(eval_index_set(lvalue[1],
-                                            lvalue[2],
+    case Node.EXPR_INDEX
+      code.print("  {};\n".f(eval_index_set(lvalue.get_child(1),
+                                            lvalue.get_child(2),
                                             rvalue)))
-    case Ast.EXPR_FIELD
+    case Node.EXPR_FIELD
       code.print("  field_set({}, {}, {});\n".f(
-                                        eval_expr_untyped(lvalue[1]),
+                                        eval_expr_untyped(lvalue.get_child(1)),
                                         Dsym.get(lvalue.get_string("name")),
                                         eval_expr_untyped(rvalue)) )
-    case Ast.EXPR_AT_VAR
+    case Node.EXPR_AT_VAR
       code.print("  {} = {};\n".f(eval_expr_untyped(lvalue),
                                   eval_expr_untyped(rvalue)) )
 
 gen_stmt_assign(left, right, warn_if_shadow?)
   if left.num_children == 1
-    gen_stmt_assign2(left[1], right, warn_if_shadow?)
+    gen_stmt_assign2(left.get_child(1), right, warn_if_shadow?)
   else
-    id_tmp = Ast.Node.new_id("_tmp_assign{}".f(counter()))
+    id_tmp = Node.new_id("_tmp_assign{}".f(counter()))
     gen_stmt_assign2(id_tmp, right, warn_if_shadow?)
 
     index = 1
-    for l in left
+    for l in left.children
       gen_stmt_assign2(l,
-                       Ast.Node.new_expr_index(id_tmp, [Ast.Node.new_int(index)]),
+                       Node.new_expr_index(id_tmp, [Node.new_int(index)]),
                        warn_if_shadow?)
       index = index + 1
 
@@ -281,8 +281,9 @@ gen_stmt_for(lvalue_list, expr, block)
       stack.push(tuple(break_label, continue_label))
 
       # Assign to the variable
-      lvalue = lvalue_list[1]
-      rvalue = Ast.Node.new_typed(Ast.C_CODE)
+      lvalue = lvalue_list.get_child(1)
+      rvalue = Node.new_inherit(expr)
+      rvalue.type = Node.C_CODE
       rvalue.text = "$int64_to_val({})$".f(text_i)
       gen_stmt_assign2(lvalue, rvalue, true)
       gen_block(block)
@@ -298,17 +299,17 @@ gen_stmt_for(lvalue_list, expr, block)
   # Otherwise, write the unoptimized loop
 
   # Write the code to get the iterator object.
-  id_iterator = Ast.Node.new_id("_iterator{}".f(counter()))
-  gen_stmt_assign2(id_iterator, Ast.Node.new_field_call(expr, "get_iter"),
+  id_iterator = Node.new_id("_iterator{}".f(counter()))
+  gen_stmt_assign2(id_iterator, Node.new_field_call(expr, "get_iter"),
                    false)
 
   # Construct the AST to call iter() once
-  iter_call = Ast.Node.new_field_call(id_iterator, "iter")
+  iter_call = Node.new_field_call(id_iterator, "iter")
 
   # Write out the loop
   code.print("  for(;;){\n")
   code.print("{}:;\n".f(continue_label))
-  id_temp = Ast.Node.new_id("_iterator_temp{}".f(counter()))
+  id_temp = Node.new_id("_iterator_temp{}".f(counter()))
   locals_push()
   gen_stmt_assign2(id_temp, iter_call, false)
   code.print("  if ({} == VALUE_EOF) break;\n".f(eval_expr_untyped(id_temp)))
@@ -322,66 +323,70 @@ gen_stmt_for(lvalue_list, expr, block)
 
 gen_stmt(stmt)
   switch stmt.type
-    case Ast.STMT_EXPR
-      expr = stmt[1]
-      if (expr.type == Ast.EXPR_ID_CALL
-       or expr.type == Ast.EXPR_FIELD_CALL
-       or expr.type == Ast.C_CODE)
+    case Node.STMT_EXPR
+      expr = stmt.get_child(1)
+      if (expr.type == Node.EXPR_ID_CALL
+       or expr.type == Node.EXPR_FIELD_CALL
+       or expr.type == Node.C_CODE)
         code.print("  {};\n".f(eval_expr_untyped(expr)))
       else
         raise("invalid expression in an expression statement")
-    case Ast.STMT_RETURN
-      code.print("  return {};\n".f(eval_expr_untyped(stmt[1])))
-    case Ast.STMT_LOOP
+    case Node.STMT_RETURN
+      code.print("  return {};\n".f(eval_expr_untyped(stmt.get_child(1))))
+    case Node.STMT_LOOP
       break_label = "_brk_lbl{}".f(counter())
       continue_label = "_cnt_lbl{}".f(counter())
       code.print("  for(;;){{}\n  {}:;\n".f(continue_label))
       stack.push(tuple(break_label, continue_label))
-      gen_block(stmt[1])
+      gen_block(stmt.get_child(1))
       stack.pop()
       code.print("  }\n")
       code.print("  {}:;\n".f(break_label))
-    case Ast.STMT_IF
-      code.print("  if ({} == VALUE_TRUE) {{}\n".f(eval_expr_untyped(stmt[1])))
-      gen_block(stmt[2])
+    case Node.STMT_IF
+      code.print("  if ({} == VALUE_TRUE) {{}\n".f(
+                                      eval_expr_untyped(stmt.get_child(1))))
+      gen_block(stmt.get_child(2))
       code.print("  }\n")
-    case Ast.STMT_ELIF
-      code.print("  else if ({} == VALUE_TRUE) {{}\n".f(eval_expr_untyped(stmt[1])))
-      gen_block(stmt[2])
+    case Node.STMT_ELIF
+      code.print("  else if ({} == VALUE_TRUE) {{}\n".f(
+                                      eval_expr_untyped(stmt.get_child(1))))
+      gen_block(stmt.get_child(2))
       code.print("  }\n")
-    case Ast.STMT_ELSE
+    case Node.STMT_ELSE
       code.print("  else {\n")
-      gen_block(stmt[1])
+      gen_block(stmt.get_child(1))
       code.print("  }\n")
-    case Ast.STMT_BREAK
+    case Node.STMT_BREAK
       if stack.size == 0
         raise "break outside of loop"
       stc = stack[-1]
       code.print("  goto {};\n".f(stc[1]))
-    case Ast.STMT_CONTINUE
+    case Node.STMT_CONTINUE
       if stack.size == 0
         raise "continue outside of a loop"
       stc = stack[-1]
       code.print("  goto {};\n".f(stc[2]))
-    case Ast.STMT_ASSIGN
-      gen_stmt_assign(stmt[1], stmt[2], false)
-    case Ast.STMT_FOR
-      gen_stmt_for(stmt[1], stmt[2], stmt[3])
-    case Ast.STMT_PASS
+    case Node.STMT_ASSIGN
+      gen_stmt_assign(stmt.get_child(1),
+                      stmt.get_child(2), false)
+    case Node.STMT_FOR
+      gen_stmt_for(stmt.get_child(1),
+                   stmt.get_child(2),
+                   stmt.get_child(3))
+    case Node.STMT_PASS
       code.print("  ;")
-    case Ast.STMT_RAISE
+    case Node.STMT_RAISE
       code.print("  exc_raise(\"%s\", val_to_string({}));".f(
-                   eval_expr_untyped(stmt[1])))
-    case Ast.STMT_SWITCH
+                   eval_expr_untyped(stmt.get_child(1))))
+    case Node.STMT_SWITCH
+      expr, case_list = stmt.children
+
       c_expr = "_switch_expr{}".f(counter())
-      expr = stmt[1]
-      case_list = stmt[2]
       code.print("  {\n")
       code.print("  Value {} = {};\n".f(c_expr, eval_expr_untyped(expr)))
       index = 1
-      for node_case in case_list
-        expr = node_case[1]
-        block = node_case[2]
+      for node_case in case_list.children
+        expr, block = node_case.children
 
         word = "else if"
         if index == 1
@@ -396,7 +401,7 @@ gen_stmt(stmt)
 
 gen_block(stmt_list)
   locals_push()
-  for stmt in stmt_list
+  for stmt in stmt_list.children
     gen_stmt(stmt)
   locals_pop()
 
@@ -419,8 +424,7 @@ gen_function_common(name, param_list)
 
 gen_function(ast)
   name = Namespace.prefix() + ast.get_string("name")
-  param_list = ast[1]
-  stmt_list = ast[2]
+  param_list, stmt_list = ast.children
 
   c_name, v_name = gen_function_common(name, param_list)
 
@@ -430,15 +434,14 @@ gen_function(ast)
   gen_params(param_list)
   code.print("){\n")
   gen_block(stmt_list)
-  if stmt_list[-1].type != Ast.STMT_RETURN
+  if stmt_list.get_child(-1).type != Node.STMT_RETURN
     code.print("  return VALUE_NIL;\n")
   code.print("}\n")
   locals_pop()
 
-gen_constructor(Ast.Node ast)
+gen_constructor(Node ast)
   name = ctx_class_name + "." + ast.get_string("name")
-  param_list = ast[1]
-  stmt_list = ast[2]
+  param_list, stmt_list = ast.children
 
   c_name, v_name = gen_function_common(name, param_list)
 
@@ -460,10 +463,9 @@ gen_constructor(Ast.Node ast)
   locals_pop()
 
 # Returns v_name of the generated method.
-gen_method(String name, Ast.Node ast)
+gen_method(String name, Node ast)
   full_name = ctx_class_name + "." + name
-  param_list = ast[1]
-  stmt_list = ast[2]
+  param_list, stmt_list = ast.children
 
   c_name, v_name = gen_function_common2(full_name,
                                         param_list.num_children + 1,
@@ -489,20 +491,20 @@ gen_method(String name, Ast.Node ast)
                ctx_class_typedef,
                ctx_class_typedef))
   gen_block(stmt_list)
-  if stmt_list[-1].type != Ast.STMT_RETURN
+  if stmt_list.get_child(-1).type != Node.STMT_RETURN
     code.print("  return VALUE_NIL;\n")
   code.print("}\n")
   locals_pop()
   return v_name
 
-get_class_type(Ast.Node ast)
+get_class_type(Node ast)
   c_code = false
   field = false
-  for node in ast
+  for node in ast.children
     switch node.type
-      case Ast.C_CODE
+      case Node.C_CODE
         c_code = true
-      case Ast.TL_VAR
+      case Node.TL_VAR
         field = true
   if c_code and field
     raise "class '{}' with both cdata and fields".f(ctx_class_name)
@@ -512,12 +514,12 @@ get_class_type(Ast.Node ast)
     return &FIELD
   return &VIRTUAL
 
-gen_class(Ast.Node node)
+gen_class(Node node)
   ctx_class_name = Namespace.prefix() + node.get_string("name")
   ctx_class_c_name = "_klass{}_".f(counter())+Util.to_c(ctx_class_name)
   Ctx.class_dict_init()
   header.print("static Klass* {};\n".f(ctx_class_c_name))
-  ast = node[1]
+  ast = node.get_child(1)
   ctx_class_type = get_class_type(ast)
 
   # Get these two dynamic symbols first, because we will be writing to init1a
@@ -532,8 +534,8 @@ gen_class(Ast.Node node)
     case &CDATA
       ctx_class_typedef = "_KlassCData{}_".f(counter()) + Util.to_c(ctx_class_name)
       header.print("typedef struct {\n")
-      for n in ast
-        if n.type == Ast.C_CODE
+      for n in ast.children
+        if n.type == Node.C_CODE
           header.print(n.text[2:(-2)])
       header.print("} {};\n".f(ctx_class_typedef))
       init1a.print("  {} = klass_new({}, sizeof({}));\n".f(
@@ -544,8 +546,8 @@ gen_class(Ast.Node node)
                   ctx_class_c_name, dsym_class))
 
       # Now iterate over the class AST to find all fields, and initialize them.
-      for n in ast
-        if n.type == Ast.TL_VAR
+      for n in ast.children
+        if n.type == Node.TL_VAR
 
           # Map the field type to argument to klass_new_field().
           field_type = ""
@@ -556,8 +558,8 @@ gen_class(Ast.Node node)
               field_type = "FIELD_READABLE | FIELD_WRITABLE"
             case "private"
               field_type = "0"
-          optassign_list = n[1]
-          for optassign in optassign_list
+          optassign_list = n.get_child(1)
+          for optassign in optassign_list.children
             dsym_var = Dsym.get(optassign.get_string("name"))
             init1a.print("  klass_new_field({}, {}, {});\n".f(
                              ctx_class_c_name,
@@ -565,27 +567,29 @@ gen_class(Ast.Node node)
                              field_type))
 
   # Finally, write out the methods and constructors
-  for n in ast
-    if n.type == Ast.FUNCTION
+  for n in ast.children
+    if n.type == Node.FUNCTION
       #rv_type = node[1]
       #param_list = node[2]
       #stmt_list = node[3]
 
       name = n.get_string("name")
-      if n.has_string?("annotation")
-        switch n.get_string("annotation")
-          case "constructor"
-            gen_constructor(n)
-          case "virtual_set"
-            val = gen_method("set_" + name, n)
-            dsym = Dsym.get(name)
-            init1a.print("  klass_new_virtual_writer({}, {}, {});\n".f(
-                           ctx_class_c_name, dsym, val))
-          case "virtual_get"
-            val = gen_method("get_" + name, n)
-            dsym = Dsym.get(name)
-            init1a.print("  klass_new_virtual_reader({}, {}, {});\n".f(
-                           ctx_class_c_name, dsym, val))
+      if n.has_node?("annotation")
+        annot_list = n.get_node("annotation")
+        if Annot.has?(annot_list, "constructor")
+          gen_constructor(n)
+        elif Annot.has?(annot_list, "virtual_set")
+          val = gen_method("set_" + name, n)
+          dsym = Dsym.get(name)
+          init1a.print("  klass_new_virtual_writer({}, {}, {});\n".f(
+                         ctx_class_c_name, dsym, val))
+        elif Annot.has?(annot_list, "virtual_get")
+          val = gen_method("get_" + name, n)
+          dsym = Dsym.get(name)
+          init1a.print("  klass_new_virtual_reader({}, {}, {});\n".f(
+                         ctx_class_c_name, dsym, val))
+        else
+          raise "invalid annotation"
       else
         gen_method(name, n)
 
@@ -595,37 +599,37 @@ gen_class(Ast.Node node)
   ctx_class_type = nil
 
 gen(ast)
-  for node in ast
+  for node in ast.children
     switch node.type
-      case Ast.NAMESPACE
+      case Node.NAMESPACE
         Namespace.push(node.get_string("name"))
-        gen(node[1])
+        gen(node.get_child(1))
         Namespace.pop()
-      case Ast.C_CODE
+      case Node.C_CODE
         header.print(node.text[2:(-2)])
         header.print("\n")
-      case Ast.FUNCTION
+      case Node.FUNCTION
         gen_function(node)
-      case Ast.CONST_VAR
-        for optassign in node[1]
+      case Node.CONST_VAR
+        for optassign in node.get_child(1).children
           name = Namespace.prefix() + optassign.get_string("name")
-          expr = optassign[1]
+          expr = optassign.get_child(1)
           init1a.print("  ssym_set(\"{}\", {});\n".f(name, eval_expr_untyped(expr)))
-      case Ast.CLASS
+      case Node.CLASS
         gen_class(node)
 
 gen_globals(ast)
-  for node in ast
-    if node.type == Ast.GLOBAL_VAR
-      optassign_list = node[1]
-      for optassign in optassign_list
+  for node in ast.children
+    if node.type == Node.GLOBAL_VAR
+      optassign_list = node.get_child(1)
+      for optassign in optassign_list.children
         name = optassign.get_string("name")
         type = eval_type(optassign.get_node_optional("type"))
         c_name = "_glb{}_{}".f(counter(), Util.to_c(name))
         locals_add(c_name, name, type)
         header.print("Value {};\n".f(c_name))
         init3.print("  {} = {};\n".f(c_name,
-                                     eval_expr_untyped(optassign[1])))
+                                     eval_expr_untyped(optassign.get_child(1))))
 
 generate(ast)
   m = get_sbufs()

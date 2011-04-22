@@ -11,7 +11,7 @@ class Array2
   #$ rdoc-name Array2.new_const
   #$ rdoc-header Array2.new_const(Integer x, Integer y, v)
   #$ Create a new Array2 of dimensions x*y, and populated with elements v.
-  constructor new_const(Integer x, Integer y, v)
+  new_const(Integer x, Integer y, v) | constructor
     $
       int64 size_x = val_to_int64(__x);
       int64 size_y = val_to_int64(__y);
@@ -51,11 +51,11 @@ class Array2
   #$ rdoc-name Array2.size_x
   #$ rdoc-header Integer Array2.size_x
   #$ x (first axis) size.
-  virtual_get size_x()
+  size_x() | virtual_get
     return $ int64_to_val(@a.size_x) $
 
   #$ rdoc-name Array2.size_y
   #$ rdoc-header Integer Array2.size_y
   #$ y (second axis) size.
-  virtual_get size_y()
+  size_y() | virtual_get
     return $ int64_to_val(@a.size_y) $

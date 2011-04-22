@@ -25,7 +25,7 @@ void bootstrap(const char* out_filename, int arg1, int argc, char* const* argv)
   Array asts, objs;
   array_init(&asts, Node*);
   array_init(&objs, const char*);
-  typer_init();
+  stran_init();
 
   for (int i = arg1; i < argc; i++){
     const char* arg = argv[i];
@@ -40,7 +40,9 @@ void bootstrap(const char* out_filename, int arg1, int argc, char* const* argv)
         err("failed to parse '%s': %s", arg, build_tree_error);
       }
       array_append(&asts, ast);
-      typer_ast(ast);
+      if (stran_absorb_ast(ast)){
+        err("during structure analysis of '%s': %s", arg, stran_error->text);
+      }
     } else if (strequal(ext, ".o")) {
       array_append(&objs, arg);
     } else if (strequal(ext, ".meta")) {
@@ -103,7 +105,6 @@ void bootstrap(const char* out_filename, int arg1, int argc, char* const* argv)
 int main(int argc, char* const* argv)
 {
   const char* out_filename = NULL;
-  const char* module_name = NULL;
   cflags = "";
   lflags = "";
   mem_init();
