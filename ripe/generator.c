@@ -47,9 +47,9 @@ static const char* tbl_get_type(const char* type)
   klassp_c_var = mem_asprintf("_klass%"PRIu64"_%s",
                               counter,
                               util_escape(type));
-  sbuf_printf(sb_header, "static Klass* %s;\n",
+  wr_print(WR_HEADER, "static Klass* %s;\n",
               klassp_c_var);
-  sbuf_printf(sb_init2, "  %s = klass_get(dsym_get(\"%s\"));\n",
+  wr_print(WR_INIT2, "  %s = klass_get(dsym_get(\"%s\"));\n",
               klassp_c_var, type);
   dict_set(&tbl_types, &type, &klassp_c_var);
   return klassp_c_var;
@@ -69,8 +69,8 @@ static const char* tbl_get_ssym(const char* symbol)
   ssym_c_var = mem_asprintf("_ssym%"PRIu64"_%s",
                             counter,
                             util_escape(symbol));
-  sbuf_printf(sb_header, "static Value %s;\n", ssym_c_var);
-  sbuf_printf(sb_init2, "  %s = ssym_get(\"%s\");\n",
+  wr_print(WR_HEADER, "static Value %s;\n", ssym_c_var);
+  wr_print(WR_INIT2, "  %s = ssym_get(\"%s\");\n",
                          ssym_c_var, symbol);
   dict_set(&tbl_ssym, &symbol, &ssym_c_var);  return ssym_c_var;
 }
@@ -89,8 +89,8 @@ static const char* tbl_get_dsym(const char* symbol)
   dsym_c_var = mem_asprintf("_dsym%"PRIu64"_%s",
                             counter,
                             util_escape(symbol));
-  sbuf_printf(sb_header, "static Value %s;\n", dsym_c_var);
-  sbuf_printf(sb_init2, "  %s = dsym_get(\"%s\");\n",
+  wr_print(WR_HEADER, "static Value %s;\n", dsym_c_var);
+  wr_print(WR_INIT2, "  %s = dsym_get(\"%s\");\n",
                          dsym_c_var, symbol);
   dict_set(&tbl_dsym, &symbol, &dsym_c_var);
   return dsym_c_var;
@@ -419,8 +419,8 @@ static const char* eval_expr(Node* expr)
         if (not dict_query(context_class_dict, &name, &field_int_var)){
           static int counter = 0; counter++;
           field_int_var = mem_asprintf("field_int_%d", counter);
-          sbuf_printf(sb_header, "static int %s;\n", field_int_var);
-          sbuf_printf(sb_init2, "  %s = klass_get_field_int("
+          wr_print(WR_HEADER, "static int %s;\n", field_int_var);
+          wr_print(WR_INIT2, "  %s = klass_get_field_int("
                       "%s, dsym_get(\"%s\"));\n", field_int_var,
                       context_class_c_name, name);
           dict_set(context_class_dict, &name, &field_int_var);
@@ -457,9 +457,9 @@ static void gen_stmt_expr(Node* stmt)
 {
   Node* expr = node_get_child(stmt, 0);
   if (expr->type == EXPR_ID_CALL or expr->type == EXPR_FIELD_CALL){
-    sbuf_printf(sb_contents, "  %s;\n", eval_expr(expr));
+    wr_print(WR_CODE, "  %s;\n", eval_expr(expr));
   } else if (expr->type == C_CODE) {
-    sbuf_printf(sb_contents, "  %s\n", eval_expr(expr));
+    wr_print(WR_CODE, "  %s\n", eval_expr(expr));
   } else {
     err_node(stmt, "invalid expression in an expression statement");
   }
@@ -477,12 +477,12 @@ static void gen_stmt_assign2(Node* lvalue, Node* rvalue)
         Variable* var = query_local_full(lvalue->text);
         if (var == NULL){
           // Register the variable (untyped)
-          sbuf_printf(sb_contents, "  Value %s = %s;\n",
+          wr_print(WR_CODE, "  Value %s = %s;\n",
                       register_local(lvalue->text, NULL), right);
           break;
         }
 
-        sbuf_printf(sb_contents, "  %s = %s;\n", var->c_name, right);
+        wr_print(WR_CODE, "  %s = %s;\n", var->c_name, right);
       }
       break;
     case EXPR_TYPED_ID:
@@ -494,24 +494,24 @@ static void gen_stmt_assign2(Node* lvalue, Node* rvalue)
           err_node(lvalue, "variable '%s' already defined", ripe_name);
         }
         const char* c_name = register_local(ripe_name, type);
-        sbuf_printf(sb_contents, "  Value %s = %s;\n",
+        wr_print(WR_CODE, "  Value %s = %s;\n",
                     c_name, right);
       }
       break;
     case EXPR_INDEX:
-      sbuf_printf(sb_contents, "  %s;\n",
+      wr_print(WR_CODE, "  %s;\n",
                   eval_index(node_get_child(lvalue, 0),
                              node_get_child(lvalue, 1),
                              rvalue));
       break;
     case EXPR_FIELD:
-      sbuf_printf(sb_contents, "  field_set(%s, %s, %s);\n",
+      wr_print(WR_CODE, "  field_set(%s, %s, %s);\n",
                   eval_expr(node_get_child(lvalue, 0)),
                   tbl_get_dsym(node_get_string(lvalue, "name")),
                   right);
       break;
     case EXPR_AT_VAR:
-      sbuf_printf(sb_contents, "  %s = %s;\n",
+      wr_print(WR_CODE, "  %s = %s;\n",
                   eval_expr(lvalue),
                   right);
       break;
@@ -551,63 +551,63 @@ static void gen_stmt(Node* stmt)
       if (context2 == CONTEXT_CONSTRUCTOR){
         err_node(stmt, "return not allowed in a constructor");
       }
-      sbuf_printf(sb_contents, "  return %s;\n",
+      wr_print(WR_CODE, "  return %s;\n",
                                 eval_expr(node_get_child(stmt, 0)));
 
       break;
     case STMT_LOOP:
       {
-        sbuf_printf(sb_contents, "  for(;;){\n");
+        wr_print(WR_CODE, "  for(;;){\n");
         dowhile_semaphore++;
         gen_stmtlist(node_get_child(stmt, 0));
         dowhile_semaphore--;
-        sbuf_printf(sb_contents, "  }\n");
+        wr_print(WR_CODE, "  }\n");
       }
       break;
     case STMT_IF:
       {
-        sbuf_printf(sb_contents, "  if (%s == VALUE_TRUE) {\n",
+        wr_print(WR_CODE, "  if (%s == VALUE_TRUE) {\n",
                                   eval_expr(node_get_child(stmt, 0)));
         gen_stmtlist(node_get_child(stmt, 1));
-        sbuf_printf(sb_contents, "  }\n");
+        wr_print(WR_CODE, "  }\n");
       }
       break;
     case STMT_ELIF:
       {
-        sbuf_printf(sb_contents, "  else if (%s == VALUE_TRUE) {\n",
+        wr_print(WR_CODE, "  else if (%s == VALUE_TRUE) {\n",
                                   eval_expr(node_get_child(stmt, 0)));
         gen_stmtlist(node_get_child(stmt, 1));
-        sbuf_printf(sb_contents, "  }\n");
+        wr_print(WR_CODE, "  }\n");
       }
       break;
     case STMT_ELSE:
       {
-        sbuf_printf(sb_contents, "  else {\n");
+        wr_print(WR_CODE, "  else {\n");
         gen_stmtlist(node_get_child(stmt, 0));
-        sbuf_printf(sb_contents, "  }\n");
+        wr_print(WR_CODE, "  }\n");
       }
       break;
     case STMT_WHILE:
       {
-        sbuf_printf(sb_contents, "  while (%s == VALUE_TRUE) {\n",
+        wr_print(WR_CODE, "  while (%s == VALUE_TRUE) {\n",
                                   eval_expr(node_get_child(stmt, 0)));
         dowhile_semaphore++;
         gen_stmtlist(node_get_child(stmt, 1));
         dowhile_semaphore--;
-        sbuf_printf(sb_contents, "  }\n");
+        wr_print(WR_CODE, "  }\n");
       }
       break;
     case STMT_BREAK:
       if (dowhile_semaphore == 0){
         err_node(stmt, "break outside a loop");
       }
-      sbuf_printf(sb_contents, "  break;\n");
+      wr_print(WR_CODE, "  break;\n");
       break;
     case STMT_CONTINUE:
       if (dowhile_semaphore == 0){
         err_node(stmt, "continue outside a loop");
       }
-      sbuf_printf(sb_contents, "  continue;\n");
+      wr_print(WR_CODE, "  continue;\n");
       break;
     case STMT_ASSIGN:
       gen_stmt_assign(node_get_child(stmt, 0), node_get_child(stmt, 1));
@@ -625,17 +625,17 @@ static void gen_stmt(Node* stmt)
         gen_stmt_assign2(id_iterator, node_new_field_call(expr, "get_iter", 0));
         Node* iterator_call = node_new_field_call(id_iterator, "iter", 0);
 
-        sbuf_printf(sb_contents, "  for(;;){");
+        wr_print(WR_CODE, "  for(;;){");
         Node* id_temp = node_new_id(mem_asprintf("_iterator_temp%d",
                                               iterator_counter));
         gen_stmt_assign2(id_temp, iterator_call);
-        sbuf_printf(sb_contents, "  if (%s == VALUE_EOF) break;\n", eval_expr(id_temp));
+        wr_print(WR_CODE, "  if (%s == VALUE_EOF) break;\n", eval_expr(id_temp));
         gen_stmt_assign(lvalue_list, id_temp);
 
         dowhile_semaphore++;
         gen_stmtlist_no_locals(node_get_child(stmt, 2));
         dowhile_semaphore--;
-        sbuf_printf(sb_contents, "  }\n");
+        wr_print(WR_CODE, "  }\n");
         pop_locals();
       }
       break;
@@ -646,8 +646,8 @@ static void gen_stmt(Node* stmt)
         Node* expr = node_get_child(stmt, 0);
         Node* case_list = node_get_child(stmt, 1);
 
-        sbuf_printf(sb_contents, "  {\n");
-        sbuf_printf(sb_contents, "  Value %s = %s;\n", c_expr_value,
+        wr_print(WR_CODE, "  {\n");
+        wr_print(WR_CODE, "  Value %s = %s;\n", c_expr_value,
                                                        eval_expr(expr));
         int num_cases = node_num_children(case_list);
         for (int i = 0; i < num_cases; i++){
@@ -656,18 +656,18 @@ static void gen_stmt(Node* stmt)
           Node* block = node_get_child(node_case, 1);
           const char* word = "else if";
           if (i == 0) word = "if";
-          sbuf_printf(sb_contents, "  %s (op_equal(%s, %s) == VALUE_TRUE) {\n",
+          wr_print(WR_CODE, "  %s (op_equal(%s, %s) == VALUE_TRUE) {\n",
                       word, c_expr_value, eval_expr(node_case_expr));
           gen_stmtlist(block);
-          sbuf_printf(sb_contents, "  }");
+          wr_print(WR_CODE, "  }");
         }
-        sbuf_printf(sb_contents, "  }\n");
+        wr_print(WR_CODE, "  }\n");
       }
       break;
     case STMT_PASS:
       break;
     case STMT_RAISE:
-      sbuf_printf(sb_contents, "  exc_raise(\"%%s\", val_to_string(%s));\n",
+      wr_print(WR_CODE, "  exc_raise(\"%%s\", val_to_string(%s));\n",
                   eval_expr(node_get_child(stmt, 0)));
       break;
     default:
@@ -687,30 +687,30 @@ static void gen_try(Node* try_block, Node* block_list, int i)
   Node* block = node_get_child(block_list, i);
   switch (block->type){
     case STMT_CATCH_ALL:
-      sbuf_printf(sb_contents, "  EXC_CA_TRY\n");
+      wr_print(WR_CODE, "  EXC_CA_TRY\n");
       if (i == 0) {
         gen_stmtlist(try_block);
       } else {
         gen_try(try_block, block_list, i-1);
       }
-      sbuf_printf(sb_contents, "  EXC_CA_CATCH\n");
+      wr_print(WR_CODE, "  EXC_CA_CATCH\n");
       gen_stmtlist(block);
-      sbuf_printf(sb_contents, "  EXC_CA_END\n");
+      wr_print(WR_CODE, "  EXC_CA_END\n");
       break;
     case STMT_FINALLY:
       {
         static int counter = 0;
         counter++;
         const char* lbl = mem_asprintf("_lbl_finally%d", counter);
-        sbuf_printf(sb_contents, "  EXC_FIN_TRY(%s)\n", lbl);
+        wr_print(WR_CODE, "  EXC_FIN_TRY(%s)\n", lbl);
         if (i == 0) {
           gen_stmtlist(try_block);
         } else {
           gen_try(try_block, block_list, i-1);
         }
-        sbuf_printf(sb_contents, "  EXC_FIN_FINALLY(%s)\n", lbl);
+        wr_print(WR_CODE, "  EXC_FIN_FINALLY(%s)\n", lbl);
         gen_stmtlist(block);
-        sbuf_printf(sb_contents, "  EXC_FIN_END(%s)\n", lbl);
+        wr_print(WR_CODE, "  EXC_FIN_END(%s)\n", lbl);
       }
       break;
   }
@@ -809,7 +809,7 @@ static void gen_func_code(Node* stmt_list)
   if (stmt_list->children.size == 0
         or
       node_get_child(stmt_list, stmt_list->children.size-1)->type != STMT_RETURN)
-    sbuf_printf(sb_contents, "  return VALUE_NIL;\n");
+    wr_print(WR_CODE, "  return VALUE_NIL;\n");
 }
 
 static void gen_function(Node* function)
@@ -829,17 +829,17 @@ static void gen_function(Node* function)
   const char* c_name = mem_asprintf("_func%u_%s",
                                     counter,
                                     util_escape(name));
-  sbuf_printf(sb_contents, "static Value %s(%s){\n",
+  wr_print(WR_CODE, "static Value %s(%s){\n",
               c_name, gen_params(param_list));
-  sbuf_printf(sb_init1a, "  Value v_%s = func%u_to_val(%s);\n",
+  wr_print(WR_INIT1A, "  Value v_%s = func%u_to_val(%s);\n",
               c_name, num_params, c_name);
   if (check_vararg(param_list))
-    sbuf_printf(sb_init1a, "  func_set_vararg(v_%s);\n", c_name);
-  sbuf_printf(sb_init1a, "  ssym_set(\"%s\", v_%s);\n", name, c_name);
+    wr_print(WR_INIT1A, "  func_set_vararg(v_%s);\n", c_name);
+  wr_print(WR_INIT1A, "  ssym_set(\"%s\", v_%s);\n", name, c_name);
   gen_func_code(stmt_list);
   pop_locals();
 
-  sbuf_printf(sb_contents, "}\n");
+  wr_print(WR_CODE, "}\n");
 }
 
 static void gen_constructor(Node* constructor)
@@ -861,24 +861,24 @@ static void gen_constructor(Node* constructor)
   push_locals();
 
   const char* c_value = mem_asprintf("v_constructor%d", counter);
-  sbuf_printf(sb_init1a, "  Value %s = func%d_to_val(%s);\n",
+  wr_print(WR_INIT1A, "  Value %s = func%d_to_val(%s);\n",
               c_value, num_params, c_constructor_name);
   if (check_vararg(param_list))
-    sbuf_printf(sb_init1a, "  func_set_vararg(%s);\n", c_value);
-  sbuf_printf(sb_init1a, "  ssym_set(\"%s\", %s);\n",
+    wr_print(WR_INIT1A, "  func_set_vararg(%s);\n", c_value);
+  wr_print(WR_INIT1A, "  ssym_set(\"%s\", %s);\n",
               r_constructor_name, c_value);
 
-  sbuf_printf(sb_contents, "static Value %s(%s){\n",
+  wr_print(WR_CODE, "static Value %s(%s){\n",
               c_constructor_name, gen_params(param_list));
   set_local("self", "__self", context_class_name);
-  sbuf_printf(sb_contents, "  %s* _c_data;\n", context_class_typedef);
-  sbuf_printf(sb_contents, "  Value __self = obj_new(%s, (void**) &_c_data);\n",
+  wr_print(WR_CODE, "  %s* _c_data;\n", context_class_typedef);
+  wr_print(WR_CODE, "  Value __self = obj_new(%s, (void**) &_c_data);\n",
               context_class_c_name);
   dowhile_semaphore = 0;
   gen_stmtlist(stmt_list);
-  sbuf_printf(sb_contents, "  return __self;\n");
+  wr_print(WR_CODE, "  return __self;\n");
   pop_locals();
-  sbuf_printf(sb_contents, "}\n");
+  wr_print(WR_CODE, "}\n");
 }
 
 static void gen_method(const char* method_name, Node* rv_type,
@@ -902,29 +902,29 @@ static void gen_method(const char* method_name, Node* rv_type,
 
   push_locals();
   context2_method_value_name = mem_asprintf("v_method%d", counter);
-  sbuf_printf(sb_init1a, "  Value %s = func%d_to_val(%s);\n",
+  wr_print(WR_INIT1A, "  Value %s = func%d_to_val(%s);\n",
               context2_method_value_name, num_params, c_method_name);
   if (check_vararg(param_list))
-    sbuf_printf(sb_init1a, "  func_set_vararg(%s);\n", context2_method_value_name);
-  sbuf_printf(sb_init1a, "  ssym_set(\"%s\", %s);\n",
+    wr_print(WR_INIT1A, "  func_set_vararg(%s);\n", context2_method_value_name);
+  wr_print(WR_INIT1A, "  ssym_set(\"%s\", %s);\n",
               r_method_name, context2_method_value_name);
-  sbuf_printf(sb_init1a, "  klass_new_method(%s, dsym_get(\"%s\"), "
+  wr_print(WR_INIT1A, "  klass_new_method(%s, dsym_get(\"%s\"), "
                            "%s);\n", context_class_c_name,
                            method_name,
                            context2_method_value_name);
 
-  sbuf_printf(sb_contents, "static Value %s(%s){\n",
+  wr_print(WR_CODE, "static Value %s(%s){\n",
               c_method_name, gen_params(param_list));
   if (context_class_type == CLASS_CDATA_OBJECT
       or context_class_type == CLASS_FIELD_OBJECT){
-    sbuf_printf(sb_contents, "  %s* _c_data;\n", context_class_typedef);
-    sbuf_printf(sb_contents, "  _c_data = (%s*) obj_c_data(__self);\n",
+    wr_print(WR_CODE, "  %s* _c_data;\n", context_class_typedef);
+    wr_print(WR_CODE, "  _c_data = (%s*) obj_c_data(__self);\n",
                 context_class_typedef);
   }
   gen_func_code(stmt_list);
   pop_locals();
 
-  sbuf_printf(sb_contents, "}\n");
+  wr_print(WR_CODE, "}\n");
 }
 
 static void gen_class(Node* klass)
@@ -939,7 +939,7 @@ static void gen_class(Node* klass)
   context_class_c_name = mem_asprintf("klass%d", counter);
   context_class_dict = dict_new(sizeof(char*), sizeof(char*),
                                 dict_hash_string, dict_equal_string);
-  sbuf_printf(sb_header, "static Klass* %s;\n", context_class_c_name);
+  wr_print(WR_HEADER, "static Klass* %s;\n", context_class_c_name);
   Node* ast = node_get_child(klass, 0);
 
   // Figure out the type of the object
@@ -966,16 +966,16 @@ static void gen_class(Node* klass)
   switch(context_class_type){
     case CLASS_CDATA_OBJECT:
       context_class_typedef = mem_asprintf("KlassCData%d", counter);
-      sbuf_printf(sb_header, "typedef struct {\n");
+      wr_print(WR_HEADER, "typedef struct {\n");
       for (int i = 0; i < ast->children.size; i++){
         Node* n = node_get_child(ast, i);
         if (n->type == C_CODE){
-          sbuf_printf(sb_header, "%s", util_trim_ends(n->text));
+          wr_print(WR_HEADER, "%s", util_trim_ends(n->text));
         }
       }
-      sbuf_printf(sb_header, "} %s;\n", context_class_typedef);
+      wr_print(WR_HEADER, "} %s;\n", context_class_typedef);
       // TODO: Class parents
-      sbuf_printf(sb_init1a, "  %s = klass_new(dsym_get(\"%s\"), sizeof(%s));\n",
+      wr_print(WR_INIT1A, "  %s = klass_new(dsym_get(\"%s\"), sizeof(%s));\n",
                   context_class_c_name,
                   context_class_name,
                   context_class_typedef);
@@ -983,7 +983,7 @@ static void gen_class(Node* klass)
     case CLASS_FIELD_OBJECT:
       // _c_data is of the type Value* for field objects
       context_class_typedef = "Value";
-      sbuf_printf(sb_init1a, "  %s = klass_new(dsym_get(\"%s\"), 0);\n",
+      wr_print(WR_INIT1A, "  %s = klass_new(dsym_get(\"%s\"), 0);\n",
                   context_class_c_name, context_class_name);
 
       for (int i = 0; i < ast->children.size; i++){
@@ -1006,7 +1006,7 @@ static void gen_class(Node* klass)
           for (int i = 0; i < node_num_children(optassign_list); i++){
             Node* optassign = node_get_child(optassign_list, i);
             const char* var_name = node_get_string(optassign, "name");
-            sbuf_printf(sb_init1a, "  klass_new_field(%s, dsym_get(\"%s\"), "
+            wr_print(WR_INIT1A, "  klass_new_field(%s, dsym_get(\"%s\"), "
                                      "%s);\n", context_class_c_name, var_name,
                                      var_type);
           }
@@ -1015,7 +1015,7 @@ static void gen_class(Node* klass)
       break;
     case CLASS_VIRTUAL_OBJECT:
       context_class_typedef = NULL;
-      sbuf_printf(sb_init1a, "  %s = klass_new(dsym_get(\"%s\"), 0);\n",
+      wr_print(WR_INIT1A, "  %s = klass_new(dsym_get(\"%s\"), 0);\n",
                   context_class_c_name, context_class_name);
   }
 
@@ -1045,7 +1045,7 @@ static void gen_class(Node* klass)
             } else if (strequal(annot_text, "virtual_set")) {
               gen_method(mem_asprintf("set_%s", name),
                          rv_type, param_list, stmt_list);
-              sbuf_printf(sb_init1a,
+              wr_print(WR_INIT1A,
                           "  klass_new_virtual_writer"
                           "(%s, dsym_get(\"%s\"), %s);\n",
                           context_class_c_name,
@@ -1054,7 +1054,7 @@ static void gen_class(Node* klass)
             } else if (strequal(annot_text, "virtual_get")) {
               gen_method(mem_asprintf("get_%s", name),
                          rv_type, param_list, stmt_list);
-              sbuf_printf(sb_init1a,
+              wr_print(WR_INIT1A,
                           "  klass_new_virtual_reader"
                           "(%s, dsym_get(\"%s\"), %s);\n",
                           context_class_c_name,
@@ -1102,10 +1102,10 @@ static void gen_globals(Node* ast)
                                               util_escape(ripe_name));
 
             set_local(ripe_name, c_name, NULL);
-            sbuf_printf(sb_header, "static Value %s;\n", c_name);
+            wr_print(WR_HEADER, "static Value %s;\n", c_name);
 
             Node* right = node_get_child(optassign, 0);
-            sbuf_printf(sb_init3, "  %s = %s;\n", c_name, eval_expr(right));
+            wr_print(WR_INIT3, "  %s = %s;\n", c_name, eval_expr(right));
           }
         }
         break;
@@ -1121,7 +1121,7 @@ static void gen_globals(Node* ast)
             const char* ripe_name = mem_asprintf("%s%s", namespace_get_prefix(), var_name);
             Node* right = node_get_child(optassign, 0);
 
-            sbuf_printf(sb_init1a, "  ssym_set(\"%s\", %s);\n",
+            wr_print(WR_INIT1A, "  ssym_set(\"%s\", %s);\n",
                         ripe_name,
                         eval_expr(right));
           }
@@ -1158,7 +1158,7 @@ static void gen_toplevels(Node* ast)
         break;
       case C_CODE:
         {
-          sbuf_printf(sb_header, "%s\n", util_trim_ends(n->text));
+          wr_print(WR_HEADER, "%s\n", util_trim_ends(n->text));
         }
         break;
       case GLOBAL_VAR:

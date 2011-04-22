@@ -104,7 +104,8 @@ lang_srcs = [
               'lang/scanner.c',
               'lang/parser.c',
               'lang/stran.c',
-              'lang/util.c'
+              'lang/util.c',
+              'lang/writer.c'
             ]
 lang_objs = tools.cons_objs(lang_srcs, lang_hs + clib_hs)
 # Construct VM object
@@ -119,7 +120,6 @@ ripe_hs = [
 ripe_srcs = [
                'ripe/ast.c',
                'ripe/cli.c',
-               'ripe/dump.c',
                'ripe/error.c',
                'ripe/generator.c',
                'ripe/operator.c',

@@ -188,6 +188,9 @@ int input_read(char* buf, int max_size); // Used by flex to do reading
 #define ANNOT_LIST        1060
 #define ANNOT             1061
 
+#include "lang/parser.h"
+#include "lang/scanner.h"
+
 //////////////////////////////////////////////////////////////////////////////
 // lang/util.c
 //////////////////////////////////////////////////////////////////////////////
@@ -197,7 +200,19 @@ bool annot_check_simple(Node* annot_list, int num, const char* args[]);
 bool annot_check(Node* annot_list, int num, ...);
 bool annot_has(Node* annot_list, const char* s);
 
-#include "lang/parser.h"
-#include "lang/scanner.h"
+//////////////////////////////////////////////////////////////////////////////
+// lang/writer.c
+//////////////////////////////////////////////////////////////////////////////
+
+#define WR_INIT1A  1
+#define WR_INIT1B  2
+#define WR_INIT2   3
+#define WR_INIT3   4
+#define WR_CODE    5
+#define WR_HEADER  6
+
+void wr_init();
+void wr_print(int destination, const char* format, ...);
+void wr_dump(FILE* f, const char* module_name);
 
 #endif

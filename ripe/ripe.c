@@ -25,7 +25,6 @@ void bootstrap(const char* out_filename, int arg1, int argc, char* const* argv)
   Array asts, objs;
   array_init(&asts, Node*);
   array_init(&objs, const char*);
-  stran_init();
 
   for (int i = arg1; i < argc; i++){
     const char* arg = argv[i];
@@ -56,7 +55,6 @@ void bootstrap(const char* out_filename, int arg1, int argc, char* const* argv)
   }
 
   // Now generate ASTs into dump objects.
-  dump_init();
   for (int i = 0; i < asts.size; i++){
     Node* ast = array_get(&asts, Node*, i);
     generate(ast, "User", "input");
@@ -69,7 +67,7 @@ void bootstrap(const char* out_filename, int arg1, int argc, char* const* argv)
   if (f == NULL){
     err("cannot open '%s' for writing: %s\n", tmp_c_path, strerror(errno));
   }
-  dump_output(f, "User");
+  wr_dump(f, "User");
   fclose(f);
 
   // Compile into an object file.
@@ -108,6 +106,8 @@ int main(int argc, char* const* argv)
   cflags = "";
   lflags = "";
   mem_init();
+  stran_init();
+  wr_init();
 
   {
     int c;
