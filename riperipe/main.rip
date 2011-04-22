@@ -51,37 +51,8 @@ is_verbose?()
 get_optims()
   return g_optims
 
-#######################################################################
-# String Buffers
-
-global g_sbufs = Map.new()
-get_sbufs()
-  return g_sbufs
-
-init_sbufs()
-  g_sbufs[&header] = StringBuf.new()
-  g_sbufs[&code] = StringBuf.new()
-  g_sbufs[&init1a] = StringBuf.new()
-  g_sbufs[&init1b] = StringBuf.new()
-  g_sbufs[&init2] = StringBuf.new()
-  g_sbufs[&init3] = StringBuf.new()
-
 dump(module_name, out)
-  out.println("#include \"modules/modules.h\"")
-  out.println(g_sbufs[&header].to_string())
-  out.println(g_sbufs[&code].to_string())
-  out.println("void init1a_{}(){{}".f(module_name))
-  out.println(g_sbufs[&init1a].to_string())
-  out.println("}")
-  out.println("void init1b_{}(){{}".f(module_name))
-  out.println(g_sbufs[&init1b].to_string())
-  out.println("}")
-  out.println("void init2_{}(){{}\n".f(module_name))
-  out.println(g_sbufs[&init2].to_string())
-  out.println("}\n")
-  out.println("void init3_{}(){{}\n".f(module_name))
-  out.println(g_sbufs[&init3].to_string())
-  out.println("}\n")
+  out.println(Wr.dump(module_name))
 
 #######################################################################
 # Actions
@@ -249,8 +220,7 @@ load_defaults()
   g_cflags = g_cflags + " -I" + Path.join(root_dir, "include")
 
 main()
-  init_sbufs()
-  Stran.init()
+  Lang.init()
 
   options = [
     [&BOOTSTRAP,    "-s", "--bootstrap", 0  , "bootstrap build"],

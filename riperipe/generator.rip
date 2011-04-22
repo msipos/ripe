@@ -28,8 +28,8 @@ namespace Ctx
     if name in ctx_class_dict
       return ctx_class_dict[name]
     field_int_var = "_field_int{}_{2}".f(counter(), Util.to_c(name))
-    header.print("static int {};\n".f(field_int_var))
-    init2.print("  {} = klass_get_field_int({2}, {3});\n".f(
+    Wr.header("static int {};\n".f(field_int_var))
+    Wr.init2("  {} = klass_get_field_int({2}, {3});\n".f(
                         field_int_var,
                         ctx_class_c_name,
                         Dsym.get(name)))
@@ -49,8 +49,8 @@ namespace Ssym
     if name in ssym_table
       return ssym_table[name]
     c_name = "_ssym{}_{2}".f(counter(), Util.to_c(name))
-    header.print("static Value {};\n".f(c_name))
-    init2.print("  {} = ssym_get(\"{2}\");\n".f(c_name, name))
+    Wr.header("static Value {};\n".f(c_name))
+    Wr.init2("  {} = ssym_get(\"{2}\");\n".f(c_name, name))
     ssym_table[name] = c_name
     return c_name
 
@@ -60,8 +60,8 @@ namespace Dsym
     if name in dsym_table
       return dsym_table[name]
     c_name = "_dsym{}_{2}".f(counter(), Util.to_c(name))
-    header.print("static Value {};\n".f(c_name))
-    init1a.print("  {} = dsym_get(\"{2}\");\n".f(c_name, name))
+    Wr.header("static Value {};\n".f(c_name))
+    Wr.init1a("  {} = dsym_get(\"{2}\");\n".f(c_name, name))
     dsym_table[name] = c_name
     return c_name
 
@@ -71,8 +71,8 @@ namespace Type
     if name in type_table
       return type_table[name]
     c_name = "_klass{}_{2}".f(counter(), Util.to_c(name))
-    header.print("static Klass* {};\n".f(c_name))
-    init2.print("  {} = klass_get({});\n".f(c_name, Dsym.get(name)))
+    Wr.header("static Klass* {};\n".f(c_name))
+    Wr.init2("  {} = klass_get({});\n".f(c_name, Dsym.get(name)))
     type_table[name] = c_name
     return c_name
 
@@ -85,8 +85,8 @@ namespace FuncTable
         raise "Assertion error in FuncTable.get()"
       return c_name
     c_name = "_func_pointer{}_{}_{}".f(counter(), num_params, Util.to_c(name))
-    header.print("CFunc{} {};\n".f(num_params, c_name))
-    init2.print("  {} = (CFunc{}) func_get_ptr(ssym_get(\"{}\"), {});\n".f(
+    Wr.header("CFunc{} {};\n".f(num_params, c_name))
+    Wr.init2("  {} = (CFunc{}) func_get_ptr(ssym_get(\"{}\"), {});\n".f(
                 c_name, num_params, name, num_params))
     func_table[name] = [num_params, c_name]
     return c_name
@@ -119,8 +119,8 @@ namespace Strings
       return strings_map[text]
     str_name = "_str{}".f(counter())
     strings_map[text] = str_name
-    header.println("static Value {};".f(str_name))
-    init2.println("  {} = string_const_to_val(\"{}\");".f(str_name, text))
+    Wr.header("static Value {};\n".f(str_name))
+    Wr.init2("  {} = string_const_to_val(\"{}\");\n".f(str_name, text))
     return str_name
 
 ##############################################################################
@@ -166,7 +166,6 @@ locals_query(ripe_name)
 # Generator
 ##############################################################################
 
-global header, code, init1a, init1b, init2, init3
 global stack
 
 is_vararg?(param_list)
@@ -186,9 +185,9 @@ gen_params2(param_list, first_comma?)
     c_name = "__" + Util.to_c(name)
     locals_add(c_name, name, type)
     if index == 1 and not first_comma?
-      code.print("Value " + c_name)
+      Wr.code("Value " + c_name)
     else
-      code.print(", Value " + c_name)
+      Wr.code(", Value " + c_name)
     index = index + 1
 
 gen_params(param_list)
@@ -204,17 +203,17 @@ gen_stmt_assign2(lvalue, rvalue, warn_if_shadow?)
         c_name = "__{}".f(Util.to_c(ripe_name))
         locals_add(c_name, ripe_name, "?")
 
-        code.print("  Value {} = {};\n".f(c_name,
+        Wr.code("  Value {} = {};\n".f(c_name,
                                           eval_expr_untyped(rvalue)))
       else
         if warn_if_shadow?
           Err.println("warning: possible shadowing of variable {1}".f(
                       lvalue.text))
         if var.type != "?"
-          code.print("  {} = {};\n".f(var.c_name,
+          Wr.code("  {} = {};\n".f(var.c_name,
                                       eval_expr_typesafe(rvalue, var.type)))
         else
-          code.print("  {} = {};\n".f(var.c_name,
+          Wr.code("  {} = {};\n".f(var.c_name,
                                       eval_expr_untyped(rvalue)))
     case Node.EXPR_TYPED_ID
       ripe_name = lvalue.get_string("name")
@@ -223,20 +222,20 @@ gen_stmt_assign2(lvalue, rvalue, warn_if_shadow?)
         raise "redefining a variable '{}'".f(ripe_name)
       c_name = "__{}".f(Util.to_c(ripe_name))
       type = eval_type(lvalue.get_node("type"))
-      code.print("  Value {} = {};\n".f(c_name,
+      Wr.code("  Value {} = {};\n".f(c_name,
                                         eval_expr_typesafe(rvalue, type)))
       locals_add(c_name, ripe_name, type)
     case Node.EXPR_INDEX
-      code.print("  {};\n".f(eval_index_set(lvalue.get_child(1),
+      Wr.code("  {};\n".f(eval_index_set(lvalue.get_child(1),
                                             lvalue.get_child(2),
                                             rvalue)))
     case Node.EXPR_FIELD
-      code.print("  field_set({}, {}, {});\n".f(
+      Wr.code("  field_set({}, {}, {});\n".f(
                                         eval_expr_untyped(lvalue.get_child(1)),
                                         Dsym.get(lvalue.get_string("name")),
                                         eval_expr_untyped(rvalue)) )
     case Node.EXPR_AT_VAR
-      code.print("  {} = {};\n".f(eval_expr_untyped(lvalue),
+      Wr.code("  {} = {};\n".f(eval_expr_untyped(lvalue),
                                   eval_expr_untyped(rvalue)) )
 
 gen_stmt_assign(left, right, warn_if_shadow?)
@@ -268,15 +267,15 @@ gen_stmt_for(lvalue_list, expr, block)
       text_delta = "_delta{}".f(counter())
       text_finish = "_finish{}".f(counter())
 
-      code.print("  {\n")
-      code.print("  Value {} = {};\n".f(text_range, e))
-      code.print("  int64 {} = range_start({});\n".f(text_i, text_range))
-      code.print("  const int64 {} = range_delta({});\n".f(text_delta, text_range))
-      code.print("  const int64 {} = range_finish({}) + {};\n".f(text_finish,
+      Wr.code("  {\n")
+      Wr.code("  Value {} = {};\n".f(text_range, e))
+      Wr.code("  int64 {} = range_start({});\n".f(text_i, text_range))
+      Wr.code("  const int64 {} = range_delta({});\n".f(text_delta, text_range))
+      Wr.code("  const int64 {} = range_finish({}) + {};\n".f(text_finish,
                                                                  text_range,
                                                                  text_delta))
-      code.print("  for(;;){\n")
-      code.print("  if ({} == {}) break;\n".f(text_i, text_finish))
+      Wr.code("  for(;;){\n")
+      Wr.code("  if ({} == {}) break;\n".f(text_i, text_finish))
       locals_push()
       stack.push(tuple(break_label, continue_label))
 
@@ -290,10 +289,10 @@ gen_stmt_for(lvalue_list, expr, block)
 
       stack.pop()
       locals_pop()
-      code.print("{}:;\n".f(continue_label))
-      code.print("  {} += {};\n".f(text_i, text_delta))
-      code.print("  }}\n")
-      code.print("{}:;\n".f(break_label))
+      Wr.code("{}:;\n".f(continue_label))
+      Wr.code("  {} += {};\n".f(text_i, text_delta))
+      Wr.code("  }}\n")
+      Wr.code("{}:;\n".f(break_label))
 
       return
   # Otherwise, write the unoptimized loop
@@ -307,19 +306,19 @@ gen_stmt_for(lvalue_list, expr, block)
   iter_call = Node.new_field_call(id_iterator, "iter")
 
   # Write out the loop
-  code.print("  for(;;){\n")
-  code.print("{}:;\n".f(continue_label))
+  Wr.code("  for(;;){\n")
+  Wr.code("{}:;\n".f(continue_label))
   id_temp = Node.new_id("_iterator_temp{}".f(counter()))
   locals_push()
   gen_stmt_assign2(id_temp, iter_call, false)
-  code.print("  if ({} == VALUE_EOF) break;\n".f(eval_expr_untyped(id_temp)))
+  Wr.code("  if ({} == VALUE_EOF) break;\n".f(eval_expr_untyped(id_temp)))
   gen_stmt_assign(lvalue_list, id_temp, true)
   stack.push(tuple(break_label, continue_label))
   gen_block(block)
   stack.pop()
   locals_pop()
-  code.print("  }\n")
-  code.print("{}:;\n".f(break_label))
+  Wr.code("  }\n")
+  Wr.code("{}:;\n".f(break_label))
 
 gen_stmt(stmt)
   switch stmt.type
@@ -328,44 +327,44 @@ gen_stmt(stmt)
       if (expr.type == Node.EXPR_ID_CALL
        or expr.type == Node.EXPR_FIELD_CALL
        or expr.type == Node.C_CODE)
-        code.print("  {};\n".f(eval_expr_untyped(expr)))
+        Wr.code("  {};\n".f(eval_expr_untyped(expr)))
       else
         raise("invalid expression in an expression statement")
     case Node.STMT_RETURN
-      code.print("  return {};\n".f(eval_expr_untyped(stmt.get_child(1))))
+      Wr.code("  return {};\n".f(eval_expr_untyped(stmt.get_child(1))))
     case Node.STMT_LOOP
       break_label = "_brk_lbl{}".f(counter())
       continue_label = "_cnt_lbl{}".f(counter())
-      code.print("  for(;;){{}\n  {}:;\n".f(continue_label))
+      Wr.code("  for(;;){{}\n  {}:;\n".f(continue_label))
       stack.push(tuple(break_label, continue_label))
       gen_block(stmt.get_child(1))
       stack.pop()
-      code.print("  }\n")
-      code.print("  {}:;\n".f(break_label))
+      Wr.code("  }\n")
+      Wr.code("  {}:;\n".f(break_label))
     case Node.STMT_IF
-      code.print("  if ({} == VALUE_TRUE) {{}\n".f(
+      Wr.code("  if ({} == VALUE_TRUE) {{}\n".f(
                                       eval_expr_untyped(stmt.get_child(1))))
       gen_block(stmt.get_child(2))
-      code.print("  }\n")
+      Wr.code("  }\n")
     case Node.STMT_ELIF
-      code.print("  else if ({} == VALUE_TRUE) {{}\n".f(
+      Wr.code("  else if ({} == VALUE_TRUE) {{}\n".f(
                                       eval_expr_untyped(stmt.get_child(1))))
       gen_block(stmt.get_child(2))
-      code.print("  }\n")
+      Wr.code("  }\n")
     case Node.STMT_ELSE
-      code.print("  else {\n")
+      Wr.code("  else {\n")
       gen_block(stmt.get_child(1))
-      code.print("  }\n")
+      Wr.code("  }\n")
     case Node.STMT_BREAK
       if stack.size == 0
         raise "break outside of loop"
       stc = stack[-1]
-      code.print("  goto {};\n".f(stc[1]))
+      Wr.code("  goto {};\n".f(stc[1]))
     case Node.STMT_CONTINUE
       if stack.size == 0
         raise "continue outside of a loop"
       stc = stack[-1]
-      code.print("  goto {};\n".f(stc[2]))
+      Wr.code("  goto {};\n".f(stc[2]))
     case Node.STMT_ASSIGN
       gen_stmt_assign(stmt.get_child(1),
                       stmt.get_child(2), false)
@@ -374,16 +373,16 @@ gen_stmt(stmt)
                    stmt.get_child(2),
                    stmt.get_child(3))
     case Node.STMT_PASS
-      code.print("  ;")
+      Wr.code("  ;")
     case Node.STMT_RAISE
-      code.print("  exc_raise(\"%s\", val_to_string({}));".f(
+      Wr.code("  exc_raise(\"%s\", val_to_string({}));".f(
                    eval_expr_untyped(stmt.get_child(1))))
     case Node.STMT_SWITCH
       expr, case_list = stmt.children
 
       c_expr = "_switch_expr{}".f(counter())
-      code.print("  {\n")
-      code.print("  Value {} = {};\n".f(c_expr, eval_expr_untyped(expr)))
+      Wr.code("  {\n")
+      Wr.code("  Value {} = {};\n".f(c_expr, eval_expr_untyped(expr)))
       index = 1
       for node_case in case_list.children
         expr, block = node_case.children
@@ -391,13 +390,13 @@ gen_stmt(stmt)
         word = "else if"
         if index == 1
           word = "if"
-        code.print("  {} (op_equal({}, {}) == VALUE_TRUE) {{}\n".f(
+        Wr.code("  {} (op_equal({}, {}) == VALUE_TRUE) {{}\n".f(
                       word,
                       c_expr,
                       eval_expr_untyped(expr)))
         gen_block(block)
-        code.print("  }\n")
-      code.print("  }\n")
+        Wr.code("  }\n")
+      Wr.code("  }\n")
 
 gen_block(stmt_list)
   locals_push()
@@ -408,12 +407,12 @@ gen_block(stmt_list)
 gen_function_common2(name, param_num, param_vararg?)
   c_name = "_func{}_{}".f(counter(), Util.to_c(name))
   v_name = "__" + c_name
-  init1a.print("  Value {} = func{}_to_val({});\n".f(v_name,
+  Wr.init1a("  Value {} = func{}_to_val({});\n".f(v_name,
                                                     param_num,
                                                     c_name))
-  init1a.print("  ssym_set(\"{}\", {});\n".f(name, v_name))
+  Wr.init1a("  ssym_set(\"{}\", {});\n".f(name, v_name))
   if param_vararg?
-    init1a.print("  func_set_vararg({});\n".f(v_name))
+    Wr.init1a("  func_set_vararg({});\n".f(v_name))
 
   return tuple(c_name, v_name)
 
@@ -430,13 +429,13 @@ gen_function(ast)
 
   # Generate code
   locals_push()
-  code.print("static Value {}(".f(c_name))
+  Wr.code("static Value {}(".f(c_name))
   gen_params(param_list)
-  code.print("){\n")
+  Wr.code("){\n")
   gen_block(stmt_list)
   if stmt_list.get_child(-1).type != Node.STMT_RETURN
-    code.print("  return VALUE_NIL;\n")
-  code.print("}\n")
+    Wr.code("  return VALUE_NIL;\n")
+  Wr.code("}\n")
   locals_pop()
 
 gen_constructor(Node ast)
@@ -447,19 +446,19 @@ gen_constructor(Node ast)
 
   # Generate constructor code
   locals_push()
-  code.print("static Value {}(".f(c_name))
+  Wr.code("static Value {}(".f(c_name))
   gen_params(param_list)
-  code.print("){\n")
+  Wr.code("){\n")
   locals_add("__self", "self", ctx_class_name)
   if ctx_class_type == &CDATA or ctx_class_type == &FIELD
-    code.print("  {}* _c_data;\n".f(ctx_class_typedef))
-    code.print("  Value __self = obj_new({}, (void**) &_c_data);\n".f(
+    Wr.code("  {}* _c_data;\n".f(ctx_class_typedef))
+    Wr.code("  Value __self = obj_new({}, (void**) &_c_data);\n".f(
                ctx_class_c_name))
   else
-    code.print("  Value __self = obj_new2({});\n".f(ctx_class_c_name))
+    Wr.code("  Value __self = obj_new2({});\n".f(ctx_class_c_name))
   gen_block(stmt_list)
-  code.print("  return __self;\n")
-  code.print("}\n")
+  Wr.code("  return __self;\n")
+  Wr.code("}\n")
   locals_pop()
 
 # Returns v_name of the generated method.
@@ -471,29 +470,29 @@ gen_method(String name, Node ast)
                                         param_list.num_children + 1,
                                         is_vararg?(param_list))
   dsym_name = Dsym.get(name)
-  init1a.print("  klass_new_method({}, {}, {});\n".f(
+  Wr.init1a("  klass_new_method({}, {}, {});\n".f(
                  ctx_class_c_name,
                  dsym_name,
                  v_name))
 
   # Generate method declaration:
   locals_push()
-  code.print("static Value {}(".f(c_name))
+  Wr.code("static Value {}(".f(c_name))
   # One special parameter -- self
   locals_add("__self", "self", ctx_class_name)
-  code.print("Value __self")
+  Wr.code("Value __self")
   # Remaining parameters
   gen_params2(param_list, true)
-  code.print("){\n")
+  Wr.code("){\n")
   # Populate _c_data
   if ctx_class_type == &CDATA or ctx_class_type == &FIELD
-    code.print("  {}* _c_data = ({}*) obj_c_data(__self);\n".f(
+    Wr.code("  {}* _c_data = ({}*) obj_c_data(__self);\n".f(
                ctx_class_typedef,
                ctx_class_typedef))
   gen_block(stmt_list)
   if stmt_list.get_child(-1).type != Node.STMT_RETURN
-    code.print("  return VALUE_NIL;\n")
-  code.print("}\n")
+    Wr.code("  return VALUE_NIL;\n")
+  Wr.code("}\n")
   locals_pop()
   return v_name
 
@@ -518,7 +517,7 @@ gen_class(Node node)
   ctx_class_name = Namespace.prefix() + node.get_string("name")
   ctx_class_c_name = "_klass{}_".f(counter())+Util.to_c(ctx_class_name)
   Ctx.class_dict_init()
-  header.print("static Klass* {};\n".f(ctx_class_c_name))
+  Wr.header("static Klass* {};\n".f(ctx_class_c_name))
   ast = node.get_child(1)
   ctx_class_type = get_class_type(ast)
 
@@ -529,20 +528,20 @@ gen_class(Node node)
   # Now, write out class initialization.
   switch ctx_class_type
     case &VIRTUAL
-      init1a.print("  {} = klass_new({}, 0);\n".f(
+      Wr.init1a("  {} = klass_new({}, 0);\n".f(
                   ctx_class_c_name, dsym_class))
     case &CDATA
       ctx_class_typedef = "_KlassCData{}_".f(counter()) + Util.to_c(ctx_class_name)
-      header.print("typedef struct {\n")
+      Wr.header("typedef struct {\n")
       for n in ast.children
         if n.type == Node.C_CODE
-          header.print(n.text[2:(-2)])
-      header.print("} {};\n".f(ctx_class_typedef))
-      init1a.print("  {} = klass_new({}, sizeof({}));\n".f(
+          Wr.header(n.text[2:(-2)])
+      Wr.header("} {};\n".f(ctx_class_typedef))
+      Wr.init1a("  {} = klass_new({}, sizeof({}));\n".f(
                   ctx_class_c_name, dsym_class, ctx_class_typedef))
     case &FIELD
       ctx_class_typedef = "Value"
-      init1a.print("  {} = klass_new({}, 0);\n".f(
+      Wr.init1a("  {} = klass_new({}, 0);\n".f(
                   ctx_class_c_name, dsym_class))
 
       # Now iterate over the class AST to find all fields, and initialize them.
@@ -561,7 +560,7 @@ gen_class(Node node)
           optassign_list = n.get_child(1)
           for optassign in optassign_list.children
             dsym_var = Dsym.get(optassign.get_string("name"))
-            init1a.print("  klass_new_field({}, {}, {});\n".f(
+            Wr.init1a("  klass_new_field({}, {}, {});\n".f(
                              ctx_class_c_name,
                              dsym_var,
                              field_type))
@@ -581,12 +580,12 @@ gen_class(Node node)
         elif Annot.has?(annot_list, "virtual_set")
           val = gen_method("set_" + name, n)
           dsym = Dsym.get(name)
-          init1a.print("  klass_new_virtual_writer({}, {}, {});\n".f(
+          Wr.init1a("  klass_new_virtual_writer({}, {}, {});\n".f(
                          ctx_class_c_name, dsym, val))
         elif Annot.has?(annot_list, "virtual_get")
           val = gen_method("get_" + name, n)
           dsym = Dsym.get(name)
-          init1a.print("  klass_new_virtual_reader({}, {}, {});\n".f(
+          Wr.init1a("  klass_new_virtual_reader({}, {}, {});\n".f(
                          ctx_class_c_name, dsym, val))
         else
           raise "invalid annotation"
@@ -606,15 +605,15 @@ gen(ast)
         gen(node.get_child(1))
         Namespace.pop()
       case Node.C_CODE
-        header.print(node.text[2:(-2)])
-        header.print("\n")
+        Wr.header(node.text[2:(-2)])
+        Wr.header("\n")
       case Node.FUNCTION
         gen_function(node)
       case Node.CONST_VAR
         for optassign in node.get_child(1).children
           name = Namespace.prefix() + optassign.get_string("name")
           expr = optassign.get_child(1)
-          init1a.print("  ssym_set(\"{}\", {});\n".f(name, eval_expr_untyped(expr)))
+          Wr.init1a("  ssym_set(\"{}\", {});\n".f(name, eval_expr_untyped(expr)))
       case Node.CLASS
         gen_class(node)
 
@@ -627,18 +626,11 @@ gen_globals(ast)
         type = eval_type(optassign.get_node_optional("type"))
         c_name = "_glb{}_{}".f(counter(), Util.to_c(name))
         locals_add(c_name, name, type)
-        header.print("Value {};\n".f(c_name))
-        init3.print("  {} = {};\n".f(c_name,
+        Wr.header("Value {};\n".f(c_name))
+        Wr.init3("  {} = {};\n".f(c_name,
                                      eval_expr_untyped(optassign.get_child(1))))
 
 generate(ast)
-  m = get_sbufs()
-  header = m[&header]
-  code = m[&code]
-  init1a = m[&init1a]
-  init1b = m[&init1b]
-  init2 = m[&init2]
-  init3 = m[&init3]
   stack = []
 
   # First layer of locals is for global variables

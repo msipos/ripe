@@ -213,6 +213,6 @@ bool annot_has(Node* annot_list, const char* s);
 
 void wr_init();
 void wr_print(int destination, const char* format, ...);
-void wr_dump(FILE* f, const char* module_name);
+const char* wr_dump(const char* module_name);
 
 #endif

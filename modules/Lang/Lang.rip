@@ -230,10 +230,12 @@ namespace Annot
     ptr = annot_list.ptr
     return $ pack_bool(annot_has(val_to_ptr(__ptr), val_to_string(__text))) $
 
-namespace Stran
+namespace Lang
   init()
-    $ stran_init(); $
+    $ stran_init();
+      wr_init(); $
 
+namespace Stran
   absorb_ast(Node ast, String filename)
     ptr = ast.ptr
     $ if (stran_absorb_ast(val_to_ptr_unsafe(__ptr))) { $
@@ -256,3 +258,25 @@ namespace Stran
   get_error()
     $ assert(stran_error->text != NULL); $
     return $ string_to_val(stran_error->text) $
+
+namespace Wr
+  init1a(txt)
+    $ wr_print(WR_INIT1A, "%s", val_to_string(__txt)); $
+
+  init1b(txt)
+    $ wr_print(WR_INIT1B, "%s", val_to_string(__txt)); $
+
+  init2(txt)
+    $ wr_print(WR_INIT2, "%s", val_to_string(__txt)); $
+
+  init3(txt)
+    $ wr_print(WR_INIT3, "%s", val_to_string(__txt)); $
+
+  code(txt)
+    $ wr_print(WR_CODE, "%s", val_to_string(__txt)); $
+
+  header(txt)
+    $ wr_print(WR_HEADER, "%s", val_to_string(__txt)); $
+
+  dump(module_name)
+    return $ string_to_val(wr_dump(val_to_string(__module_name))) $

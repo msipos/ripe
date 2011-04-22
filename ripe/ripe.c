@@ -67,7 +67,7 @@ void bootstrap(const char* out_filename, int arg1, int argc, char* const* argv)
   if (f == NULL){
     err("cannot open '%s' for writing: %s\n", tmp_c_path, strerror(errno));
   }
-  wr_dump(f, "User");
+  fprintf(f, "%s", wr_dump("User"));
   fclose(f);
 
   // Compile into an object file.
