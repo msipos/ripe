@@ -140,6 +140,7 @@ int input_read(char* buf, int max_size); // Used by flex to do reading
                                 // Going to be deprecated
 #define GLOBAL_VAR        1007
 #define CONST_VAR         1009
+#define TOP_VAR           1010
 
 // Types of STMTs
 #define STMT_EXPR         1100
@@ -163,33 +164,35 @@ int input_read(char* buf, int max_size); // Used by flex to do reading
 #define STMT_RAISE        1123
 
 // Types of EXPRs
-#define EXPR_ID_CALL      1030
-#define EXPR_FIELD_CALL   1031
-#define EXPR_INDEX        1032
-#define EXPR_ARRAY        1033
-#define EXPR_MAP          1034
-#define EXPR_FIELD        1035
-#define EXPR_AT_VAR       1036
-#define EXPR_RANGE_BOUNDED        1040
-#define EXPR_RANGE_BOUNDED_LEFT   1041
-#define EXPR_RANGE_BOUNDED_RIGHT  1042
-#define EXPR_RANGE_UNBOUNDED      1043
-#define EXPR_IS_TYPE      1044
-#define EXPR_TYPED_ID     1045
+#define EXPR_ID_CALL      1230
+#define EXPR_FIELD_CALL   1231
+#define EXPR_INDEX        1232
+#define EXPR_ARRAY        1233
+#define EXPR_MAP          1234
+#define EXPR_FIELD        1235
+#define EXPR_AT_VAR       1236
+#define EXPR_RANGE_BOUNDED        1240
+#define EXPR_RANGE_BOUNDED_LEFT   1241
+#define EXPR_RANGE_BOUNDED_RIGHT  1242
+#define EXPR_RANGE_UNBOUNDED      1243
+#define EXPR_IS_TYPE      1244
+#define EXPR_TYPED_ID     1245
 
 // Helper nonterminal nodes
-#define ID_LIST           1050
-#define EXPR_LIST         1051
-#define PARAM_LIST        1052
-#define OPTASSIGN_LIST    1053
-#define OPTASSIGN         1054
-#define TYPE              1055
-#define CASE_LIST         1056
-#define CASE              1057
-#define MAPPING_LIST      1058
-#define MAPPING           1059
-#define ANNOT_LIST        1060
-#define ANNOT             1061
+#define ID_LIST           1350
+#define EXPR_LIST         1351
+#define PARAM_LIST        1352
+#define OPTASSIGN_LIST    1353
+#define OPTASSIGN         1354
+#define TYPE              1355
+#define CASE_LIST         1356
+#define CASE              1357
+#define MAPPING_LIST      1358
+#define MAPPING           1359
+#define ANNOT_LIST        1360
+#define ANNOT             1361
+#define ASSIGN_LIST       1362
+#define ASSIGN            1363
 
 #include "lang/parser.h"
 #include "lang/scanner.h"

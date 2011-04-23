@@ -87,6 +87,7 @@
 %token   K_VIRTUAL_GET "virtual_get"
 %token   K_VIRTUAL_SET "virtual_set"
 %token   K_GLOBAL      "global"
+%token   K_VAR         "var"
 %token   K_CONST       "const"
 %token   K_ARROW       "=>"
 // Operator-like
@@ -112,12 +113,12 @@
 program:   START top_decls END { rc_result = $2; };
 
 // "top" declarations can appear at the top level.
-top_decl:  "global" optassign_plus
-                               { $$ = node_new(GLOBAL_VAR);
-                                 node_add_child($$, $2); };
 top_decl:  C_CODE              { $$ = $1; };
-top_decl:  topmid_decl         { $$ = $1; };
-top_decl:  topmidbot_decl      { $$ = $1; };
+top_decl:  const               { $$ = $1; };
+top_decl:  func                { $$ = $1; };
+top_decl:  class               { $$ = $1; };
+top_decl:  namespace           { $$ = $1; };
+top_decl:  global              { $$ = $1; };
 
 top_decls: top_decls SEP top_decl
                                { $$ = $1;
@@ -126,8 +127,10 @@ top_decls: top_decl            { $$ = node_new(TOPLEVEL_LIST);
                                  node_add_child($$, $1); };
 
 // "middle" declarations can appear within namespaces.
-mid_decl:  topmid_decl         { $$ = $1; };
-mid_decl:  topmidbot_decl      { $$ = $1; };
+mid_decl:  const               { $$ = $1; };
+mid_decl:  func                { $$ = $1; };
+mid_decl:  class               { $$ = $1; };
+mid_decl:  namespace           { $$ = $1; };
 
 mid_decls: mid_decls SEP mid_decl
                                { $$ = $1;
@@ -136,17 +139,9 @@ mid_decls: mid_decl            { $$ = node_new(TOPLEVEL_LIST);
                                  node_add_child($$, $1); };
 
 // "bottom" declarations can appear within classes
-bot_decl: ID optassign_plus   { $$ = node_new(TL_VAR);
-                                 node_set_string($$, "annotation", $1->text);
-                                 node_add_child($$, $2); };
-bot_decl: ID '(' param_star ')' annotation block
-                               { $$ = node_new(FUNCTION);
-                                 node_set_node($$, "annotation", $5);
-                                 node_set_string($$, "name", $1->text);
-                                 node_add_child($$, $3);
-                                 node_add_child($$, $6); };
-bot_decl:  topmidbot_decl      { $$ = $1; };
+bot_decl:  tl_var              { $$ = $1; };
 bot_decl:  C_CODE              { $$ = $1; };
+bot_decl:  func                { $$ = $1; };
 
 bot_decls: bot_decls SEP bot_decl
                                { $$ = $1;
@@ -155,22 +150,35 @@ bot_decls: bot_decl            { $$ = node_new(TOPLEVEL_LIST);
                                  node_add_child($$, $1); };
 
 // mixed declarations
-topmid_decl: "namespace" ID START mid_decls END
+
+tl_var: ID optassign_plus      { $$ = node_new(TL_VAR);
+                                 node_set_string($$, "annotation", $1->text);
+                                 node_add_child($$, $2); };
+
+global: "global" optassign_plus
+                               { $$ = node_new(GLOBAL_VAR);
+                                 node_add_child($$, $2); };
+
+const: "const" optassign_plus  { $$ = node_new(CONST_VAR);
+                                 node_add_child($$, $2); };
+
+namespace: "namespace" ID START mid_decls END
                                { $$ = node_new(NAMESPACE);
                                  node_set_string($$, "name", $2->text);
                                  node_add_child($$, $4); };
-topmid_decl: "class" ID START bot_decls END
+
+class: "class" ID START bot_decls END
                                { $$ = node_new(CLASS);
                                  node_set_string($$, "name", $2->text);
                                  node_add_child($$, $4); };
-topmid_decl: "const" optassign_plus
-                               { $$ = node_new(CONST_VAR);
-                                 node_add_child($$, $2); };
-topmidbot_decl: ID '(' param_star ')' block
+
+func: ID '(' param_star ')' opt_annotation block
                                { $$ = node_new(FUNCTION);
+                                 if ($5 != NULL)
+                                   node_set_node($$, "annotation", $5);
                                  node_set_string($$, "name", $1->text);
                                  node_add_child($$, $3);
-                                 node_add_child($$, $5); };
+                                 node_add_child($$, $6); };
 
 block:     START stmt_list END { $$ = $2; };
 
@@ -338,7 +346,8 @@ string:    string STRING       { $$ = node_new(STRING);
                                  $$->text = mem_strdup(sb_temp.str);
                                  sbuf_deinit(&sb_temp); };
 
-annotation:   '|' annot_plus   { $$ = $2; };
+opt_annotation: '|' annot_plus { $$ = $2; };
+opt_annotation: /* empty */    { $$ = NULL; };
 annot_plus:   annot_plus ',' annot
                                { $$ = $1;
                                  node_add_child($$, $3); };
@@ -386,6 +395,16 @@ lvalue_plus: lvalue_plus ',' lvalue
                                  node_add_child($$, $3); };
 lvalue_plus: lvalue            { $$ = node_new(EXPR_LIST);
                                  node_add_child($$, $1); };
+
+assign_plus: assign_plus ',' assign
+                               { $$ = $1;
+                                 node_add_child($$, $3); };
+assign_plus: assign            { $$ = node_new(ASSIGN_LIST);
+                                 node_add_child($$, $1); };
+
+assign: ID '=' r_expr          { $$ = node_new_inherit(ASSIGN, $1);
+                                 node_set_string($$, "name", $1->text);
+                                 node_set_node($$, "value", $3); };
 
 optassign_plus: optassign_plus ',' optassign
                                { $$ = $1;
