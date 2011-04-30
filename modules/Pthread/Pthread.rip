@@ -17,9 +17,7 @@ $
 
 namespace Pthread
   class Mutex
-    $
-      pthread_mutex_t mutex;
-    $
+    $ pthread_mutex_t mutex; $
 
     new() | constructor
       $
@@ -43,9 +41,7 @@ namespace Pthread
       $
 
     trylock()
-      $
-        return pack_bool(pthread_mutex_trylock(&(@mutex)) == 0);
-      $
+      return $ pack_bool(pthread_mutex_trylock(&(@mutex)) == 0); $
 
   class Thread
     $

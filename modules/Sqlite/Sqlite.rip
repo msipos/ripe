@@ -1,12 +1,12 @@
 $ #include<sqlite3.h> $
 
 namespace Sqlite
-  const DONE = $ int64_to_val(SQLITE_DONE) $
-  const ROW = $ int64_to_val(SQLITE_ROW) $
+  var DONE = $ int64_to_val(SQLITE_DONE) $
+  var ROW = $ int64_to_val(SQLITE_ROW) $
 
-  const INTEGER = $ int64_to_val(SQLITE_INTEGER) $
-  const FLOAT = $ int64_to_val(SQLITE_FLOAT) $
-  const TEXT = $ int64_to_val(SQLITE_TEXT) $
+  var INTEGER = $ int64_to_val(SQLITE_INTEGER) $
+  var FLOAT = $ int64_to_val(SQLITE_FLOAT) $
+  var TEXT = $ int64_to_val(SQLITE_TEXT) $
 
   class Db
     $ sqlite3* db; $
@@ -55,7 +55,7 @@ namespace Sqlite
     step()
       $ int rv = sqlite3_step(@stmt);
         if (rv == SQLITE_ROW or rv == SQLITE_DONE or rv == SQLITE_BUSY){
-          return int64_to_val(rv);
+          RRETURN(int64_to_val(rv));
         } else {
           exc_raise("error %d while stepping statement: %s", rv,
                     sqlite3_errmsg(sqlite3_db_handle(@stmt)));
@@ -79,17 +79,11 @@ namespace Sqlite
       $ int64 col = val_to_int64(__i) - 1; $
       switch t
         case Sqlite.INTEGER
-          $ return int64_to_val(
-                     sqlite3_column_int64(@stmt, col)
-                               ); $
+          return $ int64_to_val(sqlite3_column_int64(@stmt, col)); $
         case Sqlite.FLOAT
-          $ return double_to_val(
-                     sqlite3_column_double(@stmt, col)
-                               ); $
+          return $ double_to_val(sqlite3_column_double(@stmt, col)); $
         case Sqlite.TEXT
-          $ return string_to_val(
-                     (const char*) sqlite3_column_text(@stmt, col)
-                               ); $
+          return $ string_to_val((const char*) sqlite3_column_text(@stmt, col)); $
 
     finalize()
       $ sqlite3_finalize(@stmt); $

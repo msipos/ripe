@@ -14,9 +14,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "lang/lang.h"
-#include <setjmp.h>
-
-jmp_buf jb;
 
 /////////////////////////////////////////////////////////////////////////////
 // Input
@@ -68,8 +65,7 @@ void buf_cat(const char* text)
 // This gets called from bison.
 void rc_error(const char*s)
 {
-  build_tree_error = mem_asprintf("%s:%d-%d: %s", input->filename, cur_line1, cur_line2, s);
-  longjmp(jb, 2);
+  fatal_throw("%s:%d-%d: %s", input->filename, cur_line1, cur_line2, s);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -96,9 +92,8 @@ static Node* lex_read()
 {
   int tok = yylex();
   if (tok == UNKNOWN){
-    build_tree_error = mem_asprintf("%s:%d: invalid characters '%s'",
-                                    input->filename, input_lineno, yytext);
-    longjmp(jb, 1);
+    fatal_throw("%s:%d: invalid characters '%s'", input->filename, input_lineno,
+                yytext);
   }
   const char* token_text = yytext;
   if (tok == STRING) token_text = buf_sb.str;
@@ -153,10 +148,8 @@ static int lex_read_line()
           n = lex_read();
           if (n->type == '\n') goto loop;
           if (n->type == WHITESPACE) continue;
-          build_tree_error = mem_asprintf(
-                               "%s:%d: invalid token following ellipsis",
-                               input->filename, input_lineno);
-          longjmp(jb, 1);
+          fatal_throw("%s:%d: invalid token following ellipsis", 
+                      input->filename, input_lineno);
         }
         break;
     }
@@ -196,6 +189,9 @@ int rc_lex()
       int indentation;
       if (first->type == WHITESPACE){
         indentation = strlen(first->text);
+        if (strchr(first->text, '\t') != NULL){
+          fatal_warn("line %d: tab character detected", first->line);
+        }
       } else {
         indentation = 0;
       }
@@ -219,10 +215,7 @@ int rc_lex()
             break;
           }
           if (pop_indentation < indentation) {
-            build_tree_error = mem_asprintf(
-                                "line %d: invalid indentation level",
-                                first->line);
-            longjmp(jb, 1);
+            fatal_throw("line %d: invalid indentation level", first->line);
           }
         }
       }
@@ -275,13 +268,7 @@ Node* build_tree(RipeInput* in)
   input_lineno = 1;
   input_colno = 1;
   lex_init();
-
-  if (!setjmp(jb)){
-    rc_parse();
-  } else {
-    // Came back via error
-    return NULL;
-  }
+  rc_parse();
 
   return rc_result;
 }

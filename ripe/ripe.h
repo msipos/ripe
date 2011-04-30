@@ -49,8 +49,6 @@ extern const char* err_filename;
 extern int log_verbosity;
 void err_node(Node* node, const char* format, ...);
 void err(const char* format, ...);
-void warn(const char* format, ...);
-void logging(const char* format, ...);
 
 //////////////////////////////////////////////////////////////////////////////
 // ripe/dump.c
@@ -67,58 +65,9 @@ void dump_init();
 void dump_output(FILE* f, const char* module_name);
 
 //////////////////////////////////////////////////////////////////////////////
-// ripe/generator.c
-//////////////////////////////////////////////////////////////////////////////
-
-const char* eval_type(Node* type_node);
-
-// Returns non-zero in case of an error.
-int generate(Node* ast, const char* module_name, const char* source_filename);
-
-// Dump type info
-void generate_type_info(Node* ast);
-
-//////////////////////////////////////////////////////////////////////////////
-// ripe/operator.c
-//////////////////////////////////////////////////////////////////////////////
-
-bool is_unary_op(Node* node);
-const char* unary_op_map(int type);
-
-bool is_binary_op(Node* node);
-const char* binary_op_map(int type);
-
-//////////////////////////////////////////////////////////////////////////////
-// ripe/typer.c
-//////////////////////////////////////////////////////////////////////////////
-
-typedef struct {
-  const char* name;
-  // For a function or method, this is the return type:
-  const char* rv;
-  int num_params;
-  const char** param_types;
-} TyperRecord;
-
-void typer_init();
-void typer_add(TyperRecord* tr);
-TyperRecord* typer_query(const char* name);
-void typer_ast(Node* ast);
-void typer_dump(FILE* f);
-void typer_load(FILE* f);
-const char* typer_infer(Node* expr);
-bool typer_needs_check(const char* destination, const char* source);
-
-//////////////////////////////////////////////////////////////////////////////
 // ripe/util.c
 //////////////////////////////////////////////////////////////////////////////
 
-// Remove first and last character of input.
-const char* util_trim_ends(const char* input);
-// In str, replace each character c by string replace
-const char* util_replace(const char* str, const char c, const char* replace);
-// Replace all occurences of '?', '!' and '.' with '_'
-const char* util_escape(const char* input);
 // Escape and prepend "__".
 const char* util_make_c_name(const char* ripe_name);
 

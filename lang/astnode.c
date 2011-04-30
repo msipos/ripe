@@ -64,7 +64,7 @@ void node_prepend_child(Node* parent, Node* child)
   array_prepend( &(parent->children), sizeof(Node*), &child);
 }
 
-uint node_num_children(Node* parent)
+int node_num_children(Node* parent)
 {
   return parent->children.size;
 }

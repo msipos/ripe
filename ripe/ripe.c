@@ -21,9 +21,9 @@ const char* lflags = "";
 
 void bootstrap(const char* out_filename, int arg1, int argc, char* const* argv)
 {
-  logging("starting bootstrap (%d input files)...", argc - optind);
-  Array asts, objs;
+  Array asts, objs, ast_filenames;
   array_init(&asts, Node*);
+  array_init(&ast_filenames, const char*);
   array_init(&objs, const char*);
 
   for (int i = arg1; i < argc; i++){
@@ -34,14 +34,21 @@ void bootstrap(const char* out_filename, int arg1, int argc, char* const* argv)
       if (input_from_file(&input, arg)){
         err("failed to load '%s'", arg);
       }
-      Node* ast = build_tree(&input);
-      if (ast == NULL){
-        err("failed to parse '%s': %s", arg, build_tree_error);
-      }
+      fatal_push("while building AST for '%s'", arg);
+        Node* ast = build_tree(&input);
+      fatal_pop();
+      
       array_append(&asts, ast);
-      if (stran_absorb_ast(ast)){
-        err("during structure analysis of '%s': %s", arg, stran_error->text);
-      }
+      array_append(&ast_filenames, arg);
+  
+      fatal_push("during structure analysis of '%s'", arg);
+        stran_absorb_ast(ast);
+      fatal_pop();
+  
+      fatal_push("during processing of '%s'", arg);
+        proc_process_ast(ast);
+      fatal_pop();
+      
     } else if (strequal(ext, ".o")) {
       array_append(&objs, arg);
     } else if (strequal(ext, ".meta")) {
@@ -57,12 +64,16 @@ void bootstrap(const char* out_filename, int arg1, int argc, char* const* argv)
   // Now generate ASTs into dump objects.
   for (int i = 0; i < asts.size; i++){
     Node* ast = array_get(&asts, Node*, i);
-    generate(ast, "User", "input");
+    const char* arg = array_get(&ast_filenames, const char*, i);
+    slog("generate('%s')\n", arg);
+    fatal_push("while generating code in '%s'", arg);
+      generate(ast);
+    fatal_pop();
   }
 
   // Now dump into C file.
   const char* tmp_c_path = path_temp_name("ripe_boot_", ".c");
-  logging("dumping into '%s'...", tmp_c_path);
+  slog("dumping into '%s'...", tmp_c_path);
   FILE* f = fopen(tmp_c_path, "w");
   if (f == NULL){
     err("cannot open '%s' for writing: %s\n", tmp_c_path, strerror(errno));
@@ -79,7 +90,7 @@ void bootstrap(const char* out_filename, int arg1, int argc, char* const* argv)
   if (system(cmd_line)){
     err("failed running '%s'", cmd_line);
   }
-  remove(tmp_c_path);
+  //remove(tmp_c_path);
 
   // Finally compile into the output file
   char* objs_txt = "";
@@ -106,12 +117,11 @@ int main(int argc, char* const* argv)
   cflags = "";
   lflags = "";
   mem_init();
-  stran_init();
-  wr_init();
+  lang_init();
 
   {
     int c;
-    while ((c = getopt(argc, argv, "o:s")) != -1){
+    while ((c = getopt(argc, argv, "o:sv")) != -1){
       switch(c){
         case 'o':
           out_filename = optarg;

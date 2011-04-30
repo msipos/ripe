@@ -15,6 +15,32 @@
 
 #include "lang/lang.h"
 
+const char* util_trim_ends(const char* input)
+{
+  char* txt = mem_strdup(input);
+  txt++;
+  txt[strlen(txt)-1] = 0;
+  return txt;
+}
+
+const char* util_replace(const char* str, const char c, const char* replace)
+{
+  // Ultra inneficient, but who cares.
+  StringBuf sb;
+  sbuf_init(&sb, "");
+  while(*str != 0){
+    if (*str == c){
+      sbuf_printf(&sb, "%s", replace);
+    } else {
+      sbuf_printf(&sb, "%c", *str);
+    }
+    str++;
+  }
+  const char* out = mem_strdup(sb.str);
+  sbuf_deinit(&sb);
+  return out;
+}
+
 const char* util_escape(const char* ripe_name)
 {
   char tmp[strlen(ripe_name)*2 + 4];
@@ -62,6 +88,31 @@ const char* util_dot_id(Node* expr)
       // static symbol.
       return NULL;
   }
+}
+
+const char* util_signature(const char* ripe_name)
+{
+  FuncInfo* fi = stran_get_function(ripe_name);
+
+  if (fi == NULL){
+    fatal_throw("while writing signature: cannot find static data for '%s'",
+                ripe_name);
+  }
+
+  StringBuf sb;
+  sbuf_init(&sb, "");
+  sbuf_printf(&sb, "Value %s(", fi->c_name);
+
+  for (int i = 0; i < fi->num_params; i++){
+    sbuf_printf(&sb, "Value %s", util_c_name(fi->param_names[i]));
+    if (i != fi->num_params - 1){
+      sbuf_printf(&sb, ", ");
+    }
+  }
+  sbuf_printf(&sb, ")");
+  const char* rv = mem_strdup(sb.str);
+  sbuf_deinit(&sb);
+  return rv;
 }
 
 bool annot_check_simple(Node* annot_list, int num, const char* args[])
@@ -123,4 +174,12 @@ bool annot_has(Node* annot_list, const char* s)
     if (strequal(first->text, s)) return true;
   }
   return false;
+}
+
+void lang_init()
+{
+  stran_init();
+  wr_init();
+  var_init();
+  cache_init();
 }

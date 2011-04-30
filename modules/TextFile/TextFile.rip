@@ -6,8 +6,8 @@ $
 $
 
 namespace TextFile
-  const Read = $ int64_to_val(TEXTFILE_READ) $
-  const Write = $ int64_to_val(TEXTFILE_WRITE) $
+  var Read = $ int64_to_val(TEXTFILE_READ) $
+  var Write = $ int64_to_val(TEXTFILE_WRITE) $
 
   read_file(filename)
     tf = TextFile.new(filename, TextFile.Read)
@@ -51,10 +51,10 @@ class TextFile
         exc_raise("attempted to read from a closed file");
       }
       if (fgets(buf, FGETS_BUF, @f) == NULL){
-        if (feof(@f)) return VALUE_EOF;
+        if (feof(@f)) RRETURN(VALUE_EOF);
         exc_raise("error while reading from a file");
       }
-      return string_to_val(buf);
+      RRETURN(string_to_val(buf));
     $
 
   read_entire()
@@ -84,15 +84,13 @@ class TextFile
     return s
 
   print(text)
-    $
-      const char* text = val_to_string(__text);
+    $ const char* text = val_to_string(__text);
       assert(@f != NULL);
       uint64 len = strlen(text);
-      if (len == 0) return VALUE_NIL;
+      if (len == 0) RRETURN(VALUE_NIL);
       if (fwrite(text, len, 1, @f) != 1){
         exc_raise("failed to write '%s' to text file: %s", text, strerror(errno));
-      }
-    $
+      } $
 
   println(text)
     self.print(text)

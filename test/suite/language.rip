@@ -15,7 +15,7 @@ class CDataClass
     $ @i = val_to_int64(__i); $
 
 class Class
-  writable filename
+  var filename
 
   new(filename) | constructor
     @filename = filename
@@ -62,7 +62,7 @@ operators()
   Test.test(name, 1 + 2 == 3, true)
   Test.test(name, 1 + 1 < 3, true)
 
-global var_arr = nil
+var var_arr = nil
 
 test_vars1(arg1, *arg2)
   Test.test("vararg", arg2.to_string(), var_arr.to_string())
@@ -92,37 +92,6 @@ vararg()
   test_vars3(1, 2, 3, 4, 5)
   var_arr = tuple()
   test_vars3(1, 2, 3)
-
-exceptions()
-  val = false
-  try
-    pass
-  catch
-    val = true
-  Test.test("no throw", val, false)
-  #Std.println(" STACK after no throw:")
-  #Test.display_stack()
-
-  try
-    Test.error()
-  catch
-    val = true
-  Test.test("throw", val, true)
-  #Std.println(" STACK after throw:")
-  #Test.display_stack()
-
-  n = 0
-  try
-    Test.error()
-  finally
-    # Std.println(" finally")
-    n = n + 1
-  catch
-    # Std.println(" catch all")
-    n = n + 1
-  Test.test("catch+finally", n, 2)
-  #Std.println(" STACK after catch+finally:")
-  #Test.display_stack()
 
 symbols()
   symbol1 = &some_symbol

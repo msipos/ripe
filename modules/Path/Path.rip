@@ -4,9 +4,9 @@ $
 $
 
 namespace Path
-  const REGULAR = $ int64_to_val(DT_REG) $
-  const DIRECTORY = $ int64_to_val(DT_DIR) $
-  const SEPARATOR = '/'
+  var REGULAR = $ int64_to_val(DT_REG) $
+  var DIRECTORY = $ int64_to_val(DT_DIR) $
+  var SEPARATOR = '/'
 
   get_program_dir()
     return $ string_to_val(path_get_app_dir()) $
@@ -87,7 +87,7 @@ namespace Path
           exc_raise("failed to read directory");
         }
         if (dep == NULL){
-          return VALUE_EOF;
+          RRETURN(VALUE_EOF);
         }
       $
       name = $ string_to_val(de.d_name) $
@@ -100,8 +100,8 @@ namespace Path
       $
 
   class Walker
-    private stack
-    private names
+    var stack
+    var names
 
     new(name) | constructor
       @stack = [Path.Dir.new(name)]

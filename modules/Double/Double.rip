@@ -11,13 +11,13 @@ Double(arg)
       case 0b00:
         if (obj_klass(__arg) == klass_String){
           char* s = val_to_string(__arg);
-          return double_to_val(atof(s));
+          RRETURN(double_to_val(atof(s)));
         }
         goto err;
       case 0b01:
-        return double_to_val((int64) unpack_int64(__arg));
+        RRETURN(double_to_val((int64) unpack_int64(__arg)));
       case 0b10:
-        return __arg;
+        RRETURN(__arg);
       case 0b11:
         goto err;
     }
@@ -35,11 +35,9 @@ class Double
   #$ rdoc-header Double.to_string()
   #$ Returns the string representation of the number.
   to_string()
-    $
-      char buf[128];
-      sprintf(buf, "%.12f", unpack_double(__self));
-      return string_to_val(buf);
-    $
+    $ char buf[128];
+      sprintf(buf, "%.12f", unpack_double(__self)); $
+    return $ string_to_val(buf); $
 
   #$ rdoc-name Double.is_nan?
   #$ rdoc-header Double.is_nan?()

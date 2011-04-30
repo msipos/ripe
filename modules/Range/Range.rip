@@ -52,9 +52,9 @@ class Range
       switch(@range.type){
         case RANGE_BOUNDED:
         case RANGE_BOUNDED_LEFT:
-          return int64_to_val(@range.start);
+          RRETURN(int64_to_val(@range.start));
         default:
-          return VALUE_NIL;
+          RRETURN(VALUE_NIL);
       }
     $
 
@@ -63,16 +63,16 @@ class Range
       switch(@range.type){
         case RANGE_BOUNDED:
         case RANGE_BOUNDED_RIGHT:
-          return int64_to_val(@range.finish);
+          RRETURN(int64_to_val(@range.finish));
         default:
-          return VALUE_NIL;
+          RRETURN(VALUE_NIL);
       }
     $
 
-const RangeBounded = $ int64_to_val(RANGE_BOUNDED) $
-const RangeBoundedLeft = $ int64_to_val(RANGE_BOUNDED_LEFT) $
-const RangeIteratorAscending = $ int64_to_val(ASCENDING) $
-const RangeIteratorDescending = $ int64_to_val(DESCENDING) $
+var RangeBounded = $ int64_to_val(RANGE_BOUNDED) $
+var RangeBoundedLeft = $ int64_to_val(RANGE_BOUNDED_LEFT) $
+var RangeIteratorAscending = $ int64_to_val(ASCENDING) $
+var RangeIteratorDescending = $ int64_to_val(DESCENDING) $
 
 #$ rdoc-name RangeIterator
 #$ rdoc-header RangeIterator
@@ -110,10 +110,10 @@ class RangeIterator
           {
             switch(@range_type){
               case RANGE_BOUNDED:
-                if (@cur > @finish) return VALUE_EOF;
+                if (@cur > @finish) RRETURN(VALUE_EOF);
               case RANGE_BOUNDED_LEFT:
                 @cur++;
-                return int64_to_val(@cur - 1);
+                RRETURN(int64_to_val(@cur - 1));
               case RANGE_BOUNDED_RIGHT:
               case RANGE_UNBOUNDED:
                 assert_never();
@@ -123,10 +123,10 @@ class RangeIterator
           {
             switch(@range_type){
               case RANGE_BOUNDED:
-                if (@cur < @finish) return VALUE_EOF;
+                if (@cur < @finish) RRETURN(VALUE_EOF);
               case RANGE_BOUNDED_LEFT:
                 @cur--;
-                return int64_to_val(@cur + 1);
+                RRETURN(int64_to_val(@cur + 1));
               case RANGE_BOUNDED_RIGHT:
               case RANGE_UNBOUNDED:
                 assert_never();

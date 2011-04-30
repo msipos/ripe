@@ -9,10 +9,10 @@ $
 $
 
 namespace Speech
-  const MALE1 = $ int64_to_val(SPD_MALE1) $
-  const FEMALE1 = $ int64_to_val(SPD_FEMALE1) $
-  const FEMALE2 = $ int64_to_val(SPD_FEMALE2) $
-  const FEMALE3 = $ int64_to_val(SPD_FEMALE3) $
+  var MALE1 = $ int64_to_val(SPD_MALE1) $
+  var FEMALE1 = $ int64_to_val(SPD_FEMALE1) $
+  var FEMALE2 = $ int64_to_val(SPD_FEMALE2) $
+  var FEMALE3 = $ int64_to_val(SPD_FEMALE3) $
 
 class Speech
   $
@@ -31,9 +31,7 @@ class Speech
     $
 
   say(text)
-    $
-      return int64_to_val(spd_say(@c, SPD_TEXT, val_to_string(__text)));
-    $
+    return $ int64_to_val(spd_say(@c, SPD_TEXT, val_to_string(__text))); $
 
   # Volume should be between -100 and 100
   set_volume(volume)

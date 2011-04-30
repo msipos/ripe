@@ -21,6 +21,9 @@ void ripe_module1b();
 void ripe_module2();
 void ripe_module3();
 
+// Prototype for Main
+Value ripe_main();
+
 int main(int argc, char** argv)
 {
   // Provide argc and argv to interested modules
@@ -67,11 +70,8 @@ int main(int argc, char** argv)
   ripe_module2();
   ripe_module3();
 
-  // Lookup main symbol
-  Value sym_main = ssym_get("main");
-
   // Call main.
-  Value rv = func_call0(sym_main);
+  Value rv = ripe_main();
   if (is_int64(rv)){
     return unpack_int64(rv);
   }

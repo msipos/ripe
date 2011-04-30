@@ -79,6 +79,7 @@ void stack_push_func(Value func)
 
 void stack_push_annotation(char* annotation)
 {
+  slog("stack_push_annotation(): '%s' idx = %"PRId64, annotation, stack_idx);
   stack[stack_idx].type = TYPE_ANNOTATION;
   stack[stack_idx].annotation = annotation;
   stack_idx++;
@@ -86,6 +87,7 @@ void stack_push_annotation(char* annotation)
 
 void stack_pop()
 {
+  slog("stack_pop(): idx = %"PRId64, stack_idx);
   assert(stack_idx > 0);
   stack_idx--;
 }

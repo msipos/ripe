@@ -35,7 +35,7 @@ class Array2
     $
       int64 x = val_to_int64(__x);
       int64 y = val_to_int64(__y);
-      return @a.data[array2_index(&(@a), x, y)];
+      RRETURN(@a.data[array2_index(&(@a), x, y)]);
     $
 
   #$ rdoc-name Array2.index_set

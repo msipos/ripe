@@ -1,7 +1,7 @@
 class MainLoop
-  private event_handlers
-  private loopers
-  private looper_counter
+  var event_handlers
+  var loopers
+  var looper_counter
 
   constructor new()
     @event_handlers = Map.new()

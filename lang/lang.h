@@ -41,7 +41,7 @@ Node* node_new_inherit(int type, Node* ancestor);
 // Children
 void  node_add_child(Node* parent, Node* child);
 void node_prepend_child(Node* parent, Node* child);
-uint  node_num_children(Node* parent);
+int  node_num_children(Node* parent);
 Node* node_get_child(Node* parent, uint i);
 void node_extend_children(Node* new_parent, Node* old_parent);
 
@@ -63,6 +63,41 @@ Node* node_new_field_call(Node* callee, char* field_name, int64 num, ...);
 Node* node_new_type(const char* type);
 
 //////////////////////////////////////////////////////////////////////////////
+// lang/aster.c
+//////////////////////////////////////////////////////////////////////////////
+typedef enum {
+  FUNCTION,
+  METHOD,
+  CONSTRUCTOR,
+  VIRTUAL_GET,
+  VIRTUAL_SET
+} FunctionType;
+
+typedef struct {
+  // name is full function name
+  void (*cb_function) (Node* n, const char* name);
+  // name is method name, class_name is full class name
+  void (*cb_method) (Node* n,
+                     const char* name,
+                     const char* class_name,
+                     FunctionType type);
+  void (*cb_constructor) (Node* n,
+                          const char* name,
+                          const char* class_name);
+  // name is full class name
+  void (*cb_class_enter) (Node* n, const char* name);
+  void (*cb_class_exit) (Node* n, const char* name);
+  // name is full variable name
+  void (*cb_var) (Node* n, const char* name);
+  void (*cb_property) (Node* n, const char* name, const char* class_name);
+  // class_name may be NULL
+  void (*cb_ccode) (Node* n, const char* class_name);
+} Aster;
+
+void aster_process(Node* ast, Aster* aster);
+void aster_init(Aster* aster);
+
+//////////////////////////////////////////////////////////////////////////////
 // lang/input.c
 //////////////////////////////////////////////////////////////////////////////
 typedef struct {
@@ -81,42 +116,78 @@ int preprocess(RipeInput* input);
 // lang/stran.c
 //////////////////////////////////////////////////////////////////////////////
 
-typedef struct {
-  Dict classes;
-  Dict functions;
-  Dict strings;
-  Dict prototypes;
-} Stran;
+typedef enum {
+  CLASS_VIRTUAL,
+  CLASS_CDATA,
+  CLASS_FIELD
+} ClassType;
 
 typedef struct {
+  const char* c_name;
+} GlobalInfo;
+
+typedef struct {
+  const char* ripe_name;
   const char* ret;
   int num_params;
-  const char** params;
+  const char** param_types;
+  const char** param_names;
   const char* c_name;
+  const char* v_name;
+  FunctionType type;
 } FuncInfo;
 
+#define PROP_FIELD 1
 typedef struct {
-  Dict methods;
+  int type;
+  int num;
+} PropInfo;
+
+typedef struct {
+  const char* ripe_name;    // Ripe name of the class
+  const char* c_name;       // Name of a variable of type Klass*.
+  ClassType type;
+  const char* typedef_name; // Only if type == CLASS_CDATA.
+  Dict methods;             // Regardless of type.
+  int num_props;            // Only if type == CLASS_FIELD.
+  Dict props;               // Only if type == CLASS_FIELD.
+  Dict gets;                // Regardless of type.
+  Dict sets;                // Regardless of type.
 } ClassInfo;
 
 void stran_init();
 // Returns non-zero for error. (see stran_error.text)
-int stran_absorb_ast(Node* ast);
-int stran_absorb_file(const char* filename);
-void stran_prototype(const char* name);
+void stran_absorb_ast(Node* ast);
+void stran_absorb_file(const char* filename);
+
 void stran_dump_to_file(FILE* f);
 
-// Returns NULL for error.
+// The following return NULL for error.
 FuncInfo* stran_get_function(const char* name);
-void stran_dump();
-extern Error* stran_error;
+GlobalInfo* stran_query_global(const char* name);
+GlobalInfo* stran_get_global(const char* name);
+ClassInfo* stran_get_class(const char* name);
+FuncInfo* stran_get_method(const char* class_name, const char* name);
+
+//////////////////////////////////////////////////////////////////////////////
+// lang/proc.c
+//////////////////////////////////////////////////////////////////////////////
+
+void proc_process_ast(Node* ast);
+
+//////////////////////////////////////////////////////////////////////////////
+// lang/cache.c
+//////////////////////////////////////////////////////////////////////////////
+
+void cache_init();
+void cache_prototype(const char* ripe_name);
+const char* cache_dsym(const char* symbol);
+const char* cache_type(const char* type);
+void cache_global_prototype(const char* global);
 
 //////////////////////////////////////////////////////////////////////////////
 // lang/build-tree.c
 //////////////////////////////////////////////////////////////////////////////
-
-// Error in case build_tree returns NULL (no new line).
-extern const char* build_tree_error;
 
 // Parse the given file.
 Node* build_tree(RipeInput* in);
@@ -191,11 +262,26 @@ int input_read(char* buf, int max_size); // Used by flex to do reading
 #define MAPPING           1359
 #define ANNOT_LIST        1360
 #define ANNOT             1361
-#define ASSIGN_LIST       1362
-#define ASSIGN            1363
 
 #include "lang/parser.h"
 #include "lang/scanner.h"
+
+//////////////////////////////////////////////////////////////////////////////
+// lang/generator.c
+//////////////////////////////////////////////////////////////////////////////
+
+// Returns non-zero in case of an error.
+void generate(Node* ast);
+
+//////////////////////////////////////////////////////////////////////////////
+// lang/operator.c
+//////////////////////////////////////////////////////////////////////////////
+
+bool is_unary_op(Node* node);
+const char* unary_op_map(int type);
+
+bool is_binary_op(Node* node);
+const char* binary_op_map(int type);
 
 //////////////////////////////////////////////////////////////////////////////
 // lang/util.c
@@ -204,9 +290,28 @@ int input_read(char* buf, int max_size); // Used by flex to do reading
 const char* util_escape(const char* ripe_name);
 const char* util_c_name(const char* ripe_name);
 const char* util_dot_id(Node* expr);
+const char* util_trim_ends(const char* input);
+// In str, replace each character c by string replace
+const char* util_replace(const char* str, const char c, const char* replace);
+
+// util_signature generates a string of the form:
+//   "Value __Module_Function(Value, Value, Value)
+const char* util_signature(const char* ripe_name);
 bool annot_check_simple(Node* annot_list, int num, const char* args[]);
 bool annot_check(Node* annot_list, int num, ...);
 bool annot_has(Node* annot_list, const char* s);
+void lang_init();
+
+//////////////////////////////////////////////////////////////////////////////
+// lang/var.c
+//////////////////////////////////////////////////////////////////////////////
+void var_init();
+void var_push();
+void var_pop();
+void var_add_local(const char* ripe_name, const char* c_name, const char* type);
+bool var_query(const char* ripe_name);
+const char* var_query_type(const char* ripe_name);
+const char* var_query_c_name(const char* ripe_name);
 
 //////////////////////////////////////////////////////////////////////////////
 // lang/writer.c

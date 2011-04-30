@@ -15,32 +15,6 @@
 
 #include "ripe/ripe.h"
 
-const char* util_trim_ends(const char* input)
-{
-  char* txt = mem_strdup(input);
-  txt++;
-  txt[strlen(txt)-1] = 0;
-  return txt;
-}
-
-const char* util_replace(const char* str, const char c, const char* replace)
-{
-  // Ultra inneficient, but who cares.
-  StringBuf sb;
-  sbuf_init(&sb, "");
-  while(*str != 0){
-    if (*str == c){
-      sbuf_printf(&sb, "%s", replace);
-    } else {
-      sbuf_printf(&sb, "%c", *str);
-    }
-    str++;
-  }
-  const char* out = mem_strdup(sb.str);
-  sbuf_deinit(&sb);
-  return out;
-}
-
 const char* util_make_c_name(const char* ripe_name)
 {
   return util_c_name(ripe_name);

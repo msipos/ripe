@@ -40,6 +40,8 @@ void wr_init()
 
 void wr_print(int destination, const char* format, ...)
 {
+  slog("wr_print -> %d", destination);
+
   va_list ap;
   va_start(ap, format);
   // Calculate needed buffer
@@ -51,6 +53,8 @@ void wr_print(int destination, const char* format, ...)
   vsnprintf(tmpbuf, sz, format, ap);
   tmpbuf[sz - 1] = 0;
   va_end(ap);
+
+  slog("##>>%s<<##", tmpbuf);
 
   StringBuf* dest = NULL;
   switch(destination){

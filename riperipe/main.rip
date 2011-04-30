@@ -38,12 +38,14 @@ load_meta(filename)
 #######################################################################
 # Globals
 
-global g_verbose = false
-global g_cflags = "", g_lflags = "", g_omit_typing = false
-global g_optims = { &FOR_LOOPS => true,
-                    &TYPES => true,
-                    &FUNC_CALLS => true,
-                    &TYPE_VERIFY => false }
+var g_verbose = false
+var g_cflags = "" 
+var g_lflags = ""
+var g_omit_typing = false
+var g_optims = { &FOR_LOOPS   => true,
+                 &TYPES       => true,
+                 &FUNC_CALLS  => true,
+                 &TYPE_VERIFY => false }
 
 is_verbose?()
   return g_verbose
@@ -61,9 +63,11 @@ go_dump(files)
   for file in files
     ast = Node.new_from_file(file)
     asts.push(ast)
-    Stran.absorb_ast(ast, file)
+    if not g_omit_typing
+      Lang.Stran.absorb_ast(ast)
+    Lang.process(ast)
   for ast in asts
-    generate(ast)
+    Lang.generate(ast)
 
   out = StringBuf.new()
   dump("User", out)
@@ -81,7 +85,8 @@ go_bootstrap(files, outfile)
 
         ast = Node.new_from_file(file)
         asts.push(ast)
-        Stran.absorb_ast(ast, file)
+        Lang.Stran.absorb_ast(ast)
+        Lang.process(ast)
       case ".o"
         objs.push(file)
       case ".meta"
@@ -95,7 +100,7 @@ go_bootstrap(files, outfile)
   for ast in asts
     if g_verbose
       Err.println("generating ", rips[index])
-    generate(ast)
+    Lang.generate(ast)
     index = index + 1
 
   tmp_c_file = Path.temp_name("ripe", ".c")
@@ -123,12 +128,13 @@ go_build(files, outfile)
 
         ast = Node.new_from_file(file)
         asts.push(ast)
-        Stran.absorb_ast(ast, file)
+        Lang.Stran.absorb_ast(ast)
+        Lang.process(ast)
       case ".o"
         objs.push(file)
 
   for ast in asts
-    generate(ast)
+    Lang.generate(ast)
 
   # Compile ripe
   tmp_c_file = Path.temp_name("ripe", ".c")
@@ -173,7 +179,7 @@ go_module(files, module_name, outfile)
         ast = Node.new_from_file(file)
         asts.push(ast)
         if not g_omit_typing
-          Stran.absorb_ast(ast, file)
+          Lang.Stran.absorb_ast(ast)
       case ".o"
         objs.push(file)
       case ".meta"
@@ -181,9 +187,11 @@ go_module(files, module_name, outfile)
         if "cflags" in meta
           g_cflags = g_cflags + " " + meta["cflags"]
       case ".typ"
-        Stran.absorb_file(file)
+        Lang.Stran.absorb_file(file)
   for ast in asts
-    generate(ast)
+    Lang.process(ast)
+  for ast in asts
+    Lang.generate(ast)
 
   tmp_c_file = Path.temp_name("ripe", ".c")
   tf = TextFile.new(tmp_c_file, TextFile.Write)
@@ -203,10 +211,10 @@ go_type(files)
     root, ext = Path.split_extension(file)
     if ext == ".rip"
       ast = Node.new_from_file(file)
-      Stran.absorb_ast(ast, file)
+      Lang.Stran.absorb_ast(ast)
     else
       raise "Can only read .rip files in typer mode"
-  Stran.dump()
+  Lang.Stran.dump()
 
 load_defaults()
   root_dir = Path.get_program_dir()

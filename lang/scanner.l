@@ -104,8 +104,6 @@ for                             { return K_FOR; }
 in                              { return K_IN; }
 pass                            { return K_PASS; }
 class                           { return K_CLASS; }
-global                          { return K_GLOBAL; }
-const                           { return K_CONST; }
 var                             { return K_VAR; }
 [A-Za-z_][A-Za-z0-9_?]*\!?      { return ID; }
 \&[A-Za-z_][A-Za-z0-9_?]*       { return SYMBOL; }

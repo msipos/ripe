@@ -30,7 +30,7 @@ class Map
     $
       Value result;
       if (ht_query2(&(@ht), __key, &result))
-        return result;
+        RRETURN(result);
       exc_raise("key error: '%s'", to_string(__key));
     $
 
@@ -38,9 +38,7 @@ class Map
   #$ rdoc-header Map.contains?(key)
   #$ Returns true if the Map contains the given key.
   contains?(key)
-    $
-      return pack_bool(ht_query2(&(@ht), __key, NULL));
-    $
+    return $ pack_bool(ht_query2(&(@ht), __key, NULL)) $
 
   #$ rdoc-name Map.index_set
   #$ rdoc-header Map.index_set(key, value)
@@ -53,7 +51,7 @@ class Map
 
   #$ rdoc-name Map.to_string
   #$ rdoc-header Map.to_string()
-  #$ Return a human readable representation of the Map.
+  #$ Return a human var representation of the Map.
   to_string()
     $
       StringBuf sb;
@@ -73,9 +71,8 @@ class Map
       }
       sbuf_printf(&sb, ")");
       Value rv = string_to_val(sb.str);
-      sbuf_deinit(&sb);
-      return rv;
-    $
+      sbuf_deinit(&sb); $
+    return $ rv $
 
   #$ rdoc-name Map.size
   #$ rdoc-header Map.size
@@ -107,6 +104,6 @@ class MapIterator
     $
         }
         @cur++;
-      }
-      return VALUE_EOF;
-    $
+      } $
+    return eof
+

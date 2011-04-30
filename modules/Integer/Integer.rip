@@ -9,13 +9,13 @@ Integer(arg)
       case 0b00:
         if (obj_klass(__arg) == klass_String){
           char* s = val_to_string(__arg);
-          return int64_to_val(atoi(s));
+          RRETURN(int64_to_val(atoi(s)));
         }
         goto err;
       case 0b01:
-        return __arg;
+        RRETURN(__arg);
       case 0b10:
-        return int64_to_val((int64) unpack_double(__arg));
+        RRETURN(int64_to_val((int64) unpack_double(__arg)));
       case 0b11:
         goto err;
     }
@@ -30,11 +30,9 @@ Integer(arg)
 #$ Class for an Integer datatype.
 class Integer
   to_string()
-    $
-      char buf[128];
-      sprintf(buf, "%"PRId64, unpack_int64(__self));
-      return string_to_val(buf);
-    $
+    $ char buf[128];
+      sprintf(buf, "%"PRId64, unpack_int64(__self)); $
+    return $ string_to_val(buf) $
 
   #$ rdoc-name Integer.odd?
   #$ rdoc-header Integer.odd?()
@@ -72,8 +70,8 @@ class Integer
       int64 tail = 64 - last;
       self = self << tail;
       self = self >> tail;
-      self = self >> (loc - 1);
-      return pack_int64(self); $
+      self = self >> (loc - 1); $
+    return $ pack_int64(self) $
 
   pack(Integer loc, Integer width, Integer i)
     $ int64 loc = unpack_int64(__loc);
@@ -94,5 +92,5 @@ class Integer
       loc --;
       mask = mask << loc;
       self = self & (~mask);
-      self = self | ((unpack_int64(__i) << loc) & mask);
-      return pack_int64(self); $
+      self = self | ((unpack_int64(__i) << loc) & mask); $
+    return $ pack_int64(self) $

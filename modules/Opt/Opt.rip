@@ -7,8 +7,8 @@ namespace Opt
         return option
     return nil
 
-  const ARG = 1
-  const HELP = 2
+  var ARG = 1
+  var HELP = 2
 
   # Return 0 for nothing, 1 for short option and 2 for long option
   inspect(arg)

@@ -27,4 +27,4 @@ class StringBuf
     self.print("\n")
 
   to_string()
-    $ return string_const_to_val(@str); $
+    return $ string_const_to_val(@str) $

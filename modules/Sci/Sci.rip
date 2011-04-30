@@ -1,8 +1,8 @@
 namespace Sci
   class Sampler
-    private arrays
-    readable N
-    private num_arrays
+    var arrays
+    var N
+    var num_arrays
 
     new(N) | constructor
       if N < 1

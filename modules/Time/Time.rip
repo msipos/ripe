@@ -9,10 +9,8 @@ namespace Time
   #$ rdoc-header Integer Time.get_current()
   #$ Returns the time since the epoch.
   get_current()
-    $
-      time_t t = time(NULL);
-      return int64_to_val( (int64) t );
-    $
+    $ time_t t = time(NULL); $
+    return $ int64_to_val( (int64) t ) $
 
   #$ rdoc-name Time.sleep
   #$ rdoc-header Time.sleep(Integer seconds)
@@ -48,26 +46,16 @@ namespace Time
       $
 
     hour() | virtual_get
-      $
-        return int64_to_val( (int64) @t.tm_hour );
-      $
+      return $ int64_to_val( (int64) @t.tm_hour ) $
 
     minute() | virtual_get
-      $
-        return int64_to_val( (int64) @t.tm_min );
-      $
+      return $ int64_to_val( (int64) @t.tm_min ) $
 
     weekday() | virtual_get
-      $
-        return int64_to_val( (int64) @t.tm_wday + 1 );
-      $
+      return $ int64_to_val( (int64) @t.tm_wday + 1 ) $
 
     month() | virtual_get
-      $
-        return int64_to_val( (int64) @t.tm_mon + 1 );
-      $
+      return $ int64_to_val( (int64) @t.tm_mon + 1 ) $
 
     day() | virtual_get
-      $
-        return int64_to_val( (int64) @t.tm_mday );
-      $
+      return $ int64_to_val( (int64) @t.tm_mday ) $

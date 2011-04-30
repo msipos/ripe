@@ -69,6 +69,7 @@
           <keyword>raise</keyword>
           <keyword>namespace</keyword>
           <keyword>class</keyword>
+          <keyword>var</keyword>
           <keyword>self</keyword>
           <keyword>tuple</keyword>
           <keyword>modulo</keyword>

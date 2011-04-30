@@ -1,9 +1,9 @@
 $ #include <math.h> $
 
 namespace Math
-  const PI = $ double_to_val(M_PI) $
-  const INF = $ double_to_val(INFINITY) $
-  const NINF = $ double_to_val(-INFINITY) $
+  var PI = $ double_to_val(M_PI) $
+  var INF = $ double_to_val(INFINITY) $
+  var NINF = $ double_to_val(-INFINITY) $
 
   hypot(x, y)
     return $ double_to_val(
@@ -17,11 +17,9 @@ namespace Math
     return $ int64_to_val(val_to_int64(__i) % val_to_int64(__b)) $
 
   rand(a, b)
-    $
-      int64 a = val_to_int64(__a);
-      int64 b = val_to_int64(__b);
-      return int64_to_val(a + rand() % (b - a + 1));
-    $
+    $ int64 a = val_to_int64(__a);
+      int64 b = val_to_int64(__b); $
+    return $ int64_to_val(a + rand() % (b - a + 1)) $
 
   sin(x)
     return $ double_to_val(sin(val_to_double(__x))) $

@@ -42,29 +42,25 @@ namespace Bio
   dist_ss(seq1, seq2)
     s1 = seq1.seq
     s2 = seq2.seq
-    $
-      char* s1 = val_to_string(__s1);
+    $ char* s1 = val_to_string(__s1);
       char* s2 = val_to_string(__s2);
       if (strlen(s1) != strlen(s2)){
         exc_raise("two sequences have different length");
-      }
-      return double_to_val(get_distance(s1, s2));
-    $
+      } $
+    return $ double_to_val(get_distance(s1, s2)); $
 
   dist_strstr(s1, s2)
-    $
-      char* s1 = val_to_string(__s1);
+    $ char* s1 = val_to_string(__s1);
       char* s2 = val_to_string(__s2);
       if (strlen(s1) != strlen(s2)){
         exc_raise("two sequences have different length");
-      }
-      return double_to_val(get_distance(s1, s2));
-    $
+      } $
+    return $ double_to_val(get_distance(s1, s2)); $
 
   class BufferedFile
-    private tf
-    private line_last
-    private line_buffer
+    var tf
+    var line_last
+    var line_buffer
 
     new(filename) | constructor
       @tf = TextFile.new(filename, TextFile.Read)
@@ -192,13 +188,11 @@ namespace Bio
               case 'T':
                 dist += @probs_T[i];
           }
-        }
-        return double_to_val(1.0 - dist / ((double)size));
-      $
+        } $
+      return $ double_to_val(1.0 - dist / ((double)size)); $
 
     dist_p(prec)
-      $
-        ProbRecord* pr = obj_c_data(__prec);
+      $ ProbRecord* pr = obj_c_data(__prec);
         const int64 size = @size;
         const int64 psize = pr->size;
         if (psize != size)
@@ -217,14 +211,13 @@ namespace Bio
           dist += d*d;
           d = (@probs_T[i] - pr->probs_T[i]);
           dist += d*d;
-        }
-        return double_to_val(dist / ((double) size) / 5.0);
-      $
+        } $
+      return $ double_to_val(dist / ((double) size) / 5.0); $
 
   class Record
-    writable id
-    writable seq
-    writable multiplicity
+    var id
+    var seq
+    var multiplicity
 
     new(id, seq) | constructor
       @id = id
@@ -236,7 +229,7 @@ namespace Bio
       return $ int64_to_val(strlen(val_to_string(__s))) $
 
   class FastaFile
-    private buf_file
+    var buf_file
 
     new_from_file(filename) | constructor
       @buf_file = Bio.BufferedFile.new(filename)

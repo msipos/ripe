@@ -5,14 +5,10 @@ $
 
 namespace Gsl
   class Rng
-    $
-      gsl_rng* rng;
-    $
+    $ gsl_rng* rng; $
 
     new() | constructor
-      $
-        @rng = gsl_rng_alloc(gsl_rng_default);
-      $
+      $ @rng = gsl_rng_alloc(gsl_rng_default); $
 
     select(arr)
       sz = arr.size
@@ -28,31 +24,24 @@ namespace Gsl
       return sz
 
     roll(p)
-      $
-        double dp = val_to_double(__p);
+      $ double dp = val_to_double(__p);
         double x = gsl_rng_uniform(@rng);
-        if (x < dp) return VALUE_TRUE;
-        return VALUE_FALSE;
-      $
+        if (x < dp) RRETURN(VALUE_TRUE); $
+      return false
 
     uniform(a, b)
-      $
-        double da = val_to_double(__a);
-        double db = val_to_double(__b);
-        return double_to_val(da + gsl_rng_uniform(@rng) * (db - da));
-      $
+      $ double da = val_to_double(__a);
+        double db = val_to_double(__b); $
+      return $ double_to_val(da + gsl_rng_uniform(@rng) * (db - da)); $
 
     uniform_int(a, b)
-      $
-        int64 a = val_to_int64(__a);
-        int64 b = val_to_int64(__b);
-        return int64_to_val(a + gsl_rng_uniform_int(@rng, b - a + 1));
-      $
+      $ int64 a = val_to_int64(__a);
+        int64 b = val_to_int64(__b); $
+      return $ int64_to_val(a + gsl_rng_uniform_int(@rng, b - a + 1)); $
+      
 
     exponential(mu)
-      $
-        return double_to_val(gsl_ran_exponential(@rng, val_to_double(__mu)));
-      $
+      return $ double_to_val(gsl_ran_exponential(@rng, val_to_double(__mu))); $
 
     seed_random()
       $

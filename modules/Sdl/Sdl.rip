@@ -44,7 +44,7 @@ namespace Sdl
         return surf
 
   namespace Event
-    const QUIT = $ int64_to_val(SDL_QUIT) $
+    var QUIT = $ int64_to_val(SDL_QUIT) $
 
   class Event
     $ SDL_Event event; $
@@ -73,19 +73,17 @@ namespace Sdl
   get_ticks()
     return $ int64_to_val(SDL_GetTicks()) $
 
-  const SWSURFACE = $ int64_to_val(SDL_SWSURFACE) $
-  const HWSURFACE = $ int64_to_val(SDL_HWSURFACE) $
-  const DOUBLEBUF = $ int64_to_val(SDL_DOUBLEBUF) $
-  const FULLSCREEN = $ int64_to_val(SDL_FULLSCREEN) $
+  var SWSURFACE = $ int64_to_val(SDL_SWSURFACE) $
+  var HWSURFACE = $ int64_to_val(SDL_HWSURFACE) $
+  var DOUBLEBUF = $ int64_to_val(SDL_DOUBLEBUF) $
+  var FULLSCREEN = $ int64_to_val(SDL_FULLSCREEN) $
 
   color(r, g, b, a)
-    $
-      uint32 color = ((val_to_int64(__r) & 0xFF) << 24)
+    $ uint32 color = ((val_to_int64(__r) & 0xFF) << 24)
                    | ((val_to_int64(__g) & 0xFF) << 16)
                    | ((val_to_int64(__b) & 0xFF) << 8)
-                   | (val_to_int64(__a) & 0xFF);
-      return int64_to_val(color);
-    $
+                   | (val_to_int64(__a) & 0xFF); $
+    return $ int64_to_val(color) $
 
   class Surface
     $
@@ -93,14 +91,10 @@ namespace Sdl
     $
 
     width() | virtual_get
-      $
-        return int64_to_val(@surf->w);
-      $
+      return $ int64_to_val(@surf->w); $
 
     height() | virtual_get
-      $
-        return int64_to_val(@surf->h);
-      $
+      return $ int64_to_val(@surf->h); $
 
     new_screen(w, h, flags) | constructor
       $

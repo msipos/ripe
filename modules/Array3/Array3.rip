@@ -32,25 +32,21 @@ class Array3
   #$ rdoc-header Array3.index(Integer x, Integer y, Integer z)
   #$ Return the (x, y, z)-th element.
   index(x, y, z)
-    $
-      int64 x = val_to_int64(__x);
+    $ int64 x = val_to_int64(__x);
       int64 y = val_to_int64(__y);
       int64 z = val_to_int64(__z);
-      int64 i = array3_index(&(@a), x, y, z);
-      return @a.data[i];
-    $
+      int64 i = array3_index(&(@a), x, y, z); $
+    return $ @a.data[i]; $
 
   #$ rdoc-name Array3.index_set
   #$ rdoc-header Array3.index_set(Integer x, Integer y, Integer z, v)
   #$ Set the (x, y, z)-th element to v.
   index_set(x, y, z, v)
-    $
-      int64 x = val_to_int64(__x);
+    $ int64 x = val_to_int64(__x);
       int64 y = val_to_int64(__y);
       int64 z = val_to_int64(__z);
-      int64 i = array3_index(&(@a), x, y, z);
-      @a.data[i] = __v;
-    $
+      int64 i = array3_index(&(@a), x, y, z); $
+    return $ @a.data[i] = __v; $
 
   #$ rdoc-name Array3.set_const
   #$ rdoc-header Array3.set_const(v)

@@ -1,8 +1,8 @@
 namespace Num
-  const DOUBLE = $ int64_to_val(NUM_DOUBLE) $
-  const INTEGER = $ int64_to_val(NUM_INT) $
-  const COMPLEX = $ int64_to_val(NUM_COMPLEX) $
-  const INTEGER8 = $ int64_to_val(NUM_INT8) $
+  var DOUBLE = $ int64_to_val(NUM_DOUBLE) $
+  var INTEGER = $ int64_to_val(NUM_INT) $
+  var COMPLEX = $ int64_to_val(NUM_COMPLEX) $
+  var INTEGER8 = $ int64_to_val(NUM_INT8) $
 
   check_type(type)
       if (type != Num.COMPLEX and type != Num.DOUBLE
@@ -41,7 +41,7 @@ namespace Num
 
         switch(@a.type){
           case NUM_DOUBLE:
-            return double_to_val(@a.data_double[x-1]);
+            RRETURN(double_to_val(@a.data_double[x-1]));
           case NUM_COMPLEX:
           default:
             assert_never();
@@ -74,7 +74,7 @@ namespace Num
 
         while (delta < 0) delta += size;
         while (delta >= size) delta -= size;
-        if (delta == 0) return VALUE_NIL;
+        if (delta == 0) RRETURN(VALUE_NIL);
 
         if (delta < size / 2){
           switch (type){
@@ -155,11 +155,11 @@ namespace Num
         uint64 idx = (y-1)*size_x + x-1;
         switch(@a.type){
           case NUM_DOUBLE:
-            return double_to_val(@a.data_double[idx]);
+            RRETURN(double_to_val(@a.data_double[idx]));
           case NUM_INT:
-            return int64_to_val(@a.data_int64[idx]);
+            RRETURN(int64_to_val(@a.data_int64[idx]));
           case NUM_INT8:
-            return int64_to_val(@a.data_int8[idx]);
+            RRETURN(int64_to_val(@a.data_int8[idx]));
           case NUM_COMPLEX:
           default:
             assert_never();

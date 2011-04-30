@@ -23,10 +23,8 @@ namespace Xml
 
     get_root()
       node = Xml.Node.new()
-      $
-        xmlNode** node = obj_c_data(__node);
-        *node = xmlDocGetRootElement(@doc);
-      $
+      $ xmlNode** node = obj_c_data(__node);
+        *node = xmlDocGetRootElement(@doc); $
       return node
 
     # Apply an Xpath expression and return array of nodes that are results
@@ -52,38 +50,34 @@ namespace Xml
           array1_index_set(array, i+1, __node);
         }
         xmlXPathFreeObject(xpath_object);
-        xmlXPathFreeContext(xpath_context);
-        return __array;
-      $
-
+        xmlXPathFreeContext(xpath_context); $
+      return $ __array $
 
   namespace Node
-    const Element = $ int64_to_val(XML_ELEMENT_NODE) $
-    const Text = $ int64_to_val(XML_TEXT_NODE) $
+    var Element = $ int64_to_val(XML_ELEMENT_NODE) $
+    var Text = $ int64_to_val(XML_TEXT_NODE) $
 
   class Node
-    $
-      xmlNode* node;
-    $
+    $ xmlNode* node; $
 
     new() | constructor
       pass
 
     name() | virtual_get
-      $ if (!@node->name) return VALUE_NIL; $
+      $ if (!@node->name) RRETURN(VALUE_NIL); $
       return $ string_to_val((const char*) @node->name) $
 
     type() | virtual_get
       return $ int64_to_val(@node->type) $
 
     content() | virtual_get
-      $ if (!@node->content) return VALUE_NIL; $
+      $ if (!@node->content) RRETURN(VALUE_NIL); $
       return $ string_to_val((const char*) @node->content) $
 
     child() | virtual_get
       $
         xmlNode* child = @node->children;
-        if (child == NULL) return VALUE_NIL;
+        if (child == NULL) RRETURN(VALUE_NIL);
       $
       node = Xml.Node.new()
       $
@@ -95,7 +89,7 @@ namespace Xml
     next() | virtual_get
       $
         xmlNode* next = @node->next;
-        if (next == NULL) return VALUE_NIL;
+        if (next == NULL) RRETURN(VALUE_NIL);
       $
       node = Xml.Node.new()
       $

@@ -17,9 +17,12 @@
 # Context
 ##############################################################################
 
-global ctx_class_name, ctx_class_c_name, ctx_class_type, ctx_class_typedef
+var ctx_class_name
+var ctx_class_c_name
+var ctx_class_type
+var ctx_class_typedef
+var ctx_class_dict
 
-global ctx_class_dict
 namespace Ctx
   class_dict_init()
     ctx_class_dict = Map.new()
@@ -43,7 +46,7 @@ namespace Ctx
 # Symbol tables
 ##############################################################################
 
-global Map ssym_table = Map.new()
+var Map ssym_table = Map.new()
 namespace Ssym
   get(name)
     if name in ssym_table
@@ -54,7 +57,7 @@ namespace Ssym
     ssym_table[name] = c_name
     return c_name
 
-global Map dsym_table = Map.new()
+var Map dsym_table = Map.new()
 namespace Dsym
   get(name)
     if name in dsym_table
@@ -65,7 +68,7 @@ namespace Dsym
     dsym_table[name] = c_name
     return c_name
 
-global Map type_table = Map.new()
+var Map type_table = Map.new()
 namespace Type
   get(name)
     if name in type_table
@@ -76,7 +79,7 @@ namespace Type
     type_table[name] = c_name
     return c_name
 
-global Map func_table = Map.new()
+var Map func_table = Map.new()
 namespace FuncTable
   get(name, num_params)
     if name in func_table
@@ -106,12 +109,12 @@ counter()
   cnt = cnt + 1
   return cnt
 
-global cnt = 0
+var cnt = 0
 
 ##############################################################################
 # Strings
 ##############################################################################
-global strings_map = Map.new()
+var strings_map = Map.new()
 
 namespace Strings
   get(text)
@@ -127,12 +130,12 @@ namespace Strings
 # Locals
 ##############################################################################
 
-global locals
+var locals
 
 class Variable
-  writable ripe_name
-  writable c_name
-  writable type
+  var ripe_name
+  var c_name
+  var type
 
   new() | constructor
     pass
@@ -146,11 +149,11 @@ locals_pop()
 locals_add(c_name, ripe_name, String type)
   if locals_query(ripe_name) != nil
     raise "local variable '{}' already registered".f(ripe_name)
-  var = Variable.new()
-  var.c_name = c_name
-  var.ripe_name = ripe_name
-  var.type = type
-  locals[-1][ripe_name] = var
+  v = Variable.new()
+  v.c_name = c_name
+  v.ripe_name = ripe_name
+  v.type = type
+  locals[-1][ripe_name] = v
 
 locals_query(ripe_name)
   if locals.size == 0
@@ -166,7 +169,7 @@ locals_query(ripe_name)
 # Generator
 ##############################################################################
 
-global stack
+var stack
 
 is_vararg?(param_list)
   for param in param_list.children
@@ -196,8 +199,8 @@ gen_params(param_list)
 gen_stmt_assign2(lvalue, rvalue, warn_if_shadow?)
   switch lvalue.type
     case Node.ID
-      var = locals_query(lvalue.text)
-      if var == nil
+      v = locals_query(lvalue.text)
+      if v == nil
         # Register a new typeless variable
         ripe_name = lvalue.text
         c_name = "__{}".f(Util.to_c(ripe_name))
@@ -209,16 +212,16 @@ gen_stmt_assign2(lvalue, rvalue, warn_if_shadow?)
         if warn_if_shadow?
           Err.println("warning: possible shadowing of variable {1}".f(
                       lvalue.text))
-        if var.type != "?"
-          Wr.code("  {} = {};\n".f(var.c_name,
-                                      eval_expr_typesafe(rvalue, var.type)))
+        if v.type != "?"
+          Wr.code("  {} = {};\n".f(v.c_name,
+                                      eval_expr_typesafe(rvalue, v.type)))
         else
-          Wr.code("  {} = {};\n".f(var.c_name,
+          Wr.code("  {} = {};\n".f(v.c_name,
                                       eval_expr_untyped(rvalue)))
     case Node.EXPR_TYPED_ID
       ripe_name = lvalue.get_string("name")
-      var = locals_query(ripe_name)
-      if var != nil
+      v = locals_query(ripe_name)
+      if v != nil
         raise "redefining a variable '{}'".f(ripe_name)
       c_name = "__{}".f(Util.to_c(ripe_name))
       type = eval_type(lvalue.get_node("type"))
@@ -408,7 +411,7 @@ gen_function_common2(name, param_num, param_vararg?)
   fi = Stran.get_function(name)
   if fi == nil
     raise "Assertion error in gen_function_common2: {}".f(name)
-  
+
   c_name = fi.c_name
   v_name = "__" + c_name
   Wr.init1a("  Value {} = func{}_to_val({});\n".f(v_name,
@@ -613,26 +616,8 @@ gen(ast)
         Wr.header("\n")
       case Node.FUNCTION
         gen_function(node)
-      case Node.CONST_VAR
-        for optassign in node.get_child(1).children
-          name = Namespace.prefix() + optassign.get_string("name")
-          expr = optassign.get_child(1)
-          Wr.init1a("  ssym_set(\"{}\", {});\n".f(name, eval_expr_untyped(expr)))
       case Node.CLASS
         gen_class(node)
-
-gen_globals(ast)
-  for node in ast.children
-    if node.type == Node.GLOBAL_VAR
-      optassign_list = node.get_child(1)
-      for optassign in optassign_list.children
-        name = optassign.get_string("name")
-        type = eval_type(optassign.get_node_optional("type"))
-        c_name = "_glb{}_{}".f(counter(), Util.to_c(name))
-        locals_add(c_name, name, type)
-        Wr.header("Value {};\n".f(c_name))
-        Wr.init3("  {} = {};\n".f(c_name,
-                                     eval_expr_untyped(optassign.get_child(1))))
 
 generate(ast)
   stack = []
@@ -640,6 +625,5 @@ generate(ast)
   # First layer of locals is for global variables
   locals = []
   locals_push()
-  gen_globals(ast)
   gen(ast)
   locals_pop()

@@ -17,13 +17,11 @@ namespace Os
   #$ rdoc-name Os.get_env
   #$ rdoc-header Os.get_env(String var)
   #$ Get the value of environment variable var, or nil if it is not set.
-  get_env(var)
-    $
-      char* var = val_to_string(__var);
+  get_env(v)
+    $ char* var = val_to_string(__v);
       char* rv = getenv(var);
-      if (rv == NULL) return VALUE_NIL;
-      return string_to_val(rv);
-    $
+      if (rv == NULL) RRETURN(VALUE_NIL); $
+    return $ string_to_val(rv) $
 
   #$ rdoc-name Os.get_environment
   #$ rdoc-header Os.get_environment()
@@ -54,13 +52,11 @@ namespace Os
   #$ rdoc-header Os.get_args()
   #$ Return an Array1 of the command line arguments.
   get_args()
-    $
-      Value* args = alloca((sys_argc - 1) * sizeof(Value));
+    $ Value* args = alloca((sys_argc - 1) * sizeof(Value));
       for (int arg = 1; arg < sys_argc; arg++){
         args[arg-1] = string_to_val(sys_argv[arg]);
-      }
-      return array1_to_val(sys_argc - 1, args);
-    $
+      } $
+    return $ array1_to_val(sys_argc - 1, args) $
 
   #$ rdoc-name Os.system
   #$ rdoc-header Integer Os.system(String or Array1 arg)

@@ -25,17 +25,19 @@ conf["LEX"] = "flex"
 conf["VERBOSITY"] = 1
 conf["RFLAGS"] = []
 if "valgrind" in sys.argv:
-    conf["VALGRIND"] = ["valgrind", "--leak-check=no", "--track-origins=yes"]
+    conf["VALGRIND"] = ["valgrind", "--leak-check=no", "--track-origins=yes", "--smc-check=all"]
 else:
     conf["VALGRIND"] = []
 if "nogc" not in sys.argv:
     conf["CFLAGS"].append("-DCLIB_GC")
     conf["LFLAGS"].append("-lgc")
+if "slog" in sys.argv:
+    conf["CFLAGS"].append("-DSLOG")
 conf["FORCING"] = False
 if "force" in sys.argv:
     conf["FORCING"] = True
 if "quiet" in sys.argv:
-    conf["VERBOSITY"] = 0
+    conf["VERBOS ITY"] = 0
 if "verbose" in sys.argv:
     conf["VERBOSITY"] = 2
 if "profile" in sys.argv:
@@ -99,12 +101,18 @@ lang_hs = [
           ]
 lang_srcs = [
               'lang/astnode.c',
+              'lang/aster.c',
               'lang/build-tree.c',
+              'lang/cache.c',
+              'lang/generator.c',
               'lang/input.c',
               'lang/scanner.c',
+              'lang/operator.c',
               'lang/parser.c',
               'lang/stran.c',
+              'lang/proc.c',
               'lang/util.c',
+              'lang/var.c',
               'lang/writer.c'
             ]
 lang_objs = tools.cons_objs(lang_srcs, lang_hs + clib_hs)
@@ -120,12 +128,8 @@ ripe_hs = [
 ripe_srcs = [
                'ripe/ast.c',
                'ripe/cli.c',
-               'ripe/error.c',
-               'ripe/generator.c',
-               'ripe/operator.c',
                'ripe/ripe.c',
-               'ripe/util.c',
-               'ripe/vars.c'
+               'ripe/util.c'
              ]
 ripe_objs = tools.cons_objs(ripe_srcs, ripe_hs + clib_hs + lang_hs)
 tools.cons_bin('bin/ripeboot', ripe_objs + clib_objs + lang_objs, [])
@@ -218,12 +222,8 @@ if rewrite_meta:
 # BOOTSTRAP STEP 1
 
 riperipesrcs = [
-                'riperipe/dump.rip',
-                'riperipe/eval.rip',
-                'riperipe/generator.rip',
                 'riperipe/main.rip',
                 'riperipe/module.rip',
-                'riperipe/namespace.rip',
                ]
 
 bootstrap_srcs = ['product/vm.o', 'lang/lang.o', 'product/ripe.meta']
@@ -244,8 +244,9 @@ bootstrap_srcs.append('riperipe/bootstrap.o')
 def bootstrap(newripe, oldripe, depends):
     if tools.depends(newripe, [oldripe] + depends):
         tools.pprint('RIP', 'riperipe/*.rip', newripe)
-        tools.call([conf["VALGRIND"], oldripe,
-                   '-s', '-o', newripe, bootstrap_srcs])
+        args = [conf["VALGRIND"], oldripe,
+                   '-s', '-o', newripe, bootstrap_srcs]
+        tools.call(args)
 
 bootstrap('bin/ripe2', 'bin/ripeboot', bootstrap_srcs)
 bootstrap('bin/ripe3', 'bin/ripe2', [])

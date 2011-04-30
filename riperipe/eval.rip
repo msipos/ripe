@@ -13,12 +13,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-global unary_ops =  { '-'              => "op_unary_minus",
-                      Node.K_NOT        => "op_unary_not",
-                      Node.K_BIT_NOT    => "op_unary_bit_not" }
+var unary_ops =  {'-'               => "op_unary_minus",
+                  Node.K_NOT        => "op_unary_not",
+                  Node.K_BIT_NOT    => "op_unary_bit_not" }
 
 # When to optimize out the binary operator?
-const NEVER = 0
+var NEVER = 0   | const
 # For NUMERIC, the behaviour is the following:
 #   int64, int64  => int64
 #   int64, double => double
@@ -26,28 +26,28 @@ const NEVER = 0
 # Integer, Double => double
 # Integer, double => double
 # ...
-const NUMERIC = 1
+var NUMERIC = 1 | const
 # Like NUMERIC, except the result is always a bool
-const BOOL_NUMERIC = 2
+var BOOL_NUMERIC = 2 | const
 
-global binary_ops = { '+'              => ["op_plus", NUMERIC, "+"],
-                      '-'              => ["op_minus", NUMERIC, "-"],
-                      '*'              => ["op_star", NUMERIC, "*"],
-                      '/'              => ["op_slash", NUMERIC, "/"],
-                      '^'              => ["op_exp", NEVER, nil],
-                      Node.K_AND        => ["op_and", NEVER, nil],
-                      Node.K_OR         => ["op_or", NEVER, nil],
-                      Node.K_IN         => ["op_in", NEVER, nil],
-                      Node.K_BIT_AND    => ["op_bit_and", NEVER, nil],
-                      Node.K_BIT_OR     => ["op_bit_or", NEVER, nil],
-                      Node.K_BIT_XOR    => ["op_bit_xor", NEVER, nil],
-                      Node.K_MODULO     => ["op_modulo", NEVER, nil],
-                      Node.OP_EQUAL     => ["op_equal", NEVER, nil],
-                      Node.OP_NOT_EQUAL => ["op_not_equal", NEVER, nil],
-                      '>'              => ["op_gt", BOOL_NUMERIC, ">"],
-                      '<'              => ["op_lt", BOOL_NUMERIC, "<"],
-                      Node.OP_LTE       => ["op_lte", BOOL_NUMERIC, "<="],
-                      Node.OP_GTE       => ["op_gte", BOOL_NUMERIC, ">="] }
+var binary_ops = {'+'               => ["op_plus", NUMERIC, "+"],
+                  '-'               => ["op_minus", NUMERIC, "-"],
+                  '*'               => ["op_star", NUMERIC, "*"],
+                  '/'               => ["op_slash", NUMERIC, "/"],
+                  '^'               => ["op_exp", NEVER, nil],
+                  Node.K_AND        => ["op_and", NEVER, nil],
+                  Node.K_OR         => ["op_or", NEVER, nil],
+                  Node.K_IN         => ["op_in", NEVER, nil],
+                  Node.K_BIT_AND    => ["op_bit_and", NEVER, nil],
+                  Node.K_BIT_OR     => ["op_bit_or", NEVER, nil],
+                  Node.K_BIT_XOR    => ["op_bit_xor", NEVER, nil],
+                  Node.K_MODULO     => ["op_modulo", NEVER, nil],
+                  Node.OP_EQUAL     => ["op_equal", NEVER, nil],
+                  Node.OP_NOT_EQUAL => ["op_not_equal", NEVER, nil],
+                  '>'               => ["op_gt", BOOL_NUMERIC, ">"],
+                  '<'               => ["op_lt", BOOL_NUMERIC, "<"],
+                  Node.OP_LTE       => ["op_lte", BOOL_NUMERIC, "<="],
+                  Node.OP_GTE       => ["op_gte", BOOL_NUMERIC, ">="] } | const
 
 value_barrier(Tuple t)
   switch t[1]
@@ -235,8 +235,8 @@ numeric_proc(t, e)
       return "val_to_double({})".f(e)
   raise "Assertion error! This line should not be reached"
 
-global numeric_types = ["int64", "double", "Integer", "Double"]
-global double_types = ["double", "Double"]
+var numeric_types = ["int64", "double", "Integer", "Double"] | const
+var double_types = ["double", "Double"] | const
 numeric_op(tuple1, tuple2, op)
   t1, e1 = tuple1
   t2, e2 = tuple2

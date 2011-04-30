@@ -317,7 +317,6 @@ error utf8_read(const char** str, const char* limit, unichar* out);
 // If it fails, *str is left unchanged.
 error utf8_write(char** str, const char* limit, unichar c);
 
-
 ///////////////////////////////////////////////////////////////////////
 // util.c
 ///////////////////////////////////////////////////////////////////////
@@ -330,6 +329,19 @@ typedef struct {
 #define err_check(e)   ({(e) = mem_new(Error); setjmp((e)->jb); })
 //#define err_throw(e, ...); ({(e)->text = mem_asprintf(__VA_ARGS__); longjmp((e)->jb, 1);})
 void err_throw(Error* e, const char* format, ...);
-
+#ifdef SLOG
+void slog(const char* format, ...);
+#else
+#define slog(...)
+#endif
+void fatal_push(const char* format, ...);
+void fatal_pop();
+void fatal_throw(const char* format, ...);
+void fatal_vthrow(const char* format, va_list ap);
+void fatal_warn(const char* format, ...);
+void encode_int(FILE* f, int64 i);
+void encode_string(FILE* f, const char* s);
+int64 decode_int(FILE* f);
+const char* decode_string(FILE* f);
 
 #endif

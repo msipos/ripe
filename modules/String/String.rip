@@ -19,34 +19,28 @@ namespace String
 #$ rdoc-header String
 #$ A UTF-8 encoded string.
 class String
-  $
-    String s;
-  $
+  $ String s; $
 
   #$ rdoc-name String.new_uniform
   #$ rdoc-header String.new_uniform(Integer c, Integer reps)
   #$ Creates a string of length reps, filled with characters c.
   new_uniform(c, reps) | constructor
-    $
-      int64 reps = val_to_int64(__reps);
+    $ int64 reps = val_to_int64(__reps);
       int c = val_to_int64(__c);
       @s.str = mem_malloc(reps + 1);
       for (int64 i = 0; i < reps; i++){
         @s.str[i] = (char) c;
-      }
-    $
+      } $
 
   #$ rdoc-name String.find
   #$ rdoc-header String.find(String substring)
   #$ Finds the index of the first occurence of substring in self.
   #$ If no occurence is found, it returns nil.
   find(String substring)
-    $
-      char* s = strstr(@s.str,
+    $ char* s = strstr(@s.str,
                        val_to_string(__substring));
-      if (s) return int64_to_val(s - @s.str + 1);
-      return VALUE_NIL;
-    $
+      if (s) RRETURN(int64_to_val(s - @s.str + 1)); $
+    return nil
 
   #$ rdoc-name String.index
   #$ rdoc-header String.index(Integer or Range i)
@@ -65,14 +59,14 @@ class String
           char buf[finish - start + 2];
           memcpy(buf, @s.str + start, finish - start + 1);
           buf[finish - start + 1] = 0;
-          return string_to_val(buf);
+          RRETURN(string_to_val(buf));
         } else {
           char buf[start - finish + 2];
           for (int64 i = 0; i < start - finish + 1; i++){
             buf[i] = @s.str[start - i];
           }
           buf[start - finish + 1] = 0;
-          return string_to_val(buf);
+          RRETURN(string_to_val(buf));
         }
       }
     $
@@ -93,12 +87,10 @@ class String
   #$ rdoc-header String.overwrite(String s)
   #$ Overwrites the contents of the string with that of s.
   overwrite(s)
-    $
-      char* s = val_to_string(__s);
-      if (s == @s.str) return VALUE_NIL;
+    $ char* s = val_to_string(__s);
+      if (s == @s.str) RRETURN(VALUE_NIL);
       mem_free(@s.str);
-      @s.str = mem_strdup(s);
-    $
+      @s.str = mem_strdup(s); $
 
   #$ rdoc-name String.to_string
   #$ rdoc-header String.to_string()
@@ -120,7 +112,7 @@ class String
 
       while (delta < 0) delta += size;
       while (delta >= size) delta -= size;
-      if (delta == 0) return VALUE_NIL;
+      if (delta == 0) RRETURN(VALUE_NIL);
 
       char temp[size+1];
       strcpy(temp, s);
@@ -141,7 +133,7 @@ class String
       // Strip away the front
       while (*s != 0 and strchr(chars, *s) != NULL) s++;
       int64 n = strlen(s);
-      if (n == 0) return string_to_val(s);
+      if (n == 0) RRETURN(string_to_val(s));
 
       // Strip away the tail
       char tmp[n + 1];
@@ -150,8 +142,8 @@ class String
       while (strchr(chars, *s) != NULL) {
         *s = 0;
         s--;
-      }
-      return string_to_val(tmp); $
+      } $
+    return $ string_to_val(tmp) $
 
   #$ rdoc-name String.strip_whitespace
   #$ rdoc-header String.strip_whitespace()
@@ -212,8 +204,7 @@ class String
   #$ rdoc-header String String.clone()
   #$ Clones the string.
   clone()
-    $
-      return string_to_val(@s.str);
+    return $ string_to_val(@s.str);
     $
 
   #$ rdoc-name String.substitute_character!
@@ -263,68 +254,52 @@ class String
   #$ rdoc-header String.+
   #$ String concatenation.
   __plus(other)
-    $
-      const char* other = to_string(__other);
+    $ const char* other = to_string(__other);
       int bufsize = strlen(@s.str) + strlen(other) + 1;
       char buf[bufsize];
-      snprintf(buf, bufsize, "%s%s", @s.str, other);
-      return string_to_val(buf);
-    $
+      snprintf(buf, bufsize, "%s%s", @s.str, other); $
+    return $ string_to_val(buf) $
 
   __plus2(other)
-    $
-      const char* other = to_string(__other);
+    $ const char* other = to_string(__other);
       int bufsize = strlen(@s.str) + strlen(other) + 1;
       char buf[bufsize];
-      snprintf(buf, bufsize, "%s%s", other, @s.str);
-      return string_to_val(buf);
-    $
+      snprintf(buf, bufsize, "%s%s", other, @s.str); $
+    return $ string_to_val(buf) $
 
   #$ rdoc-name String.lt
   #$ rdoc-header String.<
   #$ String alphabetic comparison.
   __lt(other)
-    $
-      return pack_bool(strcmp(@s.str, val_to_string(__other)) < 0);
-    $
+    return $ pack_bool(strcmp(@s.str, val_to_string(__other)) < 0) $
 
   __lt2(other)
-    $
-      return pack_bool(strcmp(@s.str, val_to_string(__other)) > 0);
-    $
+    return $ pack_bool(strcmp(@s.str, val_to_string(__other)) > 0) $
 
   #$ rdoc-name String.lt
   #$ rdoc-header String.>
   #$ String alphabetic comparison.
   __gt(other)
-    $
-      return pack_bool(strcmp(@s.str, val_to_string(__other)) > 0);
-    $
+    return $ pack_bool(strcmp(@s.str, val_to_string(__other)) > 0) $
 
   __gt2(other)
-    $
-      return pack_bool(strcmp(@s.str, val_to_string(__other)) < 0);
-    $
+    return $ pack_bool(strcmp(@s.str, val_to_string(__other)) < 0) $
 
   #$ rdoc-name String.f
   #$ rdoc-header String.f(*args)
   #$ Returns a string with given formatting.
   f(*args)
-    $
-      Tuple* array = val_to_tuple(__args);
-      const char* out = format_to_string(@s.str, array->size, array->data);
-      return string_to_val(out);
-    $
+    $ Tuple* array = val_to_tuple(__args);
+      const char* out = format_to_string(@s.str, array->size, array->data); $
+    return $ string_to_val(out) $
 
   #$ rdoc-name String.size
   #$ rdoc-header String.size
   #$ Returns the size (length) of the string.
   size() | virtual_get
-    $
-      char* s = @s.str;
-			int l = strlen(s);
-			return int64_to_val(l);
-    $
+    $ char* s = @s.str;
+			int l = strlen(s); $
+    return $ int64_to_val(l) $
 
   #$ rdoc-name String.print
   #$ rdoc-header String.print(...)

@@ -19,41 +19,31 @@ class Set
   #$ rdoc-header Set.new()
   #$ Constructs a new empty Set.
   new() | constructor
-    $
-      ht_init(&(@ht), 0);
-    $
+    $ ht_init(&(@ht), 0); $
 
   #$ rdoc-name Set.contains?
   #$ rdoc-header Set.contains?(key)
   #$ Return if the Set contains key.
   contains?(key)
-    $
-      return pack_bool(ht_query(&(@ht), __key));
-    $
+    return $ pack_bool(ht_query(&(@ht), __key)); $
 
   #$ rdoc-name Set.add
   #$ rdoc-header Set.add(key)
   #$ Add the object to the Set.
   add(key)
-    $
-      ht_set(&(@ht), __key);
-    $
+    $ ht_set(&(@ht), __key); $
 
   #$ rdoc-name Set.clear
   #$ rdoc-header Set.clear()
   #$ Remove all objects from the Set.
   clear()
-    $
-      ht_clear(&(@ht));
-    $
+    $ ht_clear(&(@ht)); $
 
   #$ rdoc-name Set.remove
   #$ rdoc-header Set.remove(key)
   #$ Remove an object from the Set.
   remove(key)
-    $
-      return pack_bool(ht_remove(&(@ht), __key));
-    $
+    return $ pack_bool(ht_remove(&(@ht), __key)); $
 
   #$ rdoc-name Set.to_string
   #$ rdoc-header Set.to_string()
@@ -77,9 +67,8 @@ class Set
       }
       sbuf_printf(&sb, ")");
       Value rv = string_to_val(sb.str);
-      sbuf_deinit(&sb);
-      return rv;
-    $
+      sbuf_deinit(&sb); $
+    return $ rv $
 
   #$ rdoc-name Set.get_bucket
   #$ rdoc-header Set.get_bucket(Integer i)
@@ -92,10 +81,9 @@ class Set
         exc_raise("invalid index %" PRId64 " in Set with %" PRId64" buckets",
                   idx, @ht.alloc_size);
       if (@ht.buckets[idx-1] == BUCKET_FULL){
-        return @ht.keys[idx-1];
-      }
-      return VALUE_NIL;
-    $
+        RRETURN(@ht.keys[idx-1]);
+      } $
+    return nil
 
   #$ rdoc-name Set.size
   #$ rdoc-header Set.size
@@ -122,22 +110,19 @@ class SetIterator
   #$ rdoc-header SetIterator.new(Set set)
   #$ Constructs a new iterator over a set.
   new(set) | constructor
-    $
-      @ht = obj_c_data(__set);
-      @cur = 0;
-    $
+    $ @ht = obj_c_data(__set);
+      @cur = 0; $
 
   #$ rdoc-name SetIterator.iter
   #$ rdoc-header SetIterator.iter()
   #$ Return the next object from the Set, or eof if you reached the end.
   iter()
-    $
-      while (@cur < @ht->alloc_size){
+    $ while (@cur < @ht->alloc_size){
         if (@ht->buckets[@cur] == BUCKET_FULL){
           @cur++;
-          return @ht->keys[@cur - 1];
+          RRETURN(@ht->keys[@cur - 1]);
         }
         @cur++;
-      }
-      return VALUE_EOF;
-    $
+      } $
+    return eof
+
