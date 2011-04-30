@@ -15,7 +15,7 @@
 
 #include "lang/lang.h"
 
-int input_from_file(RipeInput* input, const char* filename)
+void input_from_file(RipeInput* input, const char* filename)
 {
   input->filename = mem_strdup(filename);
 
@@ -27,9 +27,8 @@ int input_from_file(RipeInput* input, const char* filename)
 
   FILE* f = fopen(filename, "r");
   if (f == NULL){
-    fprintf(stderr, "Cannot open '%s' for reading: %s\n", filename,
-            strerror(errno));
-    return 1;
+    fatal_throw("cannot open '%s' for reading: %s", filename,
+                strerror(errno));
   }
 
   for (;;){
@@ -38,5 +37,4 @@ int input_from_file(RipeInput* input, const char* filename)
     array_append2(&(input->lines), &s);
   }
   fclose(f);
-  return 0;
 }

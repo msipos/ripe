@@ -104,7 +104,7 @@ typedef struct {
   const char* filename;
   Array lines;
 } RipeInput;
-int input_from_file(RipeInput* input, const char* filename);
+void input_from_file(RipeInput* input, const char* filename);
 
 //////////////////////////////////////////////////////////////////////////////
 // lang/pp.c

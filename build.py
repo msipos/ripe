@@ -126,10 +126,8 @@ ripe_hs = [
             'ripe/ripe.h',
           ]
 ripe_srcs = [
-               'ripe/ast.c',
                'ripe/cli.c',
                'ripe/ripe.c',
-               'ripe/util.c'
              ]
 ripe_objs = tools.cons_objs(ripe_srcs, ripe_hs + clib_hs + lang_hs)
 tools.cons_bin('bin/ripeboot', ripe_objs + clib_objs + lang_objs, [])

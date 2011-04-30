@@ -13,9 +13,7 @@ class Node
   new_from_file(String filename) | constructor
     Fatal.push("while building AST of '{}'".f(filename))
     $ RipeInput input;
-      if (input_from_file(&input, val_to_string(__filename))){ $
-    raise "failed to load input from '{}'".f(filename)
-    $ }
+      input_from_file(&input, val_to_string(__filename));
       @n = build_tree(&input); $
     Fatal.pop()
 

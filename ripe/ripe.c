@@ -31,9 +31,10 @@ void bootstrap(const char* out_filename, int arg1, int argc, char* const* argv)
     const char* ext = path_get_extension(arg);
     if (strequal(ext, ".rip")){
       RipeInput input;
-      if (input_from_file(&input, arg)){
-        err("failed to load '%s'", arg);
-      }
+      fatal_push("while reading '%s'");
+        input_from_file(&input, arg);
+      fatal_pop();
+      
       fatal_push("while building AST for '%s'", arg);
         Node* ast = build_tree(&input);
       fatal_pop();
@@ -57,7 +58,7 @@ void bootstrap(const char* out_filename, int arg1, int argc, char* const* argv)
       cflags = mem_asprintf("%s %s", cflags, conf_query(&conf, "cflags"));
       lflags = mem_asprintf("%s %s", lflags, conf_query(&conf, "lflags"));
     } else {
-      err("invalid extension '%s' of file '%s'", ext, arg);
+      fatal_throw("invalid extension '%s' of file '%s'", ext, arg);
     }
   }
 
@@ -73,10 +74,9 @@ void bootstrap(const char* out_filename, int arg1, int argc, char* const* argv)
 
   // Now dump into C file.
   const char* tmp_c_path = path_temp_name("ripe_boot_", ".c");
-  slog("dumping into '%s'...", tmp_c_path);
   FILE* f = fopen(tmp_c_path, "w");
   if (f == NULL){
-    err("cannot open '%s' for writing: %s\n", tmp_c_path, strerror(errno));
+    fatal_throw("cannot open '%s' for writing: %s", tmp_c_path, strerror(errno));
   }
   fprintf(f, "%s", wr_dump("User"));
   fclose(f);
@@ -88,9 +88,9 @@ void bootstrap(const char* out_filename, int arg1, int argc, char* const* argv)
                                       tmp_c_path,
                                       tmp_o_path);
   if (system(cmd_line)){
-    err("failed running '%s'", cmd_line);
+    fatal_throw("failed running '%s'", cmd_line);
   }
-  //remove(tmp_c_path);
+  remove(tmp_c_path);
 
   // Finally compile into the output file
   char* objs_txt = "";
@@ -105,7 +105,7 @@ void bootstrap(const char* out_filename, int arg1, int argc, char* const* argv)
                           tmp_o_path,
                           out_filename);
   if (system(cmd_line)){
-    err("failed running '%s'", cmd_line);
+    fatal_throw("failed running '%s'", cmd_line);
   }
   remove(tmp_o_path);
 }
@@ -130,7 +130,7 @@ int main(int argc, char* const* argv)
           /* ignore */
           break;
         default:
-          err("getopt failed");
+          fatal_throw("getopt failed");
           return 1;
       }
     }
