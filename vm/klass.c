@@ -44,6 +44,7 @@ Klass* klass_new(Value name, int cdata_size)
   }
 
   Klass* klass = mem_new(Klass);
+  klass->parent = NULL;
   klass->name = name;
   klass->cdata_size = cdata_size;
   // This preliminary calculation of obj_size is necessary because of Function
@@ -109,10 +110,6 @@ void klass_new_method(Klass* klass, Value name, Value method)
 
 void klass_init_phase15()
 {
-  // Finally, go thru list again, and finalize it:
-  // put in all the methods, fields and cdata of the parent,
-  // put in all your own methods, fields and cdata,
-  // verify that only one cdata is defined by someone in the hierarchy.
   for (int i = 0; i < klasses.size; i++){
     Klass* klass = array_get(&klasses, Klass*, i);
     if (klass->cdata_size > 0 and klass->num_fields > 0){
@@ -193,8 +190,30 @@ void field_set(Value v_obj, Value field, Value val)
   }
 }
 
+bool field_has(Value v_obj, Value field)
+{
+  Klass* klass = obj_klass(v_obj);
+  return dict_query(&(klass->readable_fields), &field, NULL);
+}
+
 void method_error(Klass* klass, Value dsym)
 {
   exc_raise("class '%s' does not have method '%s'",
             dsym_reverse_get(klass->name), dsym_reverse_get(dsym));
+}
+
+bool method_has(Value v_obj, Value dsym)
+{
+  Klass* klass = obj_klass(v_obj);
+  return dict_query(&(klass->methods), &dsym, NULL);
+}
+
+bool obj_eq_klass(Value v_obj, Klass* k)
+{
+  Klass* kl = obj_klass(v_obj);
+  for(;;){
+    if (kl == k) return true;
+    if (kl->parent == NULL) return false;
+    kl = kl->parent;
+  }
 }

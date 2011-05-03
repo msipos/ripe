@@ -1,3 +1,77 @@
+
+success()
+  Test.test("exceptions", 1, 1)
+
+fail()
+  Test.test("exceptions", 1, 0)
+
+err()
+  $ exc_raise("exception!"); $
+
+manual_finally()
+  $ if (setjmp(exc_jb) == 0){
+    stack_push_finally(); $
+  err()
+  $ stack_pop();
+    } $
+  success()
+  $ if (stack_unwinding == true) longjmp(exc_unwinding_jb, 1); $
+  fail()
+
+manual()
+  $ if (setjmp(exc_jb) == 0){
+    stack_push_catch_all(); $
+  manual_finally()
+  $ stack_pop();
+    } else { $
+  success()
+  $ } $
+
+outer_manual()
+  $ if (setjmp(exc_jb) == 0){
+    stack_push_catch_all(); $
+  manual()
+  $ stack_pop();
+    } else { $
+  fail()
+  $ } $
+  
+pass_value()
+  raise 5
+  
+automatic()
+  try  
+    pass_value()
+  catch Integer i
+    Test.test("pass value by exception", i, 5)
+
+  try
+    err()
+    fail()
+  finally
+    success()
+  catch
+    success()
+  catch
+    fail()
+
+outer_automatic()
+  try
+    automatic()
+  catch
+    fail()
+
+exceptions()
+  try
+    outer_manual()
+    success()
+    outer_automatic()
+    success()
+  catch
+    fail()
+  finally
+    success()
+
 class CDataClass
   $
     int64 i;
@@ -22,6 +96,7 @@ class Class
 
   test_filename(test)
     Test.test("basic-class", @filename, test)
+
 
 operators()
   name = "plus"
@@ -148,6 +223,22 @@ ellipsis()
   Test.test(name, x+y,
             13)
 
+class MyParent
+  var some_field
+
+  some_method(x)
+    @some_field = x
+
+class MyChild | parent=MyParent
+  var some_other_field
+
+  some_other_method(x)
+    return @some_field
+
+  new() | constructor
+    @some_other_field = nil
+    @some_field = nil
+
 main()
   Test.set_verbose(false)
   operators()
@@ -168,7 +259,12 @@ main()
   obj.i = 10
   Test.test("set/get", 10, obj.i)
 
-  #exceptions()
+  obj = MyChild.new()
+  Test.test("class inheritance 1", obj.some_other_method(4), nil)
+  obj.some_method(5)
+  Test.test("class inheritance 2", obj.some_field, 5)
+
+  exceptions()
   symbols()
 
   Test.test("c-expr", $ int64_to_val(1) $, 1)

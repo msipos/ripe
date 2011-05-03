@@ -48,6 +48,7 @@ extern Value dsym_modulo, dsym_modulo2;
 // klass.c
 //////////////////////////////////////////////////////////////////////////////
 struct KlassT {
+  struct KlassT* parent;
   Value name;
   Dict methods;
   int num_fields;
@@ -77,9 +78,12 @@ extern Klass* klass_String;
 extern Klass* klass_Tuple;
 extern Klass* klass_Map;
 extern Klass* klass_Set;
+extern Klass* klass_Error;
 
 extern Value dsym_to_string;
 extern Value dsym_contains;
+extern Value dsym_name;
+extern Value dsym_text;
 
 void common_init_phase15();
 
@@ -90,45 +94,26 @@ void common_init_phase15();
 #include <setjmp.h>
 
 void stack_init();
-void stack_push_func(Value func);
-void stack_push_catch_all();
-void stack_push_catch(Klass* exc_type);
-void stack_push_finally();
-void stack_push_annotation(char* annotation);
-void stack_check_unwinding();
-void stack_pop();
 void stack_display();
+void exc_raise(char* format, ...) __attribute__ ((noreturn));
+void exc_raise_object(Value obj) __attribute__ ((noreturn));
 
-// CA stands for catch-all
-#define EXC_CA_TRY                 if ( setjmp(exc_jb) == 0) { \
-                                     stack_push_catch_all();
+// Annotation stuff
+void stack_annot_push(char* annotation);
+void stack_annot_pop();
+#define  RRETURN(x)  { stack_annot_pop(); return x; }
 
-#define EXC_CA_CATCH                 stack_pop();\
-                                   } else {
-
-#define EXC_CA_END                 }
-
-// FIN stands for finally
-#define EXC_FIN_TRY(lbl)           if ( setjmp(exc_jb) == 0) { \
-                                     stack_push_finally(); \
-                                   } else { \
-                                     goto lbl; \
-                                   }
-
-#define EXC_FIN_FINALLY(lbl)       stack_pop(); \
-                                   lbl:
-
-
-#define EXC_FIN_END(lbl)           stack_check_unwinding();
-
-void exc_raise(char* format, ...) __attribute__ ((noreturn)) ;
+void stack_push_catch_all();
+void stack_pop();
+void stack_push_finally();
+void stack_push_catch(Klass* exc_type);
 
 // TODO: Make these thread safe:
-jmp_buf exc_jb;
-bool stack_unwinding;
-jmp_buf exc_unwinding_jb;
+extern THREAD_LOCAL jmp_buf exc_jb;
+extern THREAD_LOCAL jmp_buf exc_unwinding_jb;
+extern THREAD_LOCAL Value exc_obj;
+extern THREAD_LOCAL bool stack_unwinding;
 
-#define  RRETURN(x)  { stack_pop(); return x; }
 
 //////////////////////////////////////////////////////////////////////////////
 // klass.c
@@ -223,8 +208,10 @@ static inline void* obj_c_ptr(Value v_obj)
 
 Value field_get(Value v_obj, Value field);
 void field_set(Value v_obj, Value field, Value val);
+bool field_has(Value v_obj, Value field);
 
 void method_error(Klass* klass, Value dsym);
+bool method_has(Value v_obj, Value dsym);
 static inline Value method_get(Value v_obj, Value dsym)
 {
   Klass* klass = obj_klass(v_obj);
@@ -236,6 +223,8 @@ static inline Value method_get(Value v_obj, Value dsym)
     return VALUE_NIL;
   }
 }
+
+bool obj_eq_klass(Value v_obj, Klass* k);
 
 //////////////////////////////////////////////////////////////////////////////
 // ops.c

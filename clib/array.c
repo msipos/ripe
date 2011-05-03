@@ -43,7 +43,11 @@ void array_delete(Array* arr)
 
 void array_append2(Array* arr, void* el)
 {
+  assert(arr->el_size <= 64);
+  assert(arr->alloc_size > 0);
+
   array_expand(arr);
+  assert(arr->alloc_size > arr->size);
   memmove(arr->data + arr->size*arr->el_size, el, arr->el_size);
   arr->size++;
 }
@@ -75,6 +79,9 @@ void array_expand(Array* arr)
     arr->alloc_size = 2;
   } else {
     arr->alloc_size *= 2;
+  }
+  if (arr->alloc_size <= arr->size){
+    fprintf(stderr, "alloc_size = %u, size = %u\n", arr->alloc_size, arr->size);
   }
   arr->data = mem_realloc(arr->data, arr->el_size * arr->alloc_size);
 }

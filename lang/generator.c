@@ -16,43 +16,46 @@
 #include "lang/lang.h"
 
 ///////////////////////////////////////////////////////////////////////////////
-// ERROR HANDLING
+// LINE CONTROL
 ///////////////////////////////////////////////////////////////////////////////
 
-static int error_line_max;
-static int error_line_min;
-
-// Try to populate error_filename and error_line_* with information from this
-// node.
-static void error_traverse(Node* node)
+static const char* line_filename;
+static int line_min;
+static int line_max;
+static void traverse(Node* node)
 {
+  line_min = -1;
+  line_max = -1;
+  
   if (node->line != -1) {
-    if (error_line_max == -1) {
-      error_line_max = node->line;
-      error_line_min = node->line;
+    if (line_max == -1) {
+      line_max = node->line;
+      line_min = node->line;
     } else {
-      if (error_line_max < node->line) error_line_max = node->line;
-      if (error_line_min > node->line) error_line_min = node->line;
+      if (line_max < node->line) line_max = node->line;
+      if (line_min > node->line) line_min = node->line;
     }
   }
   for (int i = 0; i < node_num_children(node); i++){
-    error_traverse(node_get_child(node, i));
+    traverse(node_get_child(node, i));
   }
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// ERROR HANDLING
+///////////////////////////////////////////////////////////////////////////////
 
 // If node != NULL, attempt to query information about the location of the
 // error.
 static void fatal_node(Node* node, const char* format, ...)
 {
-  error_line_min = -1;
-  error_line_max = -1;
-  if (node != NULL) error_traverse(node);
+  if (node != NULL) traverse(node);
   const char* error_numbers = NULL;
-  if (error_line_min != -1){
-    if (error_line_min == error_line_max){
-      fatal_push("line %d", error_line_min);
+  if (line_min != -1){
+    if (line_min == line_max){
+      fatal_push("line %d", line_min);
     } else {
-      fatal_push("lines %d-%d", error_line_min, error_line_max);
+      fatal_push("lines %d-%d", line_min, line_max);
     }
   }
 
@@ -67,20 +70,6 @@ static void fatal_node(Node* node, const char* format, ...)
 
 FuncInfo* context_fi = NULL;
 ClassInfo* context_ci = NULL;
-
-int context;
-#define CONTEXT_NONE 1
-#define CONTEXT_CLASS 2
-const char* context_class_name;
-const char* context_class_c_name;
-const char* context_class_typedef;
-ClassType context_class_type;
-Dict* context_class_dict;
-int context2;
-#define CONTEXT_FUNC        1
-#define CONTEXT_CONSTRUCTOR 2
-#define CONTEXT_METHOD      3
-const char* context2_method_value_name;
 
 ///////////////////////////////////////////////////////////////////////////////
 // EVALUATING AST
@@ -396,6 +385,9 @@ static const char* eval_expr(Node* expr)
           fatal_node(expr, "@ in C code in a class that is not cdata");
         return util_replace(str, '@', "_c_data->");
       }
+      if (strstr(expr->text, "return")){
+        fatal_warn("careless return in C code may disrupt the stack (use RRETURN)");
+      }
       return str;
     }
   case EXPR_IS_TYPE:
@@ -487,6 +479,12 @@ static void gen_stmt_assign(Node* left, Node* right)
 
 static void gen_stmt(Node* stmt)
 {
+  // Traverse the statement
+  traverse(stmt);
+  if (line_min != -1){
+    wr_print(WR_CODE, "#line %d \"%s\"\n", line_min, line_filename);
+  }  
+  
   switch(stmt->type){
   case STMT_EXPR:
     {
@@ -494,9 +492,6 @@ static void gen_stmt(Node* stmt)
       if (expr->type == EXPR_ID_CALL or expr->type == EXPR_FIELD_CALL){
         wr_print(WR_CODE, "  %s;\n", eval_expr(expr));
       } else if (expr->type == C_CODE) {
-        if (strstr(expr->text, "return")){
-          fatal_warn("careless return in C code may disrupt the stack (use RRETURN)");
-        }
         wr_print(WR_CODE, "  %s\n", eval_expr(expr));
       } else {
         fatal_node(stmt, "invalid expression in an expression statement");
@@ -507,7 +502,7 @@ static void gen_stmt(Node* stmt)
     if (context_fi->type == CONSTRUCTOR){
       fatal_node(stmt, "return not allowed in a constructor");
     }
-    wr_print(WR_CODE, "  stack_pop();\n");
+    wr_print(WR_CODE, "  stack_annot_pop();\n");
     wr_print(WR_CODE, "  return %s;\n", eval_expr(node_get_child(stmt, 0)));
     break;
   case STMT_LOOP:
@@ -561,19 +556,25 @@ static void gen_stmt(Node* stmt)
     {
       static int iterator_counter = 0;
       iterator_counter++;
-      const char* rip_iterator = mem_asprintf("_iterator%d", iterator_counter);
-      Node* id_iterator = node_new_id(rip_iterator);
       Node* expr = node_get_child(stmt, 1);
       Node* lvalue_list = node_get_child(stmt, 0);
 
       var_push();
+
+      // _iteratorX = expr.get_iter()
+      const char* rip_iterator = mem_asprintf("_iterator%d", iterator_counter);
+      Node* id_iterator = node_new_id(rip_iterator);
       gen_stmt_assign2(id_iterator, node_new_field_call(expr, "get_iter", 0));
-      Node* iterator_call = node_new_field_call(id_iterator, "iter", 0);
 
       wr_print(WR_CODE, "  for(;;){");
+      
+      // _iterator_tempX = _iteratorX.iter()
+      Node* iterator_call = node_new_field_call(id_iterator, "iter", 0);
       Node* id_temp = node_new_id(mem_asprintf("_iterator_temp%d",
                                   iterator_counter));
       gen_stmt_assign2(id_temp, iterator_call);
+      
+      // if _iterator_tempX == eof break
       wr_print(WR_CODE, "  if (%s == VALUE_EOF) break;\n", eval_expr(id_temp));
       gen_stmt_assign(lvalue_list, id_temp);
 
@@ -604,7 +605,12 @@ static void gen_stmt(Node* stmt)
         wr_print(WR_CODE, "  %s (op_equal(%s, %s) == VALUE_TRUE) {\n",
                     word, c_expr_value, eval_expr(node_case_expr));
         gen_block(block);
-        wr_print(WR_CODE, "  }");
+        wr_print(WR_CODE, "  }\n");
+      }
+      if (node_has_node(stmt, "else")){
+        wr_print(WR_CODE, "  else {\n");
+        gen_block(node_get_node(stmt, "else"));
+        wr_print(WR_CODE, "  }\n");
       }
       wr_print(WR_CODE, "  }\n");
     }
@@ -612,11 +618,59 @@ static void gen_stmt(Node* stmt)
   case STMT_PASS:
     break;
   case STMT_RAISE:
-    wr_print(WR_CODE, "  exc_raise(\"%%s\", val_to_string(%s));\n",
+    wr_print(WR_CODE, "  exc_raise_object(%s);\n",
              eval_expr(node_get_child(stmt, 0)));
     break;
   default:
     fatal_node(stmt, "invalid statement type %d", stmt->type);
+  }
+}
+
+static void gen_try_stuff(Node* try_stmt, Node* other_stmt)
+{
+  assert(try_stmt->type == STMT_TRY);
+  
+  switch(other_stmt->type){
+  case STMT_CATCH:
+    wr_print(WR_CODE, "  if (setjmp(exc_jb) == 0){\n");
+    if (node_has_node(other_stmt, "type")){
+      wr_print(WR_CODE, "    stack_push_catch(%s);\n", 
+               cache_type(
+                 eval_type(
+                   node_get_node(other_stmt, "type")
+                 )
+               ));
+    } else {
+      wr_print(WR_CODE, "    stack_push_catch_all();\n");
+    }
+    gen_block(node_get_node(try_stmt, "block"));
+    wr_print(WR_CODE, "    stack_pop()\n;");
+    wr_print(WR_CODE, "  } else {\n");
+    var_push();
+      if (node_has_node(other_stmt, "type")
+          and node_has_string(other_stmt, "name")){
+        const char* ripe_name = node_get_string(other_stmt, "name");
+        const char* c_name = util_c_name(ripe_name);
+        wr_print(WR_CODE, "  Value %s = exc_obj;\n", c_name);
+        var_add_local(ripe_name, c_name, 
+                      eval_type(node_get_node(other_stmt, "type")));
+      }
+      gen_block(node_get_node(other_stmt, "block"));
+    var_pop();
+    wr_print(WR_CODE, "  }\n");
+    break;
+  case STMT_FINALLY:
+    wr_print(WR_CODE, "  if (setjmp(exc_jb) == 0){\n");
+    wr_print(WR_CODE, "    stack_push_finally();\n");
+    gen_block(node_get_node(try_stmt, "block"));
+    wr_print(WR_CODE, "    stack_pop()\n;");
+    wr_print(WR_CODE, "  }\n");
+    gen_block(node_get_node(other_stmt, "block"));
+    wr_print(WR_CODE, "  if (stack_unwinding == true)\n");
+    wr_print(WR_CODE, "    longjmp(exc_unwinding_jb, 1);\n");
+    break;
+  default:
+    fatal_throw("invalid statement following try block");
   }
 }
 
@@ -629,12 +683,74 @@ static void gen_block(Node* block)
   while (i < block->children.size){
     Node* stmt = node_get_child(block, i);
 
+    // Check that ELSE and ELIF follow IF and ELIF
     if (stmt->type == STMT_ELSE or stmt->type == STMT_ELIF){
       if (prev_stmt_type != STMT_IF and
           prev_stmt_type != STMT_ELIF){
         fatal_node(stmt, "statement must follow if or elif");
       }
     }
+    
+    // These are handled specially because of the nested structure.
+    if (stmt->type == STMT_TRY){
+      // Find the extent of the try/catch blocks
+      uint itry = i;
+      uint ilast = i;
+      for(;;){
+        i++;
+        if (i >= block->children.size) break;
+        stmt = node_get_child(block, i);
+        if (stmt->type != STMT_CATCH and stmt->type != STMT_FINALLY) break;
+        ilast = i;
+      }
+      if (itry == ilast) fatal_throw("try by itself");
+      
+      if (ilast == itry+1){
+        gen_try_stuff(node_get_child(block, itry),
+                      node_get_child(block, ilast));
+        continue;
+      }
+      
+      // try                       try
+      //   BLOCK 1                   try
+      // catch                         BLOCK 1
+      //   BLOCK 2             =     catch
+      // catch                         BLOCK 2
+      //   BLOCK 3                 catch
+      //                             BLOCK 3
+      // The following code generates this structure:
+      Node* try = node_get_child(block, itry);
+      Node* other = node_get_child(block, itry+1);
+      int inext = itry+2;
+      for(;;){
+        // Combine try_block + other into try_block:
+        Node* new_block = node_new(STMT_LIST);
+        node_add_child(new_block, try);
+        node_add_child(new_block, other);
+        // new_block is   { try
+        //                    ...
+        //                  other
+        //                    ... }
+        
+        Node* new_try = node_new(STMT_TRY);
+        node_set_node(new_try, "block", new_block);
+        // new_try is   try
+        //                try
+        //                  ...
+        //                other
+        //                  ...
+        if (inext == ilast){
+          gen_try_stuff(new_try, node_get_child(block, ilast));
+          break;
+        } else {
+          other = node_get_child(block, inext);
+          try = new_try;
+          inext++;
+        }
+      } // end combining for
+      continue;
+    } // endif STMT_TRY
+        
     prev_stmt_type = stmt->type;
     gen_stmt(stmt);
     i++;
@@ -663,7 +779,7 @@ static void gen_code(Node* n, const char* name)
   fatal_push("while compiling function '%s'", name);
 
   wr_print(WR_CODE, "%s\n{\n", util_signature(name));
-  wr_print(WR_CODE, "  stack_push_annotation(\"%s\");", name);
+  wr_print(WR_CODE, "  stack_annot_push(\"%s\");\n", name);
   Node* stmt_list = node_get_node(n, "stmt_list");
   dowhile_semaphore = 0;
 
@@ -701,11 +817,11 @@ static void gen_code(Node* n, const char* name)
     if (stmt_list->children.size == 0
          or
       node_get_child(stmt_list, stmt_list->children.size-1)->type != STMT_RETURN)
-    wr_print(WR_CODE, "  stack_pop();\n");
+    wr_print(WR_CODE, "  stack_annot_pop();\n");
     wr_print(WR_CODE, "  return VALUE_NIL;\n");
   } else {
     // If this is a constructor, remember to return the new object!
-    wr_print(WR_CODE, "  stack_pop();\n");
+    wr_print(WR_CODE, "  stack_annot_pop();\n");
     wr_print(WR_CODE, "  return __self;\n");
   }
 
@@ -754,8 +870,10 @@ static void gen_var(Node* n, const char* name)
   }
 }
 
-void generate(Node* ast)
+void generate(Node* ast, const char* filename)
 {
+  line_filename = filename;
+
   Aster aster;
   aster_init(&aster);
   aster.cb_function = gen_function;

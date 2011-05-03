@@ -2,12 +2,12 @@
 
 # Possible build flags are "force", "quiet", "nodebug", "nogc", "profile"
 
-DATA_TYPES = ['Array1', 'Array2', 'Array3', 'Double', 'Flags', 'Integer', 'Map',
-              'Range', 'Set', 'String', 'StringBuf', 'Tuple']
+DATA_TYPES = ['Array1', 'Array2', 'Array3', 'Double', 'Error', 'Flags',
+              'Integer', 'Map', 'Range', 'Set', 'String', 'StringBuf', 'Tuple']
 STDLIB = ['Character', 'DataFormat', 'Err', 'Iterable', 'Math', 'Num', 'Opt',
           'Os', 'Out', 'Path', 'Test', 'TextFile', 'Time']
-OPTIONAL_MODULES = ['Bio', 'Curl', 'Gd', 'Gsl', 'Gtk', 'Json', 'Lang',
-                    'Povray', 'Pthread', 'Sci', 'Sdl', 'Speech',
+OPTIONAL_MODULES = ['Bio', 'Curl', 'Fcgi', 'Gd', 'Gsl', 'Gtk', 'Http', 'Json',
+                    'Lang', 'Povray', 'Pthread', 'Sci', 'Sdl', 'Speech',
                     'Sqlite', 'Xml']
 MODULES = DATA_TYPES + STDLIB
 DEF_MODULES = DATA_TYPES + STDLIB
@@ -25,9 +25,13 @@ conf["LEX"] = "flex"
 conf["VERBOSITY"] = 1
 conf["RFLAGS"] = []
 if "valgrind" in sys.argv:
-    conf["VALGRIND"] = ["valgrind", "--leak-check=no", "--track-origins=yes", "--smc-check=all"]
+    conf["VALGRIND"] = ["valgrind", "--leak-check=no", "--track-origins=yes",
+                        "--smc-check=all"]
 else:
     conf["VALGRIND"] = []
+if "mudflap" in sys.argv:
+    conf["CFLAGS"].append("-fmudflap")
+    conf["LFLAGS"].append("-lmudflap")
 if "nogc" not in sys.argv:
     conf["CFLAGS"].append("-DCLIB_GC")
     conf["LFLAGS"].append("-lgc")
@@ -37,7 +41,7 @@ conf["FORCING"] = False
 if "force" in sys.argv:
     conf["FORCING"] = True
 if "quiet" in sys.argv:
-    conf["VERBOS ITY"] = 0
+    conf["VERBOSITY"] = 0
 if "verbose" in sys.argv:
     conf["VERBOSITY"] = 2
 if "profile" in sys.argv:
@@ -80,6 +84,7 @@ clib_srcs = [
               'clib/mem.c',
               'clib/path.c',
               'clib/stringbuf.c',
+              'clib/structs.c',
               'clib/tok.c',
               'clib/utf8.c',
               'clib/util.c',
@@ -94,17 +99,15 @@ tools.cons_yacc('lang/parser.c', 'lang/parser.y',
 tools.cons_flex('lang/scanner.c', 'lang/scanner.l',
           ['lang/parser.h', 'lang/lang.h'] + clib_hs)
 
-lang_hs = [
-            'lang/lang.h',
+lang_hs = [ 'lang/lang.h',
             'lang/parser.h',
-            'lang/scanner.h',
-          ]
-lang_srcs = [
-              'lang/astnode.c',
+            'lang/scanner.h', ]
+lang_srcs = [ 'lang/astnode.c',
               'lang/aster.c',
               'lang/build-tree.c',
               'lang/cache.c',
               'lang/generator.c',
+              'lang/genist.c',
               'lang/input.c',
               'lang/scanner.c',
               'lang/operator.c',
@@ -113,8 +116,7 @@ lang_srcs = [
               'lang/proc.c',
               'lang/util.c',
               'lang/var.c',
-              'lang/writer.c'
-            ]
+              'lang/writer.c' ]
 lang_objs = tools.cons_objs(lang_srcs, lang_hs + clib_hs)
 # Construct VM object
 tools.link_objs(lang_objs, "lang/lang.o")
@@ -122,13 +124,8 @@ tools.link_objs(lang_objs, "lang/lang.o")
 ###############################################################################
 # RIPE TOOLS
 
-ripe_hs = [
-            'ripe/ripe.h',
-          ]
-ripe_srcs = [
-               'ripe/cli.c',
-               'ripe/ripe.c',
-             ]
+ripe_hs = [ 'ripe/ripe.h' ]
+ripe_srcs = [ 'ripe/cli.c', 'ripe/ripe.c' ]
 ripe_objs = tools.cons_objs(ripe_srcs, ripe_hs + clib_hs + lang_hs)
 tools.cons_bin('bin/ripeboot', ripe_objs + clib_objs + lang_objs, [])
 

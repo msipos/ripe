@@ -148,32 +148,49 @@ typedef struct {
   const char* c_name;       // Name of a variable of type Klass*.
   ClassType type;
   const char* typedef_name; // Only if type == CLASS_CDATA.
+  
   Dict methods;             // Regardless of type.
+  Dict vg_methods;          // Regardless of type.
+  Dict vs_methods;          // Regardless of type.
+  
   int num_props;            // Only if type == CLASS_FIELD.
   Dict props;               // Only if type == CLASS_FIELD.
   Dict gets;                // Regardless of type.
   Dict sets;                // Regardless of type.
+  const char* parent;
+  
+  // Used by genist:
+  #define GENIST_UNVISITED  0
+  #define GENIST_VISITING   1
+  #define GENIST_VISITED    2
+  int genist_marker;        // Initialize to GENIST_UNVISITED
 } ClassInfo;
 
 void stran_init();
 // Returns non-zero for error. (see stran_error.text)
-void stran_absorb_ast(Node* ast);
+void stran_absorb_ast(Node* ast, const char* filename);
 void stran_absorb_file(const char* filename);
 
 void stran_dump_to_file(FILE* f);
 
-// The following return NULL for error.
 FuncInfo* stran_get_function(const char* name);
 GlobalInfo* stran_query_global(const char* name);
 GlobalInfo* stran_get_global(const char* name);
 ClassInfo* stran_get_class(const char* name);
 FuncInfo* stran_get_method(const char* class_name, const char* name);
 
+void stran_add_function(const char* name, FuncInfo* fi);
+void stran_add_class_method(const char* class_name, const char* name, 
+                            FuncInfo* fi, FunctionType type);
+void stran_add_class_property(const char* class_name, const char* name);
+
+Dict* stran_get_classes(); // Used by genist.
+
 //////////////////////////////////////////////////////////////////////////////
 // lang/proc.c
 //////////////////////////////////////////////////////////////////////////////
 
-void proc_process_ast(Node* ast);
+void proc_process_ast(Node* ast, const char* filename);
 
 //////////////////////////////////////////////////////////////////////////////
 // lang/cache.c
@@ -230,7 +247,7 @@ int input_read(char* buf, int max_size); // Used by flex to do reading
 #define STMT_SWITCH       1115
 
 #define STMT_TRY          1120
-#define STMT_CATCH_ALL    1121
+#define STMT_CATCH        1121
 #define STMT_FINALLY      1122
 #define STMT_RAISE        1123
 
@@ -270,8 +287,14 @@ int input_read(char* buf, int max_size); // Used by flex to do reading
 // lang/generator.c
 //////////////////////////////////////////////////////////////////////////////
 
+void genist_run();
+
+//////////////////////////////////////////////////////////////////////////////
+// lang/generator.c
+//////////////////////////////////////////////////////////////////////////////
+
 // Returns non-zero in case of an error.
-void generate(Node* ast);
+void generate(Node* ast, const char* filename);
 
 //////////////////////////////////////////////////////////////////////////////
 // lang/operator.c
@@ -282,6 +305,11 @@ const char* unary_op_map(int type);
 
 bool is_binary_op(Node* node);
 const char* binary_op_map(int type);
+
+//////////////////////////////////////////////////////////////////////////////
+// lang/stacker.c
+//////////////////////////////////////////////////////////////////////////////
+
 
 //////////////////////////////////////////////////////////////////////////////
 // lang/util.c
@@ -300,6 +328,7 @@ const char* util_signature(const char* ripe_name);
 bool annot_check_simple(Node* annot_list, int num, const char* args[]);
 bool annot_check(Node* annot_list, int num, ...);
 bool annot_has(Node* annot_list, const char* s);
+const char* annot_get(Node* annot_list, const char* key);
 void lang_init();
 
 //////////////////////////////////////////////////////////////////////////////

@@ -1,0 +1,17 @@
+namespace Http
+  class Response
+    var status_code
+    var content_type
+    var content
+    
+    new() | constructor
+      @status_code = 200
+      @content_type = "text/text"
+      @content = ""
+    
+    render()
+      status_text = "200 OK"
+      return "Status: {}\r\nContent-Type: {}\r\n\r\n{}\r\n".f(
+               status_text, @content_type, @content
+             )
+

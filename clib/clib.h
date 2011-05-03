@@ -140,6 +140,16 @@ bool dict_has_bucket(Dict* d, int64 place);
 void* dict_get_bucket_key(Dict* d, int64 place);
 void* dict_get_bucket_value(Dict* d, int64 place);
 
+typedef struct {
+  Dict* d;
+  uint64 i;
+} DictIter;
+
+DictIter* dict_iter_new(Dict* d);
+bool dict_iter_has(DictIter* iter);
+void* dict_iter_get_ptr(DictIter* iter);
+void dict_iter_get_ptrs(DictIter* iter, void** key, void** value);
+
 ///////////////////////////////////////////////////////////////////////
 // hash.c
 ///////////////////////////////////////////////////////////////////////
@@ -288,6 +298,32 @@ void sbuf_clear(StringBuf* sbuf);
 void sbuf_deinit(StringBuf* sbuf);
 
 ///////////////////////////////////////////////////////////////////////
+// structs.c
+///////////////////////////////////////////////////////////////////////
+
+typedef union {
+  int i;
+  void* p;
+} SElement;
+
+// Simplified data structures
+typedef struct {
+  int size;
+  int alloc_size;
+  SElement* data;
+} SArray;
+
+void sarray_init(SArray* arr);
+void sarray_append_int(SArray* arr, int v);
+void sarray_pop(SArray* arr);
+int sarray_pop_int(SArray* arr);
+
+// ptr interface
+void* sarray_pop_ptr(SArray* arr);
+void sarray_append_ptr(SArray* arr, void* v);
+void* sarray_get_ptr(SArray* arr, int idx);
+
+///////////////////////////////////////////////////////////////////////
 // tok.c
 ///////////////////////////////////////////////////////////////////////
 typedef struct {
@@ -336,8 +372,8 @@ void slog(const char* format, ...);
 #endif
 void fatal_push(const char* format, ...);
 void fatal_pop();
-void fatal_throw(const char* format, ...);
-void fatal_vthrow(const char* format, va_list ap);
+void fatal_throw(const char* format, ...) __attribute__ ((noreturn));
+void fatal_vthrow(const char* format, va_list ap) __attribute__ ((noreturn));
 void fatal_warn(const char* format, ...);
 void encode_int(FILE* f, int64 i);
 void encode_string(FILE* f, const char* s);

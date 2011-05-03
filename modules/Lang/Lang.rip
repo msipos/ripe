@@ -27,18 +27,21 @@ namespace Lang
   c_name(text)
     return $ string_to_val(util_c_name(val_to_string(__text))) $
 
-  process(ast)
+  process(Node ast, String filename)
     ptr = ast.ptr
-    $ proc_process_ast(val_to_ptr_unsafe(__ptr)); $
+    $ proc_process_ast(val_to_ptr_unsafe(__ptr), val_to_string(__filename)); $
 
-  generate(ast)
+  generate(Node ast, String filename)
     ptr = ast.ptr
-    $ generate(val_to_ptr_unsafe(__ptr)); $
+    $ generate(val_to_ptr_unsafe(__ptr), val_to_string(__filename)); $
+
+  genist_run()
+    $ genist_run(); $
 
   namespace Stran
-    absorb_ast(Node ast)
+    absorb_ast(Node ast, String filename)
       ptr = ast.ptr
-      $ stran_absorb_ast(val_to_ptr_unsafe(__ptr)); $
+      $ stran_absorb_ast(val_to_ptr_unsafe(__ptr), val_to_string(__filename)); $
 
     absorb_file(String filename)
       $ stran_absorb_file(val_to_string(__filename)); $

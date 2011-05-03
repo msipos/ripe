@@ -4,6 +4,11 @@ $
 $
 
 namespace Json
+  class Error | parent=Error
+    new(text) | constructor
+      @text = text
+      @value = nil
+
   parse(s)
     $
       int error = 0;
@@ -11,7 +16,7 @@ namespace Json
       Value v = json_parse(val_to_string(__s), &error, &error_text);
       if (error){
     $
-    raise "JSON error: " + $ string_to_val(error_text) $
+    raise Json.Error.new("parsing error: '{}'".f($ string_to_val(error_text) $))
     $
       }
     $
@@ -36,8 +41,8 @@ namespace Json
           buf.print("\n")
         index = index + 1
       buf.print("}")
-
-    if obj is Array1
+      return
+    if obj is Array1 or obj is Array1View
       buf.print("[")
       index = 1
       for v in obj
@@ -46,18 +51,25 @@ namespace Json
           buf.print(",")
         index = index + 1
       buf.print("]")
-
+      return
     if obj is Integer
       buf.print(obj.to_string())
+      return
     if obj is Double
       buf.print(obj.to_string())
+      return
     if obj is String
       buf.print("\"")
       buf.print(obj)
       buf.print("\"")
+      return
     if obj == nil
       buf.print("null")
+      return
     if obj == true
       buf.print("true")
+      return
     if obj == false
       buf.print("false")
+      return
+    raise Json.Error.new("Object is of a class that cannot be represented in JSON")

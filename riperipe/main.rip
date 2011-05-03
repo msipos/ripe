@@ -35,11 +35,62 @@ load_meta(filename)
   return map
   tf.close()
 
+# rips, objs, metas = split_files(files)
+split_files(files)
+  rips = []; objs = []; metas = []; typs = []
+  for file in files
+    root, ext = Path.split_extension(file)
+    switch ext
+      case ".rip"
+        rips.push(file)
+      case ".o"
+        objs.push(file)
+      case ".meta"
+        metas.push(file)
+      case ".typ"
+        typs.push(file)
+      else
+        raise "Unknown extension '{}'".f(ext)
+
+  return [rips, objs, metas, typs]
+
+make_asts(rips)
+  asts = []
+  for rip in rips
+    ast = Node.new_from_file(rip)
+    asts.push(ast)
+  return asts  
+
+stran_asts(asts, rips)
+  for i in 1:asts.size
+    if not g_omit_typing
+      Lang.Stran.absorb_ast(asts[i], rips[i])
+
+process_asts(asts, rips)
+  for i in 1:asts.size
+    Lang.process(asts[i], rips[i])
+
+generate_asts(asts, rips)
+  for i in 1:asts.size
+    Lang.generate(asts[i], rips[i])  
+
+load_metas(metas)
+  for file in metas
+    meta = load_meta(file)
+    if "cflags" in meta
+      g_cflags = g_cflags + " " + meta["cflags"]
+    if "lflags" in meta
+      g_lflags = g_lflags + " " + meta["lflags"]
+
+absorb_typs(typs)
+  for file in typs
+    Lang.Stran.absorb_file(file)
+
 #######################################################################
 # Globals
 
 var g_verbose = false
-var g_cflags = "" 
+var g_cflags = ""
 var g_lflags = ""
 var g_omit_typing = false
 var g_optims = { &FOR_LOOPS   => true,
@@ -58,50 +109,32 @@ dump(module_name, out)
 
 #######################################################################
 # Actions
+
+# asts, rips, objs = go_standard(files)
+go_standard(files)
+  rips, objs, metas, typs = split_files(files)
+  load_metas(metas)
+  absorb_typs(typs)
+  asts = make_asts(rips)
+  return [asts, rips, objs]
+
 go_dump(files)
-  asts = []
-  for file in files
-    ast = Node.new_from_file(file)
-    asts.push(ast)
-    if not g_omit_typing
-      Lang.Stran.absorb_ast(ast)
-    Lang.process(ast)
-  for ast in asts
-    Lang.generate(ast)
+  asts, rips, objs = go_standard(files)
+  stran_asts(asts, rips)
+  Lang.genist_run()
+  process_asts(asts, rips)
+  generate_asts(asts, rips)
 
   out = StringBuf.new()
   dump("User", out)
   Out.println(out.to_string())
 
 go_bootstrap(files, outfile)
-  asts = []
-  rips = []
-  objs = []
-  for file in files
-    root, ext = Path.split_extension(file)
-    switch ext
-      case ".rip"
-        rips.push(file)
-
-        ast = Node.new_from_file(file)
-        asts.push(ast)
-        Lang.Stran.absorb_ast(ast)
-        Lang.process(ast)
-      case ".o"
-        objs.push(file)
-      case ".meta"
-        meta = load_meta(file)
-        if "cflags" in meta
-          g_cflags = g_cflags + " " + meta["cflags"]
-        if "lflags" in meta
-          g_lflags = g_lflags + " " + meta["lflags"]
-
-  index = 1
-  for ast in asts
-    if g_verbose
-      Err.println("generating ", rips[index])
-    Lang.generate(ast)
-    index = index + 1
+  asts, rips, objs = go_standard(files)
+  stran_asts(asts, rips)
+  Lang.genist_run()
+  process_asts(asts, rips)
+  generate_asts(asts, rips)  
 
   tmp_c_file = Path.temp_name("ripe", ".c")
   tf = TextFile.new(tmp_c_file, TextFile.Write)
@@ -117,24 +150,11 @@ go_bootstrap(files, outfile)
   Path.remove(tmp_o_file)
 
 go_build(files, outfile)
-  asts = []
-  rips = []
-  objs = []
-  for file in files
-    root, ext = Path.split_extension(file)
-    switch ext
-      case ".rip"
-        rips.push(file)
-
-        ast = Node.new_from_file(file)
-        asts.push(ast)
-        Lang.Stran.absorb_ast(ast)
-        Lang.process(ast)
-      case ".o"
-        objs.push(file)
-
-  for ast in asts
-    Lang.generate(ast)
+  asts, rips, objs = go_standard(files)
+  stran_asts(asts, rips)
+  Lang.genist_run()
+  process_asts(asts, rips)
+  generate_asts(asts, rips)  
 
   # Compile ripe
   tmp_c_file = Path.temp_name("ripe", ".c")
@@ -168,30 +188,11 @@ go_run(leftover)
   Path.remove(outfile)
 
 go_module(files, module_name, outfile)
-  asts = []
-  rips = []
-  objs = []
-  for file in files
-    root, ext = Path.split_extension(file)
-    switch ext
-      case ".rip"
-        rips.push(file)
-        ast = Node.new_from_file(file)
-        asts.push(ast)
-        if not g_omit_typing
-          Lang.Stran.absorb_ast(ast)
-      case ".o"
-        objs.push(file)
-      case ".meta"
-        meta = load_meta(file)
-        if "cflags" in meta
-          g_cflags = g_cflags + " " + meta["cflags"]
-      case ".typ"
-        Lang.Stran.absorb_file(file)
-  for ast in asts
-    Lang.process(ast)
-  for ast in asts
-    Lang.generate(ast)
+  asts, rips, objs = go_standard(files)
+  stran_asts(asts, rips)
+  Lang.genist_run()
+  process_asts(asts, rips)
+  generate_asts(asts, rips)  
 
   tmp_c_file = Path.temp_name("ripe", ".c")
   tf = TextFile.new(tmp_c_file, TextFile.Write)
@@ -211,7 +212,7 @@ go_type(files)
     root, ext = Path.split_extension(file)
     if ext == ".rip"
       ast = Node.new_from_file(file)
-      Lang.Stran.absorb_ast(ast)
+      Lang.Stran.absorb_ast(ast, file)
     else
       raise "Can only read .rip files in typer mode"
   Lang.Stran.dump()

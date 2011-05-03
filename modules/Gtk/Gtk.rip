@@ -24,7 +24,7 @@ namespace Gtk
     get_object(name)
       obj = Gtk.Object.new()
       $ const char* name = val_to_string(__name);
-        GObject** pobj = obj_c_dptr(__obj);
+        GObject** pobj = (GObject**) obj_c_dptr(__obj);
         *pobj = gtk_builder_get_object(@builder, name); $
       return obj
 

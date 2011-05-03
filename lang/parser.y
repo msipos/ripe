@@ -141,6 +141,7 @@ mid_decls: mid_decl            { $$ = node_new(TOPLEVEL_LIST);
 bot_decl:  top_var             { $$ = $1; };
 bot_decl:  C_CODE              { $$ = $1; };
 bot_decl:  func                { $$ = $1; };
+bot_decl:  "pass"              { $$ = $1; };
 
 bot_decls: bot_decls SEP bot_decl
                                { $$ = $1;
@@ -183,10 +184,12 @@ namespace: "namespace" ID START mid_decls END
                                  node_set_string($$, "name", $2->text);
                                  node_add_child($$, $4); };
 
-class: "class" ID START bot_decls END
+class: "class" ID opt_annotation START bot_decls END
                                { $$ = node_new(CLASS);
                                  node_set_string($$, "name", $2->text);
-                                 node_add_child($$, $4); };
+                                 if ($3 != NULL)
+                                  node_set_node($$, "annotation", $3);
+                                 node_add_child($$, $5); };
 
 func: ID '(' param_star ')' opt_annotation block
                                { $$ = node_new(FUNCTION);
@@ -231,14 +234,6 @@ stmt:      "return" rvalue     { $$ = node_new(STMT_RETURN);
                                  node_add_child($$, $2); };
 stmt:      "return"            { $$ = node_new(STMT_RETURN);
                                  node_add_child($$, node_new(K_NIL)); };
-stmt:      "try" block         { $$ = $2;
-                                 $$->type = STMT_TRY; };
-stmt:      "catch" block       { $$ = $2;
-                                 $$->type = STMT_CATCH_ALL; };
-stmt:      "finally" block     { $$ = $2;
-                                 $$->type = STMT_FINALLY; };
-stmt:      "raise" expr        { $$ = node_new(STMT_RAISE);
-                                 node_add_child($$, $2); };
 stmt:      "while" rvalue block
                                { $$ = node_new(STMT_WHILE);
                                  node_add_child($$, $2);
@@ -250,20 +245,42 @@ stmt:      "for" lvalue_plus "in" expr block
                                  node_add_child($$, $2);
                                  node_add_child($$, $4);
                                  node_add_child($$, $5); };
-stmt:      "switch" expr START case_list END
-                               { $$ = node_new(STMT_SWITCH);
-                                 node_add_child($$, $2);
-                                 node_add_child($$, $4); };
 stmt:      "break"             { $$ = node_new_inherit(STMT_BREAK, $1); };
 stmt:      "continue"          { $$ = node_new_inherit(STMT_CONTINUE, $1); };
 stmt:      "pass"              { $$ = node_new_inherit(STMT_PASS, $1); };
 
-case:      "case" expr block   { $$ = node_new(CASE);
+stmt:      "try" block         { $$ = node_new(STMT_TRY);
+                                 node_set_node($$, "block", $2); };
+stmt:      "catch" block       { $$ = node_new(STMT_CATCH);
+                                 node_set_node($$, "block", $2); };
+stmt:      "catch" type block  { $$ = node_new(STMT_CATCH);
+                                 node_set_node($$, "type", $2);
+                                 node_set_node($$, "block", $3); };
+stmt:      "catch" type ID block
+                               { $$ = node_new(STMT_CATCH);
+                                 node_set_node($$, "type", $2);
+                                 node_set_string($$, "name", $3->text);
+                                 node_set_node($$, "block", $4); };
+stmt:      "finally" block     { $$ = node_new(STMT_FINALLY);
+                                 node_set_node($$, "block", $2); };
+stmt:      "raise" expr        { $$ = node_new(STMT_RAISE);
+                                 node_add_child($$, $2); };
+
+stmt:      "switch" expr START case_list END
+                               { $$ = node_new(STMT_SWITCH);
                                  node_add_child($$, $2);
-                                 node_add_child($$, $3); };
+                                 node_add_child($$, $4); };
+stmt:      "switch" expr START case_list SEP "else" block END
+                               { $$ = node_new(STMT_SWITCH);
+                                 node_add_child($$, $2);
+                                 node_add_child($$, $4);
+                                 node_set_node($$, "else", $7); };
 case_list: case                { $$ = node_new(CASE_LIST);
                                  node_add_child($$, $1); };
 case_list: case_list SEP case  { $$ = $1; node_add_child($$, $3); };
+case:      "case" expr block   { $$ = node_new(CASE);
+                                 node_add_child($$, $2);
+                                 node_add_child($$, $3); };
 
 // 4 types of expressions:
 //   those that are lvalues but are not rvalues l_expr

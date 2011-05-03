@@ -91,16 +91,10 @@ void gen_c()
     printf("Value func_call%d(Value func", n);
     print_mult("Value arg", n, 1, 1);
     printf("){\n");
-    #ifndef NOSTACK
-    printf("  stack_push_func(func);\n");
-    #endif
     printf("  Func* c_data = obj_c_data(func);\n");
     printf("  Value rv = c_data->func%d(", n);
     print_mult("arg", n, 0, 1);
     printf(");\n");
-    #ifndef NOSTACK
-    printf("  stack_pop();\n");
-    #endif
     printf("  return rv;\n");
     printf("}\n");
   }
@@ -110,7 +104,6 @@ void gen_c()
     print_mult("Value arg", n, 1, 1);
     printf("){\n");
     printf("  Value method = method_get(v_obj, dsym);\n");
-    printf("  stack_push_func(method);\n");
     printf("  Func* c_data = obj_c_data(method);\n");
 
     printf("  if (c_data->var_params){\n");
@@ -118,7 +111,6 @@ void gen_c()
     print_mult("arg", n, 1, 1);
     printf("};\n");
     printf("    Value rv = func_call_opt_helper(c_data, %d, args);\n", n+1);
-    printf("    stack_pop();\n");
     printf("    return rv;\n");
     printf("  }\n");
     printf("  if (c_data->num_params != %d){\n", n+1);
@@ -128,7 +120,6 @@ void gen_c()
     printf("  Value rv = c_data->func%d(v_obj", n+1);
     print_mult("arg", n, 1, 1);
     printf(");\n");
-    printf("  stack_pop();\n");
     printf("  return rv;\n");
     printf("}\n");
 

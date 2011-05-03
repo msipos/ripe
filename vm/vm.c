@@ -43,29 +43,29 @@ int main(int argc, char** argv)
   klass_init();
 
   // Phase 1
-  stack_push_annotation("init1_Function");
+  stack_annot_push("init1_Function");
     init1_Function();
-  stack_pop();
-  stack_push_annotation("init1_Object");
+  stack_annot_pop();
+  stack_annot_push("init1_Object");
     init1_Object();
-  stack_pop();
+  stack_annot_pop();
 
   ripe_module1a();
   ripe_module1b();
 
   // Phase 1.5
-  stack_push_annotation("phase 1.5");
+  stack_annot_push("phase 1.5");
     common_init_phase15();
     klass_init_phase15();
-  stack_pop();
+  stack_annot_pop();
 
   // Phase 2
-  stack_push_annotation("init2_Function");
+  stack_annot_push("init2_Function");
     init2_Function();
-  stack_pop();
-  stack_push_annotation("init2_Object");
+  stack_annot_pop();
+  stack_annot_push("init2_Object");
     init2_Object();
-  stack_pop();
+  stack_annot_pop();
 
   ripe_module2();
   ripe_module3();

@@ -1,0 +1,9 @@
+class Error
+  var text
+  var value
+
+  new(text) | constructor
+    @text = text
+    @value = nil
+
+

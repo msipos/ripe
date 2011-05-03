@@ -1,0 +1,22 @@
+"VM" initialization schedule
+
+Init1:
+
+    A:
+        klass_new()
+    
+    B:
+        Value vf = funcX_to_val(cf);
+        func_set_vararg(vf);
+        klass_new_field(vf, dsym("fn"), FIELD_PROPERTIES);
+        klass_new_method(...
+        klass_new_virtual_reader(...
+        klass_new_virtual_writer(...
+
+Init2:
+    Value dsym... = dsym_get("..")
+    Klass* kl... = klass_get(dsym_get(...));
+    kl1...->parent = kl2...;
+
+Init3:
+    global... = evaluated expression;

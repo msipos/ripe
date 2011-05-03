@@ -54,10 +54,11 @@ static ClassInfo* class_info_new()
 {
   ClassInfo* ci = mem_new(ClassInfo);
   ci->num_props = 0;
+  ci->genist_marker = GENIST_UNVISITED;
   dict_init_string(&(ci->methods), sizeof(FuncInfo*));
+  dict_init_string(&(ci->vg_methods), sizeof(FuncInfo*));
+  dict_init_string(&(ci->vs_methods), sizeof(FuncInfo*));
   dict_init_string(&(ci->props), sizeof(PropInfo*));
-  dict_init_string(&(ci->gets), sizeof(PropInfo*));
-  dict_init_string(&(ci->sets), sizeof(PropInfo*));
   return ci;
 }
 
@@ -101,16 +102,12 @@ static FuncInfo* func_info_params(Node* n, const char* class_name)
 // Helper that combines functions and constructors
 static void helper_func(Node* n, const char* name, FunctionType type)
 {
-  name = stran_string(name);
-  if (dict_query(&(functions), &name, NULL)){
-    fatal_throw("function '%s' already defined", name);
-  }
   FuncInfo* fi = func_info_params(n, NULL);
-  fi->ripe_name = stran_string(name);
+  fi->ripe_name = name;
   fi->c_name = stran_string(mem_asprintf("ripe_%s", util_escape(name)));
   fi->v_name = stran_string(mem_asprintf("rv_%s", util_escape(name)));
   fi->type = type;
-  dict_set(&(functions), &name, &fi);
+  stran_add_function(name, fi);
 }
 
 static void absorb_function(Node* n, const char* name)
@@ -122,27 +119,27 @@ static void absorb_method(Node* n, const char* name, const char* class_name,
                           FunctionType type)
 {
   FuncInfo* fi = func_info_params(n, class_name);
+  stran_add_class_method(class_name, name, fi, type);
 
-  if (type == VIRTUAL_GET) name = mem_asprintf("get_%s", name);
-  else if (type == VIRTUAL_SET) name = mem_asprintf("set_%s", name);
-  name = stran_string(name);
-
-  if (dict_query(&(class_info->methods), &name, NULL))
-    fatal_throw("method '%s' already exists in class '%s'", name, class_name);
-  dict_set(&(class_info->methods), &name, &fi);
-
+  // Construct static name
+  const char* method_name = name;
+  if (type == VIRTUAL_GET) method_name = mem_asprintf("get_%s", name);
+  else if (type == VIRTUAL_SET) method_name = mem_asprintf("set_%s", name);
   const char* static_name = mem_asprintf("%s.%s",
                                          class_name,
-                                         name);
+                                         method_name);
   static_name = stran_string(static_name);
+
+  // Add static name to global functions table
   if (dict_query(&(functions), &static_name, NULL))
     fatal_throw("method '%s' already exists as static symbol", name);
+  dict_set(&(functions), &static_name, &fi);
 
+  // Populate remaining fields of fi.
   fi->ripe_name = stran_string(static_name);
   fi->c_name = stran_string(mem_asprintf("ripe_%s", util_escape(static_name)));
   fi->v_name = stran_string(mem_asprintf("rv_%s", util_escape(static_name)));
   fi->type = type;
-  dict_set(&(functions), &static_name, &fi);
 }
 
 static void absorb_constructor(Node* n, const char* name, const char* class_name)
@@ -158,16 +155,25 @@ static void absorb_class_enter(Node* n, const char* class_name)
     fatal_throw("class '%s' already defined", class_name);
   }
   class_info = class_info_new();
+  dict_set(&(classes), &class_name, &class_info);
   class_info->type = CLASS_VIRTUAL;
   class_info->c_name = stran_string(mem_asprintf("klass_%s", util_escape(class_name)));
   class_info->ripe_name = stran_string(class_name);
   class_info->typedef_name = stran_string(mem_asprintf("klass_%s_typedef",
                                                util_escape(class_name)));
+  class_info->parent = NULL;
+  if (node_has_node(n, "annotation")){
+    Node* annot_list = node_get_node(n, "annotation");
+    if (not annot_check(annot_list, 1, "=parent")) {
+      fatal_throw("invalid annotations in class '%s'", class_name);
+    }
+    class_info->parent = annot_get(annot_list, "parent");
+  }
+  if (class_info->parent == NULL) class_info->parent = "";
 }
 
 static void absorb_class_exit(Node* n, const char* class_name)
 {
-  dict_set(&(classes), &class_name, &class_info);
   class_name = NULL;
   class_info = NULL;
 }
@@ -191,17 +197,7 @@ static void absorb_property(Node* n, const char* name, const char* class_name)
   }
   class_info->type = CLASS_FIELD;
 
-  if (dict_query(&(class_info->props), &name, NULL)){
-    fatal_throw("duplicate property '%s' in class '%s'", name, class_name);
-  }
-
-  PropInfo* pi = mem_new(PropInfo);
-  pi->type = PROP_FIELD;
-  dict_set(&(class_info->props), &name, &pi);
-  dict_set(&(class_info->sets), &name, &pi);
-  dict_set(&(class_info->gets), &name, &pi); // TODO: Not all properties will be
-                                             // writable.
-  class_info->num_props += 1;
+  stran_add_class_property(class_name, name);
 }
 
 static void absorb_ccode(Node* n, const char* class_name)
@@ -214,8 +210,9 @@ static void absorb_ccode(Node* n, const char* class_name)
   }
 }
 
-void stran_absorb_ast(Node* ast)
+void stran_absorb_ast(Node* ast, const char* filename)
 {
+  fatal_push("during structure analysis of '%s'", filename);
   class_info = NULL;
 
   Aster aster;
@@ -230,81 +227,108 @@ void stran_absorb_ast(Node* ast)
   aster.cb_ccode = absorb_ccode;
 
   aster_process(ast, &aster);
+  fatal_pop();
 }
 
 ///////////////////////////////////////////////////////////////////////
 // stran dumping to and loading from disk
 ///////////////////////////////////////////////////////////////////////
 
+static void dump_methods(FILE* f, Dict* d)
+{
+  encode_int(f, d->size);
+  DictIter* iter = dict_iter_new(d);
+  while (dict_iter_has(iter)){
+    char* method_name; FuncInfo* fi;
+    dict_iter_get_ptrs(iter, (void**) &method_name, (void**) &fi);
+    
+    encode_string(f, method_name);
+    encode_string(f, fi->ripe_name);
+  }
+}
+
+// Inverse of above
+static void absorb_methods(FILE* f, Dict* methods)
+{
+  int64 num_methods = decode_int(f);
+  for (int j = 0; j < num_methods; j++){
+    const char* method_name = decode_string(f);
+    const char* static_name = decode_string(f);
+    FuncInfo* fi = stran_get_function(static_name);
+    if (dict_query(methods, &method_name, NULL)){
+      fatal_throw("duplicate method '%s'", method_name);
+    }
+    dict_set(methods, &method_name, &fi);
+  }
+}
+
 void stran_dump_to_file(FILE* f)
 {
   // Encode functions
   encode_int(f, functions.size);
-  for (int i = 0; i < functions.alloc_size; i++){
-    if (dict_has_bucket(&(functions), i)){
-      char* func_name = *((char**) dict_get_bucket_key(&(functions), i));
-      FuncInfo* fi = *((FuncInfo**) dict_get_bucket_value(&(functions), i));
-
-      encode_string(f, func_name);
-      encode_string(f, fi->c_name);
-      encode_string(f, fi->v_name);
-      encode_string(f, fi->ret);
-      encode_int(f, fi->type);
-      encode_int(f, fi->num_params);
-      for (int j = 0; j < fi->num_params; j++){
-        encode_string(f, fi->param_types[j]);
-        encode_string(f, fi->param_names[j]);
-      }
+  
+  DictIter* iter_functions = dict_iter_new(&functions);
+  while (dict_iter_has(iter_functions)){
+    char* func_name; FuncInfo* fi;
+    dict_iter_get_ptrs(iter_functions, (void**) &func_name, (void**) &fi);
+    
+    encode_string(f, func_name);
+    encode_string(f, fi->c_name);
+    encode_string(f, fi->v_name);
+    encode_string(f, fi->ret);
+    encode_int(f, fi->type);
+    encode_int(f, fi->num_params);
+    for (int j = 0; j < fi->num_params; j++){
+      encode_string(f, fi->param_types[j]);
+      encode_string(f, fi->param_names[j]);
     }
   }
   
   // Encode classes
   encode_int(f, classes.size);
-  for (int i = 0; i < classes.alloc_size; i++){
-    if (dict_has_bucket(&(classes), i)){
-      char* class_name = *((char**) dict_get_bucket_key(&(classes), i));
-      ClassInfo* ci = *((ClassInfo**) dict_get_bucket_value(&(classes), i));
+
+  DictIter* iter_classes = dict_iter_new(&classes);
+  while (dict_iter_has(iter_classes)){
+    char* class_name; ClassInfo* ci;
+    dict_iter_get_ptrs(iter_classes, (void**) &class_name, (void**) &ci);
+     
+    encode_string(f, class_name);
+    encode_string(f, ci->parent);
+    encode_string(f, ci->c_name);
+    encode_int(f, ci->type);
+    encode_string(f, ci->typedef_name);
+
+    dump_methods(f, &(ci->methods));
+    dump_methods(f, &(ci->vg_methods));
+    dump_methods(f, &(ci->vs_methods));
+
+    encode_int(f, ci->props.size);
+    DictIter* iter_props = dict_iter_new(&(ci->props));
+    while (dict_iter_has(iter_props)){
+      char* prop_name; PropInfo* pi;
+      dict_iter_get_ptrs(iter_props, (void**) &prop_name, (void**) &pi);
       
-      encode_string(f, class_name);
-      encode_string(f, ci->c_name);
-      encode_int(f, ci->type);
-      encode_string(f, ci->typedef_name);
-      encode_int(f, ci->methods.size);
-      for (int j = 0; j < ci->methods.alloc_size; j++){
-        if (dict_has_bucket(&(ci->methods), j)){
-          char* method_name = *((char**) dict_get_bucket_key(&(ci->methods), j));
-          FuncInfo* fi = *((FuncInfo**) dict_get_bucket_value(&(ci->methods), j));
-          encode_string(f, method_name);
-          encode_string(f, fi->ripe_name);
-        }
-      }
-      encode_int(f, ci->props.size);
-      for (int j = 0; j < ci->props.alloc_size; j++){
-        if (dict_has_bucket(&(ci->props), j)){
-          char* prop_name = *((char**) dict_get_bucket_key(&(ci->props), j));
-          PropInfo* pi = *((PropInfo**) dict_get_bucket_value(&(ci->props), j));
-          encode_string(f, prop_name);
-          encode_int(f, pi->type);
-        }
-      }
+      encode_string(f, prop_name);
+      encode_int(f, pi->type);
     }
   }
   
   // Encode globals
   encode_int(f, globals.size);
-  for (int i = 0; i < globals.alloc_size; i++){
-    if (dict_has_bucket(&(globals), i)){
-      char* global_name = *((char**) dict_get_bucket_key(&(globals), i));
-      GlobalInfo* gi = *((GlobalInfo**) dict_get_bucket_value(&(globals), i));
-      encode_string(f, global_name);
-      encode_string(f, gi->c_name);
-    } 
+  DictIter* iter_globals = dict_iter_new(&globals);
+  while (dict_iter_has(iter_globals)){
+    char* global_name; GlobalInfo* gi;
+    dict_iter_get_ptrs(iter_globals, (void**) &global_name, (void**) &gi);
+
+    encode_string(f, global_name);
+    encode_string(f, gi->c_name);
   }
 }
 
 void stran_absorb_file(const char* filename)
 {
   fatal_push("while absorbing metadata from '%s'", filename);
+
   FILE* f = fopen(filename, "r");
   if (f == NULL) fatal_throw("failed to open '%s' for reading: %s'",
                              filename, strerror(errno));
@@ -315,6 +339,7 @@ void stran_absorb_file(const char* filename)
   for (int64 i = 0; i < num_functions; i++){
     FuncInfo* fi = mem_new(FuncInfo);
     const char* func_name = decode_string(f);
+    
     fi->c_name = decode_string(f);
     fi->v_name = decode_string(f);
     fi->ret = decode_string(f);
@@ -325,8 +350,8 @@ void stran_absorb_file(const char* filename)
     for (int j = 0; j < fi->num_params; j++){
       fi->param_types[j] = decode_string(f);
       fi->param_names[j] = decode_string(f);
-    }    
-    dict_set(&(functions), &func_name, &fi);
+    }
+    stran_add_function(func_name, fi);
   }
   
   // Decode classes
@@ -334,25 +359,23 @@ void stran_absorb_file(const char* filename)
   for (int64 i = 0; i < num_classes; i++){
     ClassInfo* ci = class_info_new();
     const char* class_name = decode_string(f);
+    ci->parent = decode_string(f);
     ci->ripe_name = class_name;
     ci->c_name = decode_string(f);
     ci->type = decode_int(f);
     ci->typedef_name = decode_string(f);
-    int64 num_methods = decode_int(f);
-    for (int j = 0; j < num_methods; j++){
-      const char* method_name = decode_string(f);
-      const char* static_name = decode_string(f);
-      FuncInfo* fi = stran_get_function(static_name);
-      dict_set(&(ci->methods), &method_name, &fi);
-    }
+    dict_set(&(classes), &class_name, &ci);
+  
+    absorb_methods(f, &(ci->methods));
+    absorb_methods(f, &(ci->vg_methods));
+    absorb_methods(f, &(ci->vs_methods));
+    
     int64 num_props = decode_int(f);
     for (int j = 0; j < num_props; j++){
       const char* prop_name = decode_string(f);
-      PropInfo* pi = mem_new(PropInfo);
-      pi->type = decode_int(f);
-      dict_set(&(ci->props), &prop_name, &pi);
+      int type = decode_int(f); // Ignored for now
+      stran_add_class_property(class_name, prop_name);
     }
-    dict_set(&(classes), &class_name, &ci);
   }
   
   // Decode globals
@@ -419,6 +442,60 @@ ClassInfo* stran_get_class(const char* name)
     fatal_throw("requested unknown class '%s'", name);
   }
   return ci;
+}
+
+void stran_add_function(const char* name, FuncInfo* fi)
+{
+  name = stran_string(name);
+  if (dict_query(&(functions), &name, NULL)){
+    fatal_throw("function '%s' already defined", name);
+  }
+  dict_set(&(functions), &name, &fi);
+}
+
+void stran_add_class_method(const char* class_name, const char* name, 
+                            FuncInfo* fi, FunctionType type)
+{
+  ClassInfo* ci = stran_get_class(class_name);
+
+  const char* method_name = name;
+  if (type == VIRTUAL_GET) method_name = mem_asprintf("get_%s", name);
+  else if (type == VIRTUAL_SET) method_name = mem_asprintf("set_%s", name);
+  method_name = stran_string(method_name);
+  if (dict_query(&(ci->methods), &method_name, NULL))
+    fatal_throw("method '%s' already exists in class '%s'", method_name, class_name);
+  dict_set(&(ci->methods), &method_name, &fi);
+
+  if (type == VIRTUAL_GET){
+    if (dict_query(&(ci->vg_methods), &name, NULL))
+      fatal_throw("virtual get method '%s' already exists in class '%s'", name, class_name);
+    dict_set(&(class_info->vg_methods), &name, &fi);
+  }
+
+  if (type == VIRTUAL_SET){
+    if (dict_query(&(ci->vs_methods), &name, NULL))
+      fatal_throw("virtual set method '%s' already exists in class '%s'", name, class_name);
+    dict_set(&(class_info->vs_methods), &name, &fi);
+  }
+}
+
+void stran_add_class_property(const char* class_name, const char* name)
+{
+  ClassInfo* ci = stran_get_class(class_name);
+  
+  if (dict_query(&(ci->props), &name, NULL)){
+    fatal_throw("duplicate property '%s' in class '%s'", name, class_name);
+  }
+
+  PropInfo* pi = mem_new(PropInfo);
+  pi->type = PROP_FIELD;
+  dict_set(&(ci->props), &name, &pi);
+  ci->num_props += 1;
+}
+
+Dict* stran_get_classes()
+{
+  return &classes;
 }
 
 void stran_init()

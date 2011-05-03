@@ -117,6 +117,7 @@ const char* util_signature(const char* ripe_name)
 
 bool annot_check_simple(Node* annot_list, int num, const char* args[])
 {
+  assert(annot_list != NULL);
   assert(annot_list->type == ANNOT_LIST);
 
   // Iterate over each annotation
@@ -152,6 +153,7 @@ bool annot_check_simple(Node* annot_list, int num, const char* args[])
 
 bool annot_check(Node* annot_list, int num, ...)
 {
+  assert(annot_list != NULL);
   assert(num > 0);
 
   va_list ap;
@@ -174,6 +176,20 @@ bool annot_has(Node* annot_list, const char* s)
     if (strequal(first->text, s)) return true;
   }
   return false;
+}
+
+const char* annot_get(Node* annot_list, const char* key)
+{
+  assert(annot_list->type == ANNOT_LIST);
+  
+  for (int i = 0; i < node_num_children(annot_list); i++){
+    Node* annot = node_get_child(annot_list, i);
+    Node* first = node_get_child(annot, 0);
+    if (node_num_children(annot) == 1) continue;
+    Node* second = node_get_child(annot, 1);
+    if (strequal(first->text, key)) return util_dot_id(second);
+  }
+  return NULL;
 }
 
 void lang_init()

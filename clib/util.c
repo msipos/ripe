@@ -27,11 +27,12 @@ void err_throw(Error* e, const char* format, ...)
 }
 
 static bool fatal_initialized = false;
-static Array fatal_stack;
+static SArray fatal_stack;
 static void fatal_init()
 {
   if (not fatal_initialized) {
-    array_init(&fatal_stack, const char*);
+    sarray_init(&fatal_stack);
+    assert(fatal_stack.size < 100);
     fatal_initialized = true;
   }
 }
@@ -39,21 +40,23 @@ static void fatal_init()
 void fatal_push(const char* format, ...)
 {
   fatal_init();
+  assert(fatal_initialized);
 
   char buf[10240];
   va_list ap;
   va_start(ap, format);
-  vsprintf(buf, format, ap);
+  vsnprintf(buf, 10240, format, ap);
   va_end(ap);
 
   const char* s = mem_strdup(buf);
-  array_append2(&fatal_stack, &s);
+  sarray_append_ptr(&fatal_stack, (void*) s);
 }
 
 void fatal_pop()
 {
   fatal_init();
-  array_pop(&fatal_stack, const char*);
+  assert(fatal_stack.size > 0);
+  sarray_pop(&fatal_stack);
 }
 
 void fatal_vthrow(const char* format, va_list ap)
@@ -61,8 +64,7 @@ void fatal_vthrow(const char* format, va_list ap)
   fatal_init();
 
   for (int i = 0; i < fatal_stack.size; i++){
-    const char* s;
-    array_get2(&fatal_stack, &s, i);
+    const char* s = sarray_get_ptr(&fatal_stack, i);
     if (i == 0) fprintf(stderr, " ERROR: %s:\n", s);
            else fprintf(stderr, "        %s:\n", s);
   }
@@ -89,8 +91,7 @@ void fatal_vwarn(const char* format, va_list ap)
   fatal_init();
 
   for (int i = 0; i < fatal_stack.size; i++){
-    const char* s;
-    array_get2(&fatal_stack, &s, i);
+    const char* s = sarray_get_ptr(&fatal_stack, i);
     if (i == 0) fprintf(stderr, " WARN: %s:\n", s);
            else fprintf(stderr, "       %s:\n", s);
   }

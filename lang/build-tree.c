@@ -90,14 +90,15 @@ static void lex_init()
 
 static Node* lex_read()
 {
+  int lineno = input_lineno;
   int tok = yylex();
   if (tok == UNKNOWN){
-    fatal_throw("%s:%d: invalid characters '%s'", input->filename, input_lineno,
+    fatal_throw("%s:%d: invalid characters '%s'", input->filename, lineno,
                 yytext);
   }
   const char* token_text = yytext;
   if (tok == STRING) token_text = buf_sb.str;
-  return node_new_token(tok, mem_strdup(token_text), input->filename, input_lineno);
+  return node_new_token(tok, mem_strdup(token_text), input->filename, lineno);
 }
 
 // Returns non-zero if EOF reached.

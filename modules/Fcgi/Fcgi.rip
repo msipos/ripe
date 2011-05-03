@@ -1,0 +1,68 @@
+$ #include <fcgiapp.h> $
+
+namespace Fcgi
+  init()
+    $ int err = FCGX_Init();
+      if (err) { 
+        exc_raise("FCGX_Init failed with error %d", err);
+      } $
+  
+  open_socket(String path)
+    $ int sock = FCGX_OpenSocket(val_to_string(__path), 100);
+      if (sock < 0){
+        exc_raise("FCGX_OpenSocket failed with error %d", sock);
+      } $
+    return $ int64_to_val(sock) $
+  
+  class Request
+    $ FCGX_Request cgi; $
+
+    new(Integer socket) | constructor
+      $ int err = FCGX_InitRequest(&(@cgi), val_to_int64(__socket), 0);
+        if (err) { 
+          exc_raise("FCGX_InitRequest failed with error %d", err);
+        } $
+    
+    accept()
+      $ int err = FCGX_Accept_r(&(@cgi));
+        if (err) { 
+          exc_raise("FCGX_Accept_r failed with error %d", err);
+        } $
+    
+    get_param(String param_name)
+      $ char** envp = @cgi.envp;
+        const char* param_name = val_to_string(__param_name);
+        for (int i = 0;; i++){
+          const char* pair = envp[i];
+          if (pair == NULL) break;
+
+          const char* tmp = param_name;
+          for(;;){
+            if (*tmp == 0){     // Reached the end of param_name
+              // Does the end correspond to '=' in the pair?
+              if (*pair == '=') {
+                RRETURN(string_to_val(pair+1));
+              } else break;
+            }
+            if (*tmp != *pair) break;
+            if (*pair == 0) break;
+
+            pair++; tmp++;
+          }
+        } $
+      return nil
+      
+    show_params()
+      $ char** envp = @cgi.envp;
+        for (int i = 0;; i++){
+          if (envp[i] == NULL) break;
+          printf("%s\n", envp[i]);
+        } $
+    
+    print(String txt)
+      $ const char* s = val_to_string(__txt);
+        int n = strlen(s);
+        int err = FCGX_PutStr(s, n, @cgi.out);
+        if (err < 0 or err != n) {
+          exc_raise("FCGX_PutStr failed with error %d", err);
+        } $

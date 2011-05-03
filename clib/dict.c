@@ -232,3 +232,40 @@ bool dict_equal_uint64(void* key1, void* key2)
 {
   return (*((uint64*) key1)) == (*((uint64*) key2));
 }
+
+DictIter* dict_iter_new(Dict* d)
+{
+  DictIter* iter = mem_new(DictIter);
+  iter->d = d;
+  iter->i = 0;
+  return iter;
+}
+
+bool dict_iter_has(DictIter* iter)
+{
+  for(;;){
+    // Out of bounds, then you are done with dictionary
+    if (iter->i >= iter->d->alloc_size) return false;
+
+    // We're at a bucket.
+    if (dict_has_bucket(iter->d, iter->i)) return true;
+    
+    (iter->i)++;
+  }
+}
+
+void* dict_iter_get_ptr(DictIter* iter)
+{
+  assert(dict_has_bucket(iter->d, iter->i));
+  void* p = *((void**) dict_get_bucket_key(iter->d, iter->i));
+  (iter->i)++;
+  return p;
+}
+
+void dict_iter_get_ptrs(DictIter* iter, void** key, void** value)
+{
+  assert(dict_has_bucket(iter->d, iter->i));
+  *key = *((void**) dict_get_bucket_key(iter->d, iter->i));
+  *value = *((void**) dict_get_bucket_value(iter->d, iter->i));
+  (iter->i)++;
+}

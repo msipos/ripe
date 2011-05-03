@@ -30,8 +30,11 @@ Klass* klass_String;
 Klass* klass_Tuple;
 Klass* klass_Map;
 Klass* klass_Set;
+Klass* klass_Error;
 Value dsym_to_string;
 Value dsym_contains;
+Value dsym_name;
+Value dsym_text;
 
 void common_init_phase15()
 {
@@ -47,7 +50,10 @@ void common_init_phase15()
   klass_Tuple = klass_get(dsym_get("Tuple"));
   klass_Map = klass_get(dsym_get("Map"));
   klass_Set = klass_get(dsym_get("Set"));
+  klass_Error = klass_get(dsym_get("Error"));
 
   dsym_to_string = dsym_get("to_string");
   dsym_contains = dsym_get("contains?");
+  dsym_name = dsym_get("name");
+  dsym_text = dsym_get("text");
 }

@@ -34,22 +34,15 @@ void bootstrap(const char* out_filename, int arg1, int argc, char* const* argv)
       fatal_push("while reading '%s'");
         input_from_file(&input, arg);
       fatal_pop();
-      
+
       fatal_push("while building AST for '%s'", arg);
-        Node* ast = build_tree(&input);
+      Node* ast = build_tree(&input);
       fatal_pop();
-      
+
       array_append(&asts, ast);
       array_append(&ast_filenames, arg);
-  
-      fatal_push("during structure analysis of '%s'", arg);
-        stran_absorb_ast(ast);
-      fatal_pop();
-  
-      fatal_push("during processing of '%s'", arg);
-        proc_process_ast(ast);
-      fatal_pop();
-      
+
+      stran_absorb_ast(ast, arg);
     } else if (strequal(ext, ".o")) {
       array_append(&objs, arg);
     } else if (strequal(ext, ".meta")) {
@@ -62,13 +55,22 @@ void bootstrap(const char* out_filename, int arg1, int argc, char* const* argv)
     }
   }
 
+  genist_run();
+
+  for (int i = 0; i < asts.size; i++){
+    Node* ast = array_get(&asts, Node*, i);
+    const char* arg = array_get(&ast_filenames, const char*, i);
+
+    proc_process_ast(ast, arg);
+  }
+
   // Now generate ASTs into dump objects.
   for (int i = 0; i < asts.size; i++){
     Node* ast = array_get(&asts, Node*, i);
     const char* arg = array_get(&ast_filenames, const char*, i);
-    slog("generate('%s')\n", arg);
+
     fatal_push("while generating code in '%s'", arg);
-      generate(ast);
+    generate(ast, arg);
     fatal_pop();
   }
 
