@@ -15,7 +15,10 @@ manual_finally()
   $ stack_pop();
     } $
   success()
-  $ if (stack_unwinding == true) longjmp(exc_unwinding_jb, 1); $
+  $ if (stack_unwinding == true) { $
+  success()
+  $ stack_continue_unwinding();
+  } $
   fail()
 
 manual()
@@ -35,12 +38,12 @@ outer_manual()
     } else { $
   fail()
   $ } $
-  
+
 pass_value()
   raise 5
-  
+
 automatic()
-  try  
+  try
     pass_value()
   catch Integer i
     Test.test("pass value by exception", i, 5)

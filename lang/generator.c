@@ -26,7 +26,7 @@ static void traverse(Node* node)
 {
   line_min = -1;
   line_max = -1;
-  
+
   if (node->line != -1) {
     if (line_max == -1) {
       line_max = node->line;
@@ -483,8 +483,8 @@ static void gen_stmt(Node* stmt)
   traverse(stmt);
   if (line_min != -1){
     wr_print(WR_CODE, "#line %d \"%s\"\n", line_min, line_filename);
-  }  
-  
+  }
+
   switch(stmt->type){
   case STMT_EXPR:
     {
@@ -567,13 +567,13 @@ static void gen_stmt(Node* stmt)
       gen_stmt_assign2(id_iterator, node_new_field_call(expr, "get_iter", 0));
 
       wr_print(WR_CODE, "  for(;;){");
-      
+
       // _iterator_tempX = _iteratorX.iter()
       Node* iterator_call = node_new_field_call(id_iterator, "iter", 0);
       Node* id_temp = node_new_id(mem_asprintf("_iterator_temp%d",
                                   iterator_counter));
       gen_stmt_assign2(id_temp, iterator_call);
-      
+
       // if _iterator_tempX == eof break
       wr_print(WR_CODE, "  if (%s == VALUE_EOF) break;\n", eval_expr(id_temp));
       gen_stmt_assign(lvalue_list, id_temp);
@@ -629,12 +629,12 @@ static void gen_stmt(Node* stmt)
 static void gen_try_stuff(Node* try_stmt, Node* other_stmt)
 {
   assert(try_stmt->type == STMT_TRY);
-  
+
   switch(other_stmt->type){
   case STMT_CATCH:
     wr_print(WR_CODE, "  if (setjmp(exc_jb) == 0){\n");
     if (node_has_node(other_stmt, "type")){
-      wr_print(WR_CODE, "    stack_push_catch(%s);\n", 
+      wr_print(WR_CODE, "    stack_push_catch(%s);\n",
                cache_type(
                  eval_type(
                    node_get_node(other_stmt, "type")
@@ -652,7 +652,7 @@ static void gen_try_stuff(Node* try_stmt, Node* other_stmt)
         const char* ripe_name = node_get_string(other_stmt, "name");
         const char* c_name = util_c_name(ripe_name);
         wr_print(WR_CODE, "  Value %s = exc_obj;\n", c_name);
-        var_add_local(ripe_name, c_name, 
+        var_add_local(ripe_name, c_name,
                       eval_type(node_get_node(other_stmt, "type")));
       }
       gen_block(node_get_node(other_stmt, "block"));
@@ -667,7 +667,7 @@ static void gen_try_stuff(Node* try_stmt, Node* other_stmt)
     wr_print(WR_CODE, "  }\n");
     gen_block(node_get_node(other_stmt, "block"));
     wr_print(WR_CODE, "  if (stack_unwinding == true)\n");
-    wr_print(WR_CODE, "    longjmp(exc_unwinding_jb, 1);\n");
+    wr_print(WR_CODE, "    stack_continue_unwinding();\n");
     break;
   default:
     fatal_throw("invalid statement following try block");
@@ -690,7 +690,7 @@ static void gen_block(Node* block)
         fatal_node(stmt, "statement must follow if or elif");
       }
     }
-    
+
     // These are handled specially because of the nested structure.
     if (stmt->type == STMT_TRY){
       // Find the extent of the try/catch blocks
@@ -704,13 +704,13 @@ static void gen_block(Node* block)
         ilast = i;
       }
       if (itry == ilast) fatal_throw("try by itself");
-      
+
       if (ilast == itry+1){
         gen_try_stuff(node_get_child(block, itry),
                       node_get_child(block, ilast));
         continue;
       }
-      
+
       // try                       try
       //   BLOCK 1                   try
       // catch                         BLOCK 1
@@ -731,7 +731,7 @@ static void gen_block(Node* block)
         //                    ...
         //                  other
         //                    ... }
-        
+
         Node* new_try = node_new(STMT_TRY);
         node_set_node(new_try, "block", new_block);
         // new_try is   try
@@ -750,7 +750,7 @@ static void gen_block(Node* block)
       } // end combining for
       continue;
     } // endif STMT_TRY
-        
+
     prev_stmt_type = stmt->type;
     gen_stmt(stmt);
     i++;

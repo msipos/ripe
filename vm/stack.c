@@ -38,6 +38,7 @@ THREAD_LOCAL jmp_buf exc_jb;
 THREAD_LOCAL jmp_buf exc_unwinding_jb;
 THREAD_LOCAL bool stack_unwinding = false;
 THREAD_LOCAL Value exc_obj;
+THREAD_LOCAL int stack_backup;
 
 void stack_init()
 {
@@ -74,24 +75,6 @@ void stack_pop()
   stack_idx--;
 }
 
-/*
-
-
-void stack_push_finally()
-{
-  stack[stack_idx].type = TYPE_FINALLY;
-  copy_jmp_buf(stack[stack_idx].jb, exc_jb);
-  stack_idx++;
-}
-
-void stack_push_func(Value func)
-{
-  stack[stack_idx].type = TYPE_FUNC;
-  stack[stack_idx].func = func;
-  stack_idx++;
-}
-*/
-
 void stack_annot_push(char* annotation)
 {
   stack[stack_idx].type = TYPE_ANNOT;
@@ -126,6 +109,70 @@ void stack_display()
   }
 }
 
+void stack_continue_unwinding()
+{
+  for(;;){
+    if (stack_idx == 0) break;
+    stack_idx--;
+
+    switch(stack[stack_idx].type){
+      case TYPE_ANNOT:
+        // Ignore.
+        break;
+      case TYPE_CATCH_ALL:
+        // Restore to this handler.
+        stack_unwinding = false;
+        copy_jmp_buf(exc_jb, stack[stack_idx].jb);
+        longjmp(exc_jb, 1);
+        break;
+      case TYPE_CATCH:
+        if (obj_eq_klass(exc_obj, stack[stack_idx].exc_type)){
+          stack_unwinding = false;
+          copy_jmp_buf(exc_jb, stack[stack_idx].jb);
+          longjmp(exc_jb, 1);
+        }
+        break;
+      case TYPE_FINALLY:
+        copy_jmp_buf(exc_jb, stack[stack_idx].jb);
+        longjmp(exc_jb, 1);
+        break;
+    }
+  }
+
+  stack_idx = stack_backup;
+  stack_display();
+  fprintf(stderr, "  uncaught exception of type %s",
+          dsym_reverse_get(
+            obj_klass(exc_obj)->name
+          )
+         );
+
+  bool do_to_string = false;
+  if (field_has(exc_obj, dsym_text)){
+    Value vtext = field_get(exc_obj, dsym_text);
+    if (obj_klass(vtext) == klass_String){
+      fprintf(stderr, ": '%s'\n", val_to_string(vtext));
+    } else {
+      fprintf(stderr, "with unreadable text field\n");
+      do_to_string = true;
+    }
+  } else {
+    fprintf(stderr, " with no text field\n");
+    do_to_string = true;
+  }
+
+  if (do_to_string){
+    if (method_has(exc_obj, dsym_to_string)){
+      Value vtext = method_call0(exc_obj, dsym_to_string);
+      if (obj_klass(vtext) == klass_String){
+        fprintf(stderr, "  object representation: '%s'\n", val_to_string(vtext));
+      }
+    }
+  }
+
+  exit(1);
+}
+
 void exc_raise(char* format, ...)
 {
   va_list ap;
@@ -142,71 +189,8 @@ void exc_raise(char* format, ...)
 
 void exc_raise_object(Value obj)
 {
-  int backup_stack_idx = stack_idx;
+  stack_backup = stack_idx;
   stack_unwinding = true;
-  for(;;){
-    if (stack_idx == 0) break;
-    stack_idx--;
-    
-    switch(stack[stack_idx].type){
-      case TYPE_ANNOT:
-        // Ignore.
-        break;
-      case TYPE_CATCH_ALL:
-        // Restore to this handler.
-        stack_unwinding = false;
-        copy_jmp_buf(exc_jb, stack[stack_idx].jb);
-        longjmp(exc_jb, 1);
-        break;
-      case TYPE_CATCH:
-        if (obj_eq_klass(obj, stack[stack_idx].exc_type)){
-          stack_unwinding = false;
-          exc_obj = obj;
-          copy_jmp_buf(exc_jb, stack[stack_idx].jb);
-          longjmp(exc_jb, 1);
-        }
-        break;
-      case TYPE_FINALLY:
-        if (setjmp(exc_unwinding_jb) == 0){
-          copy_jmp_buf(exc_jb, stack[stack_idx].jb);
-          longjmp(exc_jb, 1);
-        }
-        break;
-    }
-  }
-
-  // If you're here, display the stack and terminate
-  stack_idx = backup_stack_idx; 
-  stack_display();
-  fprintf(stderr, "  uncaught exception of type %s", 
-          dsym_reverse_get(
-            obj_klass(obj)->name
-          )
-         );
-
-  bool do_to_string = false;
-  if (field_has(obj, dsym_text)){
-    Value vtext = field_get(obj, dsym_text);
-    if (obj_klass(vtext) == klass_String){
-      fprintf(stderr, ": '%s'\n", val_to_string(vtext));   
-    } else {
-      fprintf(stderr, "with unreadable text field\n");
-      do_to_string = true;
-    }
-  } else {
-    fprintf(stderr, " with no text field\n");
-    do_to_string = true;
-  }
-  
-  if (do_to_string){
-    if (method_has(obj, dsym_to_string)){
-      Value vtext = method_call0(obj, dsym_to_string);
-      if (obj_klass(vtext) == klass_String){
-        fprintf(stderr, "  object representation: '%s'\n", val_to_string(vtext));
-      }
-    }
-  }
-  
-  exit(1);
+  exc_obj = obj;
+  stack_continue_unwinding();
 }
-

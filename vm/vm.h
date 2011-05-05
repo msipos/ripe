@@ -107,13 +107,11 @@ void stack_push_catch_all();
 void stack_pop();
 void stack_push_finally();
 void stack_push_catch(Klass* exc_type);
+void stack_continue_unwinding() __attribute__ ((noreturn));
 
-// TODO: Make these thread safe:
 extern THREAD_LOCAL jmp_buf exc_jb;
-extern THREAD_LOCAL jmp_buf exc_unwinding_jb;
 extern THREAD_LOCAL Value exc_obj;
 extern THREAD_LOCAL bool stack_unwinding;
-
 
 //////////////////////////////////////////////////////////////////////////////
 // klass.c
