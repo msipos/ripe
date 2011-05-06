@@ -68,4 +68,25 @@ namespace Os
     if arg is Array1
       txt = String.join(arg, " ")
       return $ int64_to_val(system(val_to_string(__txt))) $
-    raise "invalid type of argument to Os.system()"
+    raise TypeError.new("invalid type of argument to Os.system()")
+  
+  exec(arg)
+    txt = nil
+    if arg is String
+      txt = arg
+    elif arg is Array1
+      txt = String.join(arg, " ")
+    else
+      raise TypeError.new("invalid type of argument to Os.exec()")
+    $ const char* txt = val_to_string(__txt);
+      FILE* pipe = popen(txt, "r");
+      if (!pipe) exc_raise("failed to open pipe '%s'", txt);
+      char buffer[256];
+      StringBuf result; sbuf_init(&result, "");
+      while(!feof(pipe)) {
+        if(fgets(buffer, 256, pipe) != NULL) sbuf_cat(&result, buffer);
+      }
+      int status = pclose(pipe);
+      Value s =  string_to_val(result.str);
+      sbuf_deinit(&result); $
+    return tuple($int64_to_val(status)$, $ s $)

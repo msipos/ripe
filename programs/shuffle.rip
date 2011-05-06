@@ -8,7 +8,7 @@ wrong_shuffle!(array)
     array[r] = array[i]
     array[i] = t
 
-global Gsl.Rng rng = Gsl.Rng.new()
+var Gsl.Rng rng = Gsl.Rng.new()
 
 usage()
   Err.println(" Usage:")

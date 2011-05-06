@@ -1,0 +1,23 @@
+is_text?(arg)
+  desc = Path.description(arg)
+  if desc.find("text") != nil
+    return true
+  return false
+
+main()
+  walker = Path.Walker.new(".")
+  for name, type in walker
+    if type != Path.REGULAR
+      continue
+   
+    if name[-1] == '~'
+      continue
+    
+    if name.find("git") != nil
+      continue
+
+    if not is_text?(name)
+      continue
+
+    Out.println(name)
+

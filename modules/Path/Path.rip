@@ -8,6 +8,12 @@ namespace Path
   var DIRECTORY = $ int64_to_val(DT_DIR) $
   var SEPARATOR = '/'
 
+  description(path)
+    status, desc = Os.exec(["file", path])
+    if status != 0
+      raise "file failed on path '{}' with error {}".f(path, status)
+    return desc
+
   get_program_dir()
     return $ string_to_val(path_get_app_dir()) $
 
