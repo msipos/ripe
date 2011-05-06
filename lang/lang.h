@@ -321,6 +321,7 @@ const char* util_dot_id(Node* expr);
 const char* util_trim_ends(const char* input);
 // In str, replace each character c by string replace
 const char* util_replace(const char* str, const char c, const char* replace);
+const char* util_node_type(int type);
 
 // util_signature generates a string of the form:
 //   "Value __Module_Function(Value, Value, Value)

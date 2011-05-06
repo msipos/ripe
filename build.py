@@ -37,9 +37,7 @@ if "nogc" not in sys.argv:
     conf["LFLAGS"].append("-lgc")
 if "slog" in sys.argv:
     conf["CFLAGS"].append("-DSLOG")
-conf["FORCING"] = False
-if "force" in sys.argv:
-    conf["FORCING"] = True
+conf["FORCING"] = "force" in sys.argv
 if "quiet" in sys.argv:
     conf["VERBOSITY"] = 0
 if "verbose" in sys.argv:

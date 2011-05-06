@@ -56,6 +56,7 @@
 %token   K_TRUE        "true"
 %token   K_FALSE       "false"
 %token   K_NIL         "nil"
+%token   K_EOF         "eof"
 %token   K_AND         "and"
 %token   K_OR          "or"
 %token   K_NOT         "not"
@@ -74,7 +75,6 @@
 %token   K_SWITCH      "switch"
 %token   K_CASE        "case"
 %token   K_IS          "is"
-%token   K_EOF         "eof"
 %token   K_TRY         "try"
 %token   K_CATCH       "catch"
 %token   K_FINALLY     "finally"
@@ -86,9 +86,8 @@
 %token   K_CONSTRUCTOR "constructor"
 %token   K_VIRTUAL_GET "virtual_get"
 %token   K_VIRTUAL_SET "virtual_set"
-%token   K_GLOBAL      "global"
 %token   K_VAR         "var"
-%token   K_CONST       "const"
+%token   K_BLOCK       "block"
 %token   K_ARROW       "=>"
 // Operator-like
 %token   OP_EQUAL     "=="
@@ -208,14 +207,16 @@ func: type ID '(' param_star ')' opt_annotation block
                                  node_set_node($$, "param_list", $4);
                                  node_set_node($$, "stmt_list", $7); };
 
-block:     START stmt_list END { $$ = $2; };
+block:     open stmt_list close
+                               { $$ = $2; };
 
 stmt_list: stmt_list SEP stmt  { $$ = $1;
-                                 node_add_child($$, $3); };
+                                 if ($3 != NULL) node_add_child($$, $3); };
 stmt_list: stmt                { $$ = node_new(STMT_LIST);
                                  node_add_child($$, $1); };
-stmt_list: /* empty */         { $$ = node_new(STMT_LIST); };
+//stmt_list: /* empty */         { $$ = node_new(STMT_LIST); };
 
+stmt:      /* empty */         { $$ = NULL; };
 stmt:      "if" rvalue block   { $$ = node_new(STMT_IF);
                                  node_set_node($$, "expr", $2);
                                  node_set_node($$, "block", $3); };
@@ -325,8 +326,9 @@ r_expr:    ID '(' rvalue_star ')'
                                  node_add_child($$, $3); };
 r_expr:    '[' rvalue_star ']' { $$ = node_new(EXPR_ARRAY);
                                  node_add_child($$, $2); };
-r_expr:    '{' mapping_plus '}' { $$ = node_new(EXPR_MAP);
-                                  node_add_child($$, $2); };
+r_expr:    '{' mapping_plus '}' 
+                               { $$ = node_new(EXPR_MAP);
+                                 node_add_child($$, $2); };
 r_expr:    '(' rvalue ')'      { $$ = $2; };
 r_expr:    rvalue '+' rvalue   { $$ = operator($1, $2, $3); };
 r_expr:    rvalue '-' rvalue   { $$ = operator($1, $2, $3); };
@@ -379,6 +381,11 @@ d_expr:    "true"              { $$ = $1; };
 d_expr:    "false"             { $$ = $1; };
 d_expr:    "eof"               { $$ = $1; };
 d_expr:    SYMBOL              { $$ = $1; };
+
+open:      START               { $$ = $1; };
+open:      '{'                 { $$ = $1; };
+close:     END                 { $$ = $1; };
+close:     '}'                 { $$ = $1; };
 
 string:    STRING              { $$ = $1; };
 string:    string STRING       { $$ = node_new(STRING);

@@ -105,6 +105,7 @@ in                              { return K_IN; }
 pass                            { return K_PASS; }
 class                           { return K_CLASS; }
 var                             { return K_VAR; }
+block                           { return K_BLOCK; }
 [A-Za-z_][A-Za-z0-9_?]*\!?      { return ID; }
 \&[A-Za-z_][A-Za-z0-9_?]*       { return SYMBOL; }
 .                               { return UNKNOWN; }

@@ -15,6 +15,8 @@
 
 #include "lang/lang.h"
 
+static const char* dump_current_line();
+
 /////////////////////////////////////////////////////////////////////////////
 // Input
 /////////////////////////////////////////////////////////////////////////////
@@ -65,6 +67,7 @@ void buf_cat(const char* text)
 // This gets called from bison.
 void rc_error(const char*s)
 {
+  fatal_push("line was '%s'", dump_current_line());
   fatal_throw("%s:%d-%d: %s", input->filename, cur_line1, cur_line2, s);
 }
 
@@ -223,14 +226,16 @@ int rc_lex()
       prev_indentation = indentation;
 
       // Dump everything else in raw_line that's not whitespace into line.
-      // While dumping, convert all ';' nodes into SEP.
+      // While dumping, convert all ';' nodes into SEP, '{' and '}' to 
+      // START and END respectively.
       for (int i = 0; i < raw_line.size; i++){
         Node* n = array_get(&raw_line, Node*, i);
         switch (n->type){
           case WHITESPACE:
             break;
           case ';':
-            array_append(&line, node_new(SEP));
+            n->type = SEP;
+            array_append(&line, n);
             break;
           default:
             array_append(&line, n);
@@ -254,6 +259,16 @@ int rc_lex()
   rc_lval = array_get(&line, Node*, next_token);
   next_token++;
   return rc_lval->type;
+}
+
+static const char* dump_current_line()
+{
+  const char* buf = "";
+  for (int i = 0; i < line.size; i++){
+    Node* n = array_get(&line, Node*, i);
+    buf = mem_asprintf("%s %s", buf, util_node_type(n->type));
+  }
+  return buf;
 }
 
 /////////////////////////////////////////////////////////////////////////////

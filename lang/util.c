@@ -192,6 +192,76 @@ const char* annot_get(Node* annot_list, const char* key)
   return NULL;
 }
 
+typedef struct {
+  int type;
+  const char* text;
+} MapElement;
+#define  NM(id)   {id, #id}
+
+MapElement node_map[] = {
+  NM(ID),
+  NM(INT),
+  NM(DOUBLE),
+  NM(STRING),
+  NM(CHARACTER),
+  NM(SYMBOL),
+  NM(SEP),
+  NM(START),
+  NM(END),
+  NM(C_CODE),
+  {K_NAMESPACE, "namespace"},
+  {K_RETURN, "return"},
+  {K_TRUE, "true"},
+  {K_FALSE, "false"},
+  {K_NIL, "nil"},
+  {K_EOF, "eof"},
+  {K_AND, "and"},
+  {K_OR, "or"},
+  {K_NOT, "not"},
+  {K_BIT_AND, "bit_and"},
+  {K_BIT_OR, "bit_or"},
+  {K_BIT_XOR, "bit_xor"},
+  {K_BIT_NOT, "bit_not"},
+  {K_MODULO, "modulo"},
+  {K_IF, "if"},
+  {K_ELSE, "else"},
+  {K_ELIF, "elif"},
+  {K_WHILE, "while"},
+  {K_BREAK, "break"},
+  {K_CONTINUE, "continue"},
+  {K_LOOP, "loop"},
+  {K_SWITCH, "switch"},
+  {K_CASE, "case"},
+  {K_IS, "is"},
+  {K_TRY, "try"},
+  {K_CATCH, "catch"},
+  {K_FINALLY, "finally"},
+  {K_RAISE, "raise"},
+  {K_FOR, "for"},
+  {K_IN, "in"},
+  {K_PASS, "pass"},
+  {K_CLASS, "class"},
+  {K_CONSTRUCTOR, "constructor"},
+  {K_VIRTUAL_GET, "virtual_get"},
+  {K_VIRTUAL_SET, "virtual_set"},
+  {K_VAR, "var"},
+  {K_ARROW, "=>"},
+  {OP_EQUAL, "=="},
+  {OP_NOT_EQUAL, "!]"},
+  {OP_LTE, "<="},
+  {OP_GTE, ">="},
+  {0, NULL}
+};
+
+const char* util_node_type(int type)
+{
+  for (int i = 0; node_map[i].type != 0; i++){
+    if (node_map[i].type == type) return node_map[i].text;
+  }
+  if (type < 128) return mem_asprintf("%c", type);
+  return mem_asprintf("%d", type);
+}
+
 void lang_init()
 {
   stran_init();

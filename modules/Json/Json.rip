@@ -29,16 +29,16 @@ namespace Json
 
   encode_to_stringbuf(StringBuf buf, obj)
     if obj is Map
-      buf.print("{\n")
+      buf.print("{")
       index = 1
       for k, v in obj
         Json.encode_to_stringbuf(buf, k)
-        buf.print(" : ")
+        buf.print(":")
         Json.encode_to_stringbuf(buf, v)
         if index < obj.size
-          buf.print(",\n")
+          buf.print(",")
         else
-          buf.print("\n")
+          buf.print("")
         index = index + 1
       buf.print("}")
       return

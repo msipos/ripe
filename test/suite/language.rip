@@ -76,14 +76,10 @@ exceptions()
     success()
 
 class CDataClass
-  $
-    int64 i;
-  $
+  $ int64 i; $
 
   new() | constructor
-    $
-      @i = 1;
-    $
+    $ @i = 1; $
 
   i() | virtual_get
     return $ int64_to_val(@i) $
@@ -198,12 +194,15 @@ switch_helper(x)
       return 1
     case 3
       return 2
+    else
+      return 4
 
 switcher()
   name = "switch/case"
   Test.test(name, 3, switch_helper(1))
   Test.test(name, 2, switch_helper(3))
   Test.test(name, 1, switch_helper(2))
+  Test.test(name, 4, switch_helper(4))
 
 ellipsis()
   name = ...
@@ -242,6 +241,8 @@ class MyChild | parent=MyParent
     @some_other_field = nil
     @some_field = nil
 
+shorthand() { Test.test("shorthand", 1, 1); success(); }
+
 main()
   Test.set_verbose(false)
   operators()
@@ -250,6 +251,7 @@ main()
   types()
   switcher()
   ellipsis()
+  shorthand()
 
   obj = Class.new("testfile")
   obj.test_filename("testfile")
