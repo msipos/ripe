@@ -73,18 +73,18 @@ void gen_c()
          "  assert_never();\n"
          "  return VALUE_NIL;\n"
          "}\n");
-
-  printf("\n// constructors\n\n");
-  for (int n = 0; n <= MAX_PARAMS; n++){
-    printf("Value func%d_to_val(CFunc%d c_func){\n", n, n);
-    printf("  Func* func;\n");
-    printf("  Value f = obj_new(klass_func, (void**) &func);\n");
-    printf("  func->var_params = 0;\n");
-    printf("  func->num_params = %d;\n", n);
-    printf("  func->func%d = c_func;\n", n);
-    printf("  return f;\n");
-    printf("}\n");
-  }
+         
+  printf("// constructor\n\n");
+  printf("Value func_to_val(void* c_func, int num_params){\n");
+  printf("  Func* func;\n");
+  printf("  Value f = obj_new(klass_func, (void**) &func);\n");
+  printf("  func->var_params = 0;\n");
+  printf("  func->num_params = num_params;\n");
+  printf("  func->func = c_func;\n");
+  printf("  func->block_elems = 0;\n");
+  printf("  func->block_data = NULL;\n");
+  printf("  return f;\n");
+  printf("}\n");  
 
   printf("\n// callers\n");
   for (int n = 0; n <= MAX_PARAMS; n++){
@@ -146,14 +146,19 @@ void gen_h()
   printf("// Func c_data\n");
   printf("typedef struct {\n");
   printf("  union {\n");
+  printf("    void* func;\n");
   for (int i = 0; i <= MAX_PARAMS; i++){
     printf("    CFunc%d func%d;\n", i, i);
   }
-  printf("  };\n  uint16 num_params;\n  uint16 var_params;\n} Func;\n");
+  printf("  };\n  uint16 num_params;\n  uint16 var_params;\n"
+         "  uint16 block_elems;\n  Value* block_data;\n} Func;\n");
 
   printf("\n// constructors\n\n");
+  printf("Value func_to_val(void* c_func, int num_params);\n");
   for (int i = 0; i <= MAX_PARAMS; i++){
-    printf("Value func%d_to_val(CFunc%d);\n", i, i);
+    printf("#define func%d_to_val(cfunc) "
+           "func_to_val((void*) ((CFunc%d*) cfunc), %d)\n",
+           i, i, i);
   }
 
   printf("\n// callers\n\n");

@@ -315,6 +315,10 @@ type_like: rvalue '.' ID       { $$ = node_new(EXPR_FIELD);
                                  node_add_child($$, $1);
                                  node_set_string($$, "name", $3->text); };
 
+r_expr:    "block" '(' param_star ')' block
+                               { $$ = node_new(EXPR_BLOCK);
+                                 node_set_node($$, "param_list", $3);
+                                 node_set_node($$, "stmt_list", $5); }
 r_expr:    rvalue '.' ID '(' rvalue_star ')'
                                { $$ = node_new(EXPR_FIELD_CALL);
                                  node_add_child($$, $1);

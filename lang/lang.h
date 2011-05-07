@@ -265,6 +265,7 @@ int input_read(char* buf, int max_size); // Used by flex to do reading
 #define EXPR_RANGE_UNBOUNDED      1243
 #define EXPR_IS_TYPE      1244
 #define EXPR_TYPED_ID     1245
+#define EXPR_BLOCK        1256
 
 // Helper nonterminal nodes
 #define ID_LIST           1350
