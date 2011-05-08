@@ -43,3 +43,33 @@ void* func_get_ptr(Value v_func, int16 num_params)
   }
   return (void*) c_data->func0;
 }
+
+Value func_to_val(void* c_func, int num_params)
+{
+  Func* func;
+  Value f = obj_new(klass_func, (void**) &func);
+  func->var_params = 0;
+  func->num_params = num_params;
+  func->func = c_func;
+  func->is_block = false;
+  func->block_elems = 0;
+  func->block_data = NULL;
+  return f;
+}
+
+Value block_to_val(void* c_func, int num_params, int block_elems, ...)
+{
+  Func* func;
+  Value f = obj_new(klass_func, (void**) &func);
+  func->var_params = 0;
+  func->num_params = num_params;
+  func->func = c_func;
+  func->is_block = true;
+  func->block_elems = block_elems;
+  
+  va_list ap;
+  va_start(ap, block_elems);
+  func->block_data = mem_malloc(block_elems * sizeof(Value));
+  for (int i = 0; i < block_elems; i++) func->block_data[i] = va_arg(ap, Value);
+  return f;
+}

@@ -252,8 +252,6 @@ int input_read(char* buf, int max_size); // Used by flex to do reading
 #define STMT_RAISE        1123
 
 // Types of EXPRs
-#define EXPR_ID_CALL      1230
-#define EXPR_FIELD_CALL   1231
 #define EXPR_INDEX        1232
 #define EXPR_ARRAY        1233
 #define EXPR_MAP          1234
@@ -265,7 +263,8 @@ int input_read(char* buf, int max_size); // Used by flex to do reading
 #define EXPR_RANGE_UNBOUNDED      1243
 #define EXPR_IS_TYPE      1244
 #define EXPR_TYPED_ID     1245
-#define EXPR_BLOCK        1256
+#define EXPR_BLOCK        1246
+#define EXPR_CALL         1247
 
 // Helper nonterminal nodes
 #define ID_LIST           1350
@@ -340,9 +339,15 @@ void var_init();
 void var_push();
 void var_pop();
 void var_add_local(const char* ripe_name, const char* c_name, const char* type);
+void var_add_local2(const char* ripe_name, const char* c_name, 
+                    const char* type, int kind);
 bool var_query(const char* ripe_name);
 const char* var_query_type(const char* ripe_name);
 const char* var_query_c_name(const char* ripe_name);
+int var_query_kind(const char* ripe_name);
+
+#define VAR_REGULAR     1
+#define VAR_BLOCK_PARAM 2
 
 //////////////////////////////////////////////////////////////////////////////
 // lang/writer.c

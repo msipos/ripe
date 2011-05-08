@@ -15,6 +15,8 @@
 
 #include "lang/lang.h"
 
+static const char* gen_block(Node* block) ATTR_WARN_UNUSED_RESULT;
+
 ///////////////////////////////////////////////////////////////////////////////
 // LINE CONTROL
 ///////////////////////////////////////////////////////////////////////////////
@@ -70,6 +72,33 @@ static void fatal_node(Node* node, const char* format, ...)
 
 FuncInfo* context_fi = NULL;
 ClassInfo* context_ci = NULL;
+typedef struct {
+  StringBuf sbuf_code;
+  SArray closure_names;
+  SArray closure_exprs;
+  const char* func_name;
+} BlockContext;
+BlockContext* context_block = NULL;
+
+///////////////////////////////////////////////////////////////////////////////
+// BLOCK STUFF
+///////////////////////////////////////////////////////////////////////////////
+
+static const char* closure_add(const char* name, const char* evaluated)
+{
+  assert(context_block != NULL);
+  
+  for (int i = 0; i < context_block->closure_names.size; i++){
+    const char* n = sarray_get_ptr(&(context_block->closure_names), i);
+    if (strequal(name, n)){
+      return mem_asprintf("_c_data->block_data[%d]", i);
+    }
+  }
+  sarray_append_ptr(&(context_block->closure_names), (void*) name);
+  sarray_append_ptr(&(context_block->closure_exprs), (void*) evaluated);
+  return mem_asprintf("_c_data->block_data[%d]", 
+                      context_block->closure_names.size - 1);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // EVALUATING AST
@@ -92,6 +121,14 @@ static const char* eval_expr_list(Node* expr_list, bool first_comma)
   const char* result = mem_strdup(sb_temp.str);
   sbuf_deinit(&sb_temp);
   return result;
+}
+
+static const char* eval_expr_call(Node* expr, Node* arg_list)
+{
+  return mem_asprintf("func_call%d(%s %s)", 
+                      node_num_children(arg_list),
+                      eval_expr(expr),
+                      eval_expr_list(arg_list, true));
 }
 
 static const char* eval_static_call(const char* ssym, Node* arg_list)
@@ -225,7 +262,13 @@ static const char* eval_expr(Node* expr)
   case K_EOF:
     return mem_strdup("VALUE_EOF");
   case ID:
-    return var_query_c_name(expr->text);
+    if (context_block != NULL){
+      // If it's a block param, then OK.
+      if (var_query_kind(expr->text) == VAR_BLOCK_PARAM)
+        return var_query_c_name(expr->text);
+      else 
+        return closure_add(expr->text, var_query_c_name(expr->text));
+    } else return var_query_c_name(expr->text);
   case SYMBOL:
     return cache_dsym(expr->text + 1);
   case INT:
@@ -289,41 +332,37 @@ static const char* eval_expr(Node* expr)
     break;
   case EXPR_INDEX:
     return eval_index(node_get_child(expr, 0), node_get_child(expr, 1), NULL);
-  case EXPR_FIELD_CALL:
+  case EXPR_CALL:
     {
-      Node* parent = node_get_child(expr, 0);
-      const char* field = node_get_string(expr, "name");
-      Node* arg_list = node_get_child(expr, 1);
-
-      // Attempt to evaluate parent as a static symbol.
-      const char* s = eval_expr_as_id(parent);
-      if (s == NULL or var_query(s)){
-        // Dynamic call
-        return eval_obj_call(parent, field, arg_list);
+      Node* callee = node_get_node(expr, "callee");
+      Node* args = node_get_node(expr, "args");
+      
+      // If callee is a field, then we must check if its a method call.
+      if (callee->type == EXPR_FIELD){
+        const char* field_name = node_get_string(callee, "name");
+        Node* left = node_get_child(callee, 0);
+        
+        const char* s = eval_expr_as_id(left);
+        if (s == NULL or var_query(s))
+          return eval_obj_call(left, field_name, args);
       }
-      // Static call
-      return eval_static_call(mem_asprintf("%s.%s", s, field), arg_list);
-    }
-    break;
-  case EXPR_ID_CALL:
-    {
-      Node* left = node_get_child(expr, 0);
-      Node* arg_list = node_get_child(expr, 1);
-      assert(left->type == ID);
-      if (var_query(left->text))
-        fatal_node(expr, "variable '%s' called as a function", left->text);
-      if (strequal(left->text, "tuple")){
-        return mem_asprintf(
-                 "tuple_to_val(%u %s)",
-                 node_num_children(arg_list),
-                 eval_expr_list(arg_list, true)
-               );
-      }
+      
+      const char* s = eval_expr_as_id(callee);
+      if (s != NULL){
+        // Could be a tuple constructor.
+        if (strequal(s, "tuple")){
+          return mem_asprintf("tuple_to_val(%u %s)",
+                              node_num_children(args),
+                              eval_expr_list(args, true));
+        }
 
-      // At this point it must be a static call.
-      return eval_static_call(left->text, arg_list);
+        // If all of callee can be evaluated as an id, then it must be a static
+        // call.
+        return eval_static_call(s, args);
+      }
+      
+      return eval_expr_call(callee, args);
     }
-    break;
   case EXPR_RANGE_BOUNDED:
     {
       Node* left = node_get_child(expr, 0);
@@ -343,25 +382,28 @@ static const char* eval_expr(Node* expr)
                         eval_expr(node_get_child(expr, 0)));
   case EXPR_RANGE_UNBOUNDED:
     return "range_to_val(RANGE_UNBOUNDED, 0, 0)";
-    case EXPR_FIELD:
-      {
-        // Attempt to evaluate this field as a static symbol.
-        Node* left = node_get_child(expr, 0);
-        const char* s = eval_expr_as_id(left);
-        if (s == NULL or var_query(s)){
-          // Dynamic field.
-          const char* field = node_get_string(expr, "name");
+  case EXPR_FIELD:
+    {
+      // Attempt to evaluate this field as a static symbol.
+      Node* left = node_get_child(expr, 0);
+      const char* s = eval_expr_as_id(left);
+      if (s == NULL or var_query(s)){
+        // Dynamic field.
+        const char* field = node_get_string(expr, "name");
 
-          return mem_asprintf("field_get(%s, %s)",
-                              eval_expr(left),
-                              cache_dsym(field));
-        } else {
-          // Could be a global variable.
-          s = eval_expr_as_id(expr);
-          return var_query_c_name(s);
-        }
+        return mem_asprintf("field_get(%s, %s)",
+                            eval_expr(left),
+                            cache_dsym(field));
+      } else {
+        // Could be a global variable.
+        s = eval_expr_as_id(expr);
+
+        if (context_block != NULL){
+          return closure_add(s, var_query_c_name(s));
+        } else return var_query_c_name(s);
       }
-      break;
+    }
+    break;
   case EXPR_AT_VAR:
     {
       const char* name = node_get_string(expr, "name");
@@ -400,28 +442,95 @@ static const char* eval_expr(Node* expr)
                           eval_expr(node_get_child(expr, 0)),
                           cache_type(type));
     }
+  case EXPR_BLOCK:
+    {
+      fatal_push("in anonymous block");
+      if (context_block != NULL){
+        fatal_node(expr, "nested blocks are not implemented yet");
+      }
+
+      // Initialize context_block  
+      context_block = mem_new(BlockContext);
+      sbuf_init(&(context_block->sbuf_code), "");
+      sarray_init(&(context_block->closure_names));
+      sarray_init(&(context_block->closure_exprs));
+      static int counter = 0; counter++;
+      context_block->func_name = mem_asprintf("ripe_blk%d", counter);
+
+      Node* param_list = node_get_node(expr, "param_list");
+      Node* stmt_list = node_get_node(expr, "stmt_list");
+      var_push();
+
+      // Print out the header of the anonymous function
+      sbuf_printf(&(context_block->sbuf_code), "static Value %s(Value __block",
+                  context_block->func_name);
+      for (int i = 0; i < node_num_children(param_list); i++){
+        Node* param = node_get_child(param_list, i);
+        const char* name = node_get_string(param, "name");
+        const char* c_name = util_c_name(name);
+        if (node_has_string(param, "array"))
+          fatal_node(expr,
+                     "array parameters for blocks are not implemented yet");
+        const char* type = "?"; // TODO: Deal with type.
+        var_add_local2(name, c_name, type, VAR_BLOCK_PARAM);
+        sbuf_printf(&(context_block->sbuf_code), ", Value %s", c_name);
+      }
+      sbuf_printf(&(context_block->sbuf_code), ")\n");
+      
+      // Generate block code
+      sbuf_printf(&(context_block->sbuf_code), "{\n");
+      sbuf_printf(&(context_block->sbuf_code), 
+                  "  Func* _c_data = obj_c_data(__block);\n");
+
+      sbuf_printf(&(context_block->sbuf_code), 
+                  "  stack_annot_push(\"anonymous function\");\n");
+      sbuf_printf(&(context_block->sbuf_code), "%s", gen_block(stmt_list));
+      sbuf_printf(&(context_block->sbuf_code), "}\n");
+
+      // Now, print out the block function to WR_HEADER
+      wr_print(WR_HEADER, "%s", context_block->sbuf_code.str);
+      const char* result = mem_asprintf("block_to_val(%s, %d, %d",
+                                        context_block->func_name,
+                                        node_num_children(param_list),
+                                        context_block->closure_names.size);
+      for (int i = 0; i < context_block->closure_names.size; i++){
+        const char* evaluated = sarray_get_ptr(&(context_block->closure_exprs),
+                                               i);
+        result = mem_asprintf("%s, %s", result, evaluated);
+      }
+      result = mem_asprintf("%s)", result);
+
+      // End EXPR_BLOCK
+      var_pop();
+      context_block = NULL;
+      fatal_pop();
+      return result;
+    }
   default:
     assert_never();
   }
   return NULL;
 }
 
-static void gen_block(Node* block);
-
-static void gen_stmt_assign2(Node* lvalue, Node* rvalue)
+static const char* gen_stmt_assign2(Node* lvalue, 
+                                    Node* rvalue) ATTR_WARN_UNUSED_RESULT;
+static const char* gen_stmt_assign2(Node* lvalue, Node* rvalue)
 {
+  StringBuf sb;
+  sbuf_init(&sb, "");
+
   const char* right = eval_expr(rvalue);
   switch(lvalue->type){
   case ID:
     {
       const char* var_name = lvalue->text;
       if (var_query(var_name)){
-        wr_print(WR_CODE, "  %s = %s;\n", var_query_c_name(var_name), right);
+        sbuf_printf(&sb, "  %s = %s;\n", var_query_c_name(var_name), right);
       } else {
         // Register the variable (untyped)
         const char* c_name = util_c_name(var_name);
         var_add_local(var_name, c_name, "?");
-        wr_print(WR_CODE, "  Value %s = %s;\n", c_name, right);
+        sbuf_printf(&sb, "  Value %s = %s;\n", c_name, right);
       }
     }
     break;
@@ -431,70 +540,81 @@ static void gen_stmt_assign2(Node* lvalue, Node* rvalue)
       const char* c_name = util_c_name(var_name);
       const char* type = eval_type(node_get_node(lvalue, "type"));
       var_add_local(var_name, c_name, type);
-      wr_print(WR_CODE, "  Value %s = %s;\n", c_name, right);
+      sbuf_printf(&sb, "  Value %s = %s;\n", c_name, right);
     }
     break;
   case EXPR_INDEX:
-    wr_print(WR_CODE, "  %s;\n",
+    sbuf_printf(&sb, "  %s;\n",
                 eval_index(node_get_child(lvalue, 0),
                            node_get_child(lvalue, 1),
                            rvalue));
     break;
   case EXPR_FIELD:
-    wr_print(WR_CODE, "  field_set(%s, %s, %s);\n",
+    sbuf_printf(&sb, "  field_set(%s, %s, %s);\n",
                 eval_expr(node_get_child(lvalue, 0)),
                 cache_dsym(node_get_string(lvalue, "name")),
                 right);
     break;
   case EXPR_AT_VAR:
-    wr_print(WR_CODE, "  field_set(__self, %s, %s);\n",
+    sbuf_printf(&sb, "  field_set(__self, %s, %s);\n",
              cache_dsym(node_get_string(lvalue, "name")),
              right);
     break;
   default:
     assert_never();
   }
+  
+  return sb.str;
 }
 
-static void gen_stmt_assign(Node* left, Node* right)
+static const char* gen_stmt_assign(Node* left, 
+                                   Node* right) ATTR_WARN_UNUSED_RESULT;
+static const char* gen_stmt_assign(Node* left, Node* right)
 {
+  StringBuf sb;
+  sbuf_init(&sb, "");
+
   if (node_num_children(left) == 1){
     left = node_get_child(left, 0);
-    gen_stmt_assign2(left, right);
+    sbuf_printf(&sb, "%s", gen_stmt_assign2(left, right));
   } else {
     static int counter = 0;
     counter++;
     char* tmp_variable = mem_asprintf("_tmp_assign_%d", counter);
 
     Node* id_tmp = node_new_id(tmp_variable);
-    gen_stmt_assign2(id_tmp,
-                     right);
+    sbuf_printf(&sb, "%s", gen_stmt_assign2(id_tmp, right));
 
     for (int i = 0; i < node_num_children(left); i++){
       Node* l = node_get_child(left, i);
-      gen_stmt_assign2(l, node_new_expr_index1(id_tmp, node_new_int(i+1) ));
+      sbuf_printf(&sb, "%s", 
+                  gen_stmt_assign2(l, node_new_expr_index1(id_tmp, 
+                                                           node_new_int(i+1))));
     }
   }
+  
+  return sb.str;
 }
 
-static void gen_stmt(Node* stmt)
+static const char* gen_stmt(Node* stmt)
 {
+  StringBuf sb;
+  sbuf_init(&sb, "");
+
   // Traverse the statement
   traverse(stmt);
   if (line_min != -1){
-    wr_print(WR_CODE, "#line %d \"%s\"\n", line_min, line_filename);
+    sbuf_printf(&sb, "#line %d \"%s\"\n", line_min, line_filename);
   }
 
   switch(stmt->type){
   case STMT_EXPR:
     {
       Node* expr = node_get_child(stmt, 0);
-      if (expr->type == EXPR_ID_CALL or expr->type == EXPR_FIELD_CALL){
-        wr_print(WR_CODE, "  %s;\n", eval_expr(expr));
-      } else if (expr->type == C_CODE) {
-        wr_print(WR_CODE, "  %s\n", eval_expr(expr));
+      if (expr->type == C_CODE) {
+        sbuf_printf(&sb, "  %s\n", eval_expr(expr));
       } else {
-        fatal_node(stmt, "invalid expression in an expression statement");
+        sbuf_printf(&sb, "  %s;\n", eval_expr(expr));
       }
     }
     break;
@@ -502,55 +622,56 @@ static void gen_stmt(Node* stmt)
     if (context_fi->type == CONSTRUCTOR){
       fatal_node(stmt, "return not allowed in a constructor");
     }
-    wr_print(WR_CODE, "  stack_annot_pop();\n");
-    wr_print(WR_CODE, "  return %s;\n", eval_expr(node_get_child(stmt, 0)));
+    sbuf_printf(&sb, "  stack_annot_pop();\n");
+    sbuf_printf(&sb, "  return %s;\n", eval_expr(node_get_child(stmt, 0)));
     break;
   case STMT_LOOP:
-    wr_print(WR_CODE, "  for(;;){\n");
+    sbuf_printf(&sb, "  for(;;){\n");
     dowhile_semaphore++;
-    gen_block(node_get_child(stmt, 0));
+    sbuf_printf(&sb, "%s", gen_block(node_get_child(stmt, 0)));
     dowhile_semaphore--;
-    wr_print(WR_CODE, "  }\n");
+    sbuf_printf(&sb, "  }\n");
     break;
   case STMT_IF:
-    wr_print(WR_CODE, "  if (%s == VALUE_TRUE) {\n",
+    sbuf_printf(&sb, "  if (%s == VALUE_TRUE) {\n",
              eval_expr(node_get_node(stmt, "expr")));
-    gen_block(node_get_node(stmt, "block"));
-    wr_print(WR_CODE, "  }\n");
+    sbuf_printf(&sb, "%s", gen_block(node_get_node(stmt, "block")));
+    sbuf_printf(&sb, "  }\n");
     break;
   case STMT_ELIF:
-    wr_print(WR_CODE, "  else if (%s == VALUE_TRUE) {\n",
+    sbuf_printf(&sb, "  else if (%s == VALUE_TRUE) {\n",
              eval_expr(node_get_node(stmt, "expr")));
-    gen_block(node_get_node(stmt, "block"));
-    wr_print(WR_CODE, "  }\n");
+    sbuf_printf(&sb, "%s", gen_block(node_get_node(stmt, "block")));
+    sbuf_printf(&sb, "  }\n");
     break;
   case STMT_ELSE:
-    wr_print(WR_CODE, "  else {\n");
-    gen_block(node_get_node(stmt, "block"));
-    wr_print(WR_CODE, "  }\n");
+    sbuf_printf(&sb, "  else {\n");
+    sbuf_printf(&sb, "%s", gen_block(node_get_node(stmt, "block")));
+    sbuf_printf(&sb, "  }\n");
     break;
   case STMT_WHILE:
-    wr_print(WR_CODE, "  while (%s == VALUE_TRUE) {\n",
+    sbuf_printf(&sb, "  while (%s == VALUE_TRUE) {\n",
              eval_expr(node_get_child(stmt, 0)));
     dowhile_semaphore++;
-    gen_block(node_get_child(stmt, 1));
+    sbuf_printf(&sb, "%s", gen_block(node_get_child(stmt, 1)));
     dowhile_semaphore--;
-    wr_print(WR_CODE, "  }\n");
+    sbuf_printf(&sb, "  }\n");
     break;
   case STMT_BREAK:
     if (dowhile_semaphore == 0){
       fatal_node(stmt, "break outside a loop");
     }
-    wr_print(WR_CODE, "  break;\n");
+    sbuf_printf(&sb, "  break;\n");
     break;
   case STMT_CONTINUE:
     if (dowhile_semaphore == 0){
       fatal_node(stmt, "continue outside a loop");
     }
-    wr_print(WR_CODE, "  continue;\n");
+    sbuf_printf(&sb, "  continue;\n");
     break;
   case STMT_ASSIGN:
-    gen_stmt_assign(node_get_child(stmt, 0), node_get_child(stmt, 1));
+    sbuf_printf(&sb, "%s", gen_stmt_assign(node_get_child(stmt, 0), 
+                                           node_get_child(stmt, 1)));
     break;
   case STMT_FOR:
     {
@@ -564,24 +685,26 @@ static void gen_stmt(Node* stmt)
       // _iteratorX = expr.get_iter()
       const char* rip_iterator = mem_asprintf("_iterator%d", iterator_counter);
       Node* id_iterator = node_new_id(rip_iterator);
-      gen_stmt_assign2(id_iterator, node_new_field_call(expr, "get_iter", 0));
+      sbuf_printf(&sb, "%s", 
+                  gen_stmt_assign2(id_iterator, 
+                                   node_new_field_call(expr, "get_iter", 0)));
 
-      wr_print(WR_CODE, "  for(;;){");
+      sbuf_printf(&sb, "  for(;;){");
 
       // _iterator_tempX = _iteratorX.iter()
       Node* iterator_call = node_new_field_call(id_iterator, "iter", 0);
       Node* id_temp = node_new_id(mem_asprintf("_iterator_temp%d",
                                   iterator_counter));
-      gen_stmt_assign2(id_temp, iterator_call);
+      sbuf_printf(&sb, "%s", gen_stmt_assign2(id_temp, iterator_call));
 
       // if _iterator_tempX == eof break
-      wr_print(WR_CODE, "  if (%s == VALUE_EOF) break;\n", eval_expr(id_temp));
-      gen_stmt_assign(lvalue_list, id_temp);
+      sbuf_printf(&sb, "  if (%s == VALUE_EOF) break;\n", eval_expr(id_temp));
+      sbuf_printf(&sb, "%s", gen_stmt_assign(lvalue_list, id_temp));
 
       dowhile_semaphore++;
-      gen_block(node_get_child(stmt, 2));
+      sbuf_printf(&sb, "%s", gen_block(node_get_child(stmt, 2)));
       dowhile_semaphore--;
-      wr_print(WR_CODE, "  }\n");
+      sbuf_printf(&sb, "  }\n");
       var_pop();
     }
     break;
@@ -592,8 +715,8 @@ static void gen_stmt(Node* stmt)
       Node* expr = node_get_child(stmt, 0);
       Node* case_list = node_get_child(stmt, 1);
 
-      wr_print(WR_CODE, "  {\n");
-      wr_print(WR_CODE, "  Value %s = %s;\n", c_expr_value,
+      sbuf_printf(&sb, "  {\n");
+      sbuf_printf(&sb, "  Value %s = %s;\n", c_expr_value,
                                                      eval_expr(expr));
       int num_cases = node_num_children(case_list);
       for (int i = 0; i < num_cases; i++){
@@ -602,81 +725,92 @@ static void gen_stmt(Node* stmt)
         Node* block = node_get_child(node_case, 1);
         const char* word = "else if";
         if (i == 0) word = "if";
-        wr_print(WR_CODE, "  %s (op_equal(%s, %s) == VALUE_TRUE) {\n",
+        sbuf_printf(&sb, "  %s (op_equal(%s, %s) == VALUE_TRUE) {\n",
                     word, c_expr_value, eval_expr(node_case_expr));
-        gen_block(block);
-        wr_print(WR_CODE, "  }\n");
+        sbuf_printf(&sb, "%s", gen_block(block));
+        sbuf_printf(&sb, "  }\n");
       }
       if (node_has_node(stmt, "else")){
-        wr_print(WR_CODE, "  else {\n");
-        gen_block(node_get_node(stmt, "else"));
-        wr_print(WR_CODE, "  }\n");
+        sbuf_printf(&sb, "  else {\n");
+        sbuf_printf(&sb, "%s", gen_block(node_get_node(stmt, "else")));
+        sbuf_printf(&sb, "  }\n");
       }
-      wr_print(WR_CODE, "  }\n");
+      sbuf_printf(&sb, "  }\n");
     }
     break;
   case STMT_PASS:
     break;
   case STMT_RAISE:
-    wr_print(WR_CODE, "  exc_raise_object(%s);\n",
+    sbuf_printf(&sb, "  exc_raise_object(%s);\n",
              eval_expr(node_get_child(stmt, 0)));
     break;
   default:
     fatal_node(stmt, "invalid statement type %d", stmt->type);
   }
+  
+  return sb.str;
 }
 
-static void gen_try_stuff(Node* try_stmt, Node* other_stmt)
+static const char* gen_try_stuff(Node* try_stmt, 
+                                 Node* other_stmt) ATTR_WARN_UNUSED_RESULT;
+static const char* gen_try_stuff(Node* try_stmt, Node* other_stmt)
 {
   assert(try_stmt->type == STMT_TRY);
 
+  StringBuf sb;
+  sbuf_init(&sb, "");
+
   switch(other_stmt->type){
   case STMT_CATCH:
-    wr_print(WR_CODE, "  if (setjmp(exc_jb) == 0){\n");
+    sbuf_printf(&sb, "  if (setjmp(exc_jb) == 0){\n");
     if (node_has_node(other_stmt, "type")){
-      wr_print(WR_CODE, "    stack_push_catch(%s);\n",
+      sbuf_printf(&sb, "    stack_push_catch(%s);\n",
                cache_type(
                  eval_type(
                    node_get_node(other_stmt, "type")
                  )
                ));
     } else {
-      wr_print(WR_CODE, "    stack_push_catch_all();\n");
+      sbuf_printf(&sb, "    stack_push_catch_all();\n");
     }
-    gen_block(node_get_node(try_stmt, "block"));
-    wr_print(WR_CODE, "    stack_pop()\n;");
-    wr_print(WR_CODE, "  } else {\n");
+    sbuf_printf(&sb, "%s", gen_block(node_get_node(try_stmt, "block")));
+    sbuf_printf(&sb, "    stack_pop()\n;");
+    sbuf_printf(&sb, "  } else {\n");
     var_push();
       if (node_has_node(other_stmt, "type")
           and node_has_string(other_stmt, "name")){
         const char* ripe_name = node_get_string(other_stmt, "name");
         const char* c_name = util_c_name(ripe_name);
-        wr_print(WR_CODE, "  Value %s = exc_obj;\n", c_name);
+        sbuf_printf(&sb, "  Value %s = exc_obj;\n", c_name);
         var_add_local(ripe_name, c_name,
                       eval_type(node_get_node(other_stmt, "type")));
       }
-      gen_block(node_get_node(other_stmt, "block"));
+      sbuf_printf(&sb, "%s", gen_block(node_get_node(other_stmt, "block")));
     var_pop();
-    wr_print(WR_CODE, "  }\n");
+    sbuf_printf(&sb, "  }\n");
     break;
   case STMT_FINALLY:
-    wr_print(WR_CODE, "  if (setjmp(exc_jb) == 0){\n");
-    wr_print(WR_CODE, "    stack_push_finally();\n");
-    gen_block(node_get_node(try_stmt, "block"));
-    wr_print(WR_CODE, "    stack_pop()\n;");
-    wr_print(WR_CODE, "  }\n");
-    gen_block(node_get_node(other_stmt, "block"));
-    wr_print(WR_CODE, "  if (stack_unwinding == true)\n");
-    wr_print(WR_CODE, "    stack_continue_unwinding();\n");
+    sbuf_printf(&sb, "  if (setjmp(exc_jb) == 0){\n");
+    sbuf_printf(&sb, "    stack_push_finally();\n");
+    sbuf_printf(&sb, "%s", gen_block(node_get_node(try_stmt, "block")));
+    sbuf_printf(&sb, "    stack_pop()\n;");
+    sbuf_printf(&sb, "  }\n");
+    sbuf_printf(&sb, "%s", gen_block(node_get_node(other_stmt, "block")));
+    sbuf_printf(&sb, "  if (stack_unwinding == true)\n");
+    sbuf_printf(&sb, "    stack_continue_unwinding();\n");
     break;
   default:
     fatal_throw("invalid statement following try block");
   }
+  return sb.str;
 }
 
-static void gen_block(Node* block)
+static const char* gen_block(Node* block)
 {
   var_push(); // Each block is a scope.
+
+  StringBuf sb;
+  sbuf_init(&sb, "");
 
   int prev_stmt_type = 0;
   uint i = 0;
@@ -706,8 +840,8 @@ static void gen_block(Node* block)
       if (itry == ilast) fatal_throw("try by itself");
 
       if (ilast == itry+1){
-        gen_try_stuff(node_get_child(block, itry),
-                      node_get_child(block, ilast));
+        sbuf_printf(&sb, "%s", gen_try_stuff(node_get_child(block, itry),
+                                            node_get_child(block, ilast)));
         continue;
       }
 
@@ -740,7 +874,7 @@ static void gen_block(Node* block)
         //                other
         //                  ...
         if (inext == ilast){
-          gen_try_stuff(new_try, node_get_child(block, ilast));
+          sbuf_printf(&sb, gen_try_stuff(new_try, node_get_child(block, ilast)));
           break;
         } else {
           other = node_get_child(block, inext);
@@ -752,11 +886,26 @@ static void gen_block(Node* block)
     } // endif STMT_TRY
 
     prev_stmt_type = stmt->type;
-    gen_stmt(stmt);
+    
+    // If in a block, then must return result of latest expression or NIL
+    if (context_block != NULL and i == block->children.size - 1){
+      if (stmt->type == STMT_EXPR){
+        sbuf_printf(&sb, "  stack_annot_pop();\n");
+        sbuf_printf(&sb, "  return\n %s;\n", gen_stmt(stmt));
+      } else {
+        sbuf_printf(&sb, "%s", gen_stmt(stmt));
+        sbuf_printf(&sb, "  stack_annot_pop();\n");
+        sbuf_printf(&sb, "  return VALUE_NIL;\n");
+      }
+    } else {
+      sbuf_printf(&sb, "%s", gen_stmt(stmt));
+    }
+    
     i++;
   }
 
   var_pop();
+  return sb.str;
 }
 
 static void register_locals(const char* name)
@@ -809,7 +958,7 @@ static void gen_code(Node* n, const char* name)
     /* nothing */
     break;
   }
-  gen_block(stmt_list);
+  wr_print(WR_CODE, "%s", gen_block(stmt_list));
   var_pop();
 
   // If last statement is of type STMT_RETURN, no need for another return.

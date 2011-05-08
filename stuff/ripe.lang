@@ -46,6 +46,7 @@
         </context>
 
         <context id="keywords" style-ref="keyword">
+          <keyword>block</keyword>
           <keyword>if</keyword>
           <keyword>elif</keyword>
           <keyword>else</keyword>

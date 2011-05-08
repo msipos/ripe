@@ -54,7 +54,8 @@ typedef uint16_t error;
 #include <assert.h>
 #define assert_never()  assert(false)
 
-#define ATTR_NORETURN      __attribute__((noreturn))
+#define ATTR_NORETURN             __attribute__((noreturn))
+#define ATTR_WARN_UNUSED_RESULT   __attribute__((warn_unused_result))
 #ifndef NOTHREADS
 #define THREAD_LOCAL  __thread
 #else
@@ -320,7 +321,7 @@ int sarray_pop_int(SArray* arr);
 
 // ptr interface
 void* sarray_pop_ptr(SArray* arr);
-void sarray_append_ptr(SArray* arr, void* v);
+void sarray_append_ptr(SArray* arr, const void* v);
 void* sarray_get_ptr(SArray* arr, int idx);
 
 ///////////////////////////////////////////////////////////////////////

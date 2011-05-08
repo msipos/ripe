@@ -73,29 +73,29 @@ void gen_c()
          "  assert_never();\n"
          "  return VALUE_NIL;\n"
          "}\n");
-         
-  printf("// constructor\n\n");
-  printf("Value func_to_val(void* c_func, int num_params){\n");
-  printf("  Func* func;\n");
-  printf("  Value f = obj_new(klass_func, (void**) &func);\n");
-  printf("  func->var_params = 0;\n");
-  printf("  func->num_params = num_params;\n");
-  printf("  func->func = c_func;\n");
-  printf("  func->block_elems = 0;\n");
-  printf("  func->block_data = NULL;\n");
-  printf("  return f;\n");
-  printf("}\n");  
 
   printf("\n// callers\n");
   for (int n = 0; n <= MAX_PARAMS; n++){
     printf("Value func_call%d(Value func", n);
     print_mult("Value arg", n, 1, 1);
     printf("){\n");
+    printf("  obj_verify(func, klass_Function);\n");
     printf("  Func* c_data = obj_c_data(func);\n");
-    printf("  Value rv = c_data->func%d(", n);
+    printf("  if (c_data->is_block){\n");
+
+    if (n < MAX_PARAMS){
+      printf("    return c_data->func%d(func", n+1);
+      print_mult("arg", n, 1, 1);
+      printf(");\n");
+    } else printf("    assert_never();\n");
+  
+    printf("  } else {\n");
+
+    printf("    return c_data->func%d(", n);
     print_mult("arg", n, 0, 1);
     printf(");\n");
-    printf("  return rv;\n");
+
+    printf("  }\n");
     printf("}\n");
   }
 
@@ -150,11 +150,10 @@ void gen_h()
   for (int i = 0; i <= MAX_PARAMS; i++){
     printf("    CFunc%d func%d;\n", i, i);
   }
-  printf("  };\n  uint16 num_params;\n  uint16 var_params;\n"
+  printf("  };\n  uint16 num_params;\n  uint16 var_params;\n  bool is_block;\n"
          "  uint16 block_elems;\n  Value* block_data;\n} Func;\n");
 
   printf("\n// constructors\n\n");
-  printf("Value func_to_val(void* c_func, int num_params);\n");
   for (int i = 0; i <= MAX_PARAMS; i++){
     printf("#define func%d_to_val(cfunc) "
            "func_to_val((void*) ((CFunc%d*) cfunc), %d)\n",

@@ -18,6 +18,7 @@
 int sys_argc;
 char** sys_argv;
 
+Klass* klass_Function;
 Klass* klass_Nil;
 Klass* klass_Eof;
 Klass* klass_Bool;
@@ -38,6 +39,7 @@ Value dsym_text;
 
 void common_init_phase15()
 {
+  klass_Function = klass_get(dsym_get("Function"));
   klass_Nil = klass_get(dsym_get("Nil"));
   klass_Eof = klass_get(dsym_get("Eof"));
   klass_Bool = klass_get(dsym_get("Bool"));

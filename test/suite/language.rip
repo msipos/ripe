@@ -12,11 +12,11 @@ manual_finally()
   $ if (setjmp(exc_jb) == 0){
     stack_push_finally(); $
   err()
+  fail()
   $ stack_pop();
     } $
-  success()
   $ if (stack_unwinding == true) { $
-  success()
+  success()                       # 1
   $ stack_continue_unwinding();
   } $
   fail()
@@ -27,7 +27,7 @@ manual()
   manual_finally()
   $ stack_pop();
     } else { $
-  success()
+  success()                       # 2
   $ } $
 
 outer_manual()
@@ -46,15 +46,15 @@ automatic()
   try
     pass_value()
   catch Integer i
-    Test.test("pass value by exception", i, 5)
+    Test.test("pass value by exception", i, 5)  # 3
 
   try
     err()
     fail()
   finally
-    success()
+    success()                                   # 4
   catch
-    success()
+    success()                                   # 5
   catch
     fail()
 
@@ -65,15 +65,17 @@ outer_automatic()
     fail()
 
 exceptions()
+  ttl = c_total
   try
     outer_manual()
-    success()
+    success()      # 6
     outer_automatic()
-    success()
+    success()      # 7
   catch
     fail()
   finally
-    success()
+    success()      # 8
+  Test.test("num of tests", c_total, ttl + 8)
 
 class CDataClass
   $ int64 i; $
@@ -243,6 +245,21 @@ class MyChild | parent=MyParent
 
 shorthand() { Test.test("shorthand", 1, 1); success(); }
 
+blocks()
+  ttl = c_total
+  b = block()
+        Test.test("inside block", 1, 1)
+        4
+  Test.test("blocks simple", b(), 4)
+
+  text = "curryed block"
+  curry = block(x, y) { Test.test(text, x, y) }
+  curry(1, 1)
+  curry(false, false)
+
+  Test.test("called inside block", ttl+4, c_total)
+  
+    
 main()
   Test.set_verbose(false)
   operators()
@@ -252,6 +269,7 @@ main()
   switcher()
   ellipsis()
   shorthand()
+  blocks()
 
   obj = Class.new("testfile")
   obj.test_filename("testfile")

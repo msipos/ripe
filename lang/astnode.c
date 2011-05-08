@@ -113,6 +113,9 @@ Node* node_get_node(Node* n, const char* key)
     dict_query(&(n->props_nodes), &key, &out);
   #else
     bool rv = dict_query(&(n->props_nodes), &key, &out);
+    if (rv != true){
+      fatal_throw("no node '%s' (this should not happen)", key);
+    }
     assert(rv == true);
   #endif
   return out;
@@ -175,9 +178,13 @@ Node* node_new_expr_list()
 
 Node* node_new_field_call(Node* callee, char* field_name, int64 num, ...)
 {
-  Node* rv = node_new(EXPR_FIELD_CALL);
-  node_add_child(rv, callee);
-  node_set_string(rv, "name", field_name);
+  Node* field = node_new(EXPR_FIELD);
+  node_add_child(field, callee);
+  node_set_string(field, "name", field_name);
+
+  Node* rv = node_new(EXPR_CALL);
+  node_set_node(rv, "callee", field);
+
   Node* expr_list = node_new(EXPR_LIST);
   va_list ap;
   va_start(ap, num);
@@ -185,7 +192,7 @@ Node* node_new_field_call(Node* callee, char* field_name, int64 num, ...)
     node_add_child(expr_list, va_arg(ap, Node*));
   }
   va_end(ap);
-  node_add_child(rv, expr_list);
+  node_set_node(rv, "args", expr_list);
   return rv;
 }
 

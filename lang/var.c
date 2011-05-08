@@ -19,8 +19,9 @@ typedef struct {
   const char* c_name;
   const char* ripe_name;
   const char* type;
+  int kind;
 } Variable;
-static Array locals_arr; // A dictionary for each function (block).
+static Array locals_arr; // A dictionary for each function (scope).
 
 void var_init()
 {
@@ -40,8 +41,13 @@ void var_pop()
   array_pop(&locals_arr, Dict*);
 }
 
-void var_add_local(const char* ripe_name, const char* c_name, 
-                   const char* type)
+void var_add_local(const char* ripe_name, const char* c_name, const char* type)
+{
+  var_add_local2(ripe_name, c_name, type, VAR_REGULAR);
+}
+
+void var_add_local2(const char* ripe_name, const char* c_name, 
+                    const char* type, int kind)
 {
   assert(locals_arr.size > 0);
 
@@ -53,6 +59,8 @@ void var_add_local(const char* ripe_name, const char* c_name,
   var->c_name = c_name;
   var->ripe_name = ripe_name;
   var->type = type;
+  var->kind = kind;
+  
   Dict* dict = array_get(&locals_arr, Dict*, locals_arr.size - 1);
   dict_set(dict, &ripe_name, &var);
 }
@@ -103,4 +111,12 @@ const char* var_query_c_name(const char* ripe_name)
     fatal_throw("unknown variable '%s'", ripe_name);
   }
   return query(ripe_name)->c_name;
+}
+
+int var_query_kind(const char* ripe_name)
+{
+  if (not var_query(ripe_name)){
+    fatal_throw("unknown variable '%s'", ripe_name);
+  }
+  return query(ripe_name)->kind;
 }

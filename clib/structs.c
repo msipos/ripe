@@ -44,10 +44,10 @@ void sarray_pop(SArray* arr)
 
 //            PTR INTERFACE
 
-void sarray_append_ptr(SArray* arr, void* v)
+void sarray_append_ptr(SArray* arr, const void* v)
 {
   sarray_expand(arr);
-  arr->data[arr->size].p = v;
+  arr->data[arr->size].p = (void*) v;
   arr->size++;
 }
 

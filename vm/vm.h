@@ -66,6 +66,7 @@ typedef struct KlassT Klass;
 extern int sys_argc;
 extern char** sys_argv;
 
+extern Klass* klass_Function;
 extern Klass* klass_Nil;
 extern Klass* klass_Eof;
 extern Klass* klass_Bool;
@@ -318,6 +319,8 @@ double val_to_double(Value v);
 extern Klass* klass_func;
 void init1_Function();
 void init2_Function();
+Value func_to_val(void* c_func, int num_params);
+Value block_to_val(void* c_func, int num_params, int block_elems, ...);
 #include "vm/func-generated.h"
 void func_set_vararg(Value v_func);
 void* func_get_ptr(Value v_func, int16 num_params);

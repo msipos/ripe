@@ -105,7 +105,7 @@
 %left    '+' '-'
 %left    '*' '/' "modulo"
 %right   '^'
-%left    '.' '['
+%left    '.' '[' '('
 
 %% ////////////////////////////////////////////////////////////// Grammar rules
 
@@ -319,15 +319,10 @@ r_expr:    "block" '(' param_star ')' block
                                { $$ = node_new(EXPR_BLOCK);
                                  node_set_node($$, "param_list", $3);
                                  node_set_node($$, "stmt_list", $5); }
-r_expr:    rvalue '.' ID '(' rvalue_star ')'
-                               { $$ = node_new(EXPR_FIELD_CALL);
-                                 node_add_child($$, $1);
-                                 node_set_string($$, "name", $3->text);
-                                 node_add_child($$, $5); };
-r_expr:    ID '(' rvalue_star ')'
-                               { $$ = node_new(EXPR_ID_CALL);
-                                 node_add_child($$, $1);
-                                 node_add_child($$, $3); };
+r_expr:    rvalue '(' rvalue_star ')'
+                               { $$ = node_new(EXPR_CALL);
+                                 node_set_node($$, "callee", $1);
+                                 node_set_node($$, "args", $3); }
 r_expr:    '[' rvalue_star ']' { $$ = node_new(EXPR_ARRAY);
                                  node_add_child($$, $2); };
 r_expr:    '{' mapping_plus '}' 
