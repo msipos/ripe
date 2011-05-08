@@ -37,7 +37,7 @@ class Double
   to_string()
     $ char buf[128];
       sprintf(buf, "%.12f", unpack_double(__self)); $
-    return $ string_to_val(buf); $
+    return $ string_to_val(buf) $
 
   #$ rdoc-name Double.is_nan?
   #$ rdoc-header Double.is_nan?()

@@ -106,4 +106,4 @@ namespace Gd
     $  gdImagePtr* image = obj_c_data(__image); $
     return $ int64_to_val(gdImageColorAllocate(*image, val_to_int64(__r),
                                                        val_to_int64(__g),
-                                                       val_to_int64(__b))); $
+                                                       val_to_int64(__b))) $

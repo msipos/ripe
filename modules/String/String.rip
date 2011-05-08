@@ -70,7 +70,7 @@ class String
         }
       }
     $
-    return $ int64_to_val(@s.str[util_index("String", val_to_int64(__i), strlen(@s.str))]); $
+    return $ int64_to_val(@s.str[util_index("String", val_to_int64(__i), strlen(@s.str))]) $
 
   #$ rdoc-name String.index_set
   #$ rdoc-header String.index_set(Integer i, Character c)
@@ -204,8 +204,7 @@ class String
   #$ rdoc-header String String.clone()
   #$ Clones the string.
   clone()
-    return $ string_to_val(@s.str);
-    $
+    return $ string_to_val(@s.str) $
 
   #$ rdoc-name String.substitute_character!
   #$ rdoc-header String substitute_character!(Character a, Character b)

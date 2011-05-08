@@ -25,7 +25,7 @@ class Set
   #$ rdoc-header Set.contains?(key)
   #$ Return if the Set contains key.
   contains?(key)
-    return $ pack_bool(ht_query(&(@ht), __key)); $
+    return $ pack_bool(ht_query(&(@ht), __key)) $
 
   #$ rdoc-name Set.add
   #$ rdoc-header Set.add(key)
@@ -43,7 +43,7 @@ class Set
   #$ rdoc-header Set.remove(key)
   #$ Remove an object from the Set.
   remove(key)
-    return $ pack_bool(ht_remove(&(@ht), __key)); $
+    return $ pack_bool(ht_remove(&(@ht), __key)) $
 
   #$ rdoc-name Set.to_string
   #$ rdoc-header Set.to_string()

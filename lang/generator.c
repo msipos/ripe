@@ -622,8 +622,8 @@ static const char* gen_stmt(Node* stmt)
     if (context_fi->type == CONSTRUCTOR){
       fatal_node(stmt, "return not allowed in a constructor");
     }
-    sbuf_printf(&sb, "  stack_annot_pop();\n");
-    sbuf_printf(&sb, "  return %s;\n", eval_expr(node_get_child(stmt, 0)));
+    sbuf_printf(&sb, "  RRETURN(%s);\n",
+                eval_expr(node_get_child(stmt, 0)));
     break;
   case STMT_LOOP:
     sbuf_printf(&sb, "  for(;;){\n");
@@ -890,12 +890,11 @@ static const char* gen_block(Node* block)
     // If in a block, then must return result of latest expression or NIL
     if (context_block != NULL and i == block->children.size - 1){
       if (stmt->type == STMT_EXPR){
-        sbuf_printf(&sb, "  stack_annot_pop();\n");
-        sbuf_printf(&sb, "  return\n %s;\n", gen_stmt(stmt));
+        sbuf_printf(&sb, "  RRETURN(\n%s);\n", 
+                    eval_expr(node_get_child(stmt, 0)));
       } else {
         sbuf_printf(&sb, "%s", gen_stmt(stmt));
-        sbuf_printf(&sb, "  stack_annot_pop();\n");
-        sbuf_printf(&sb, "  return VALUE_NIL;\n");
+        sbuf_printf(&sb, "  RRETURN(VALUE_NIL);\n");
       }
     } else {
       sbuf_printf(&sb, "%s", gen_stmt(stmt));
@@ -966,12 +965,10 @@ static void gen_code(Node* n, const char* name)
     if (stmt_list->children.size == 0
          or
       node_get_child(stmt_list, stmt_list->children.size-1)->type != STMT_RETURN)
-    wr_print(WR_CODE, "  stack_annot_pop();\n");
-    wr_print(WR_CODE, "  return VALUE_NIL;\n");
+    wr_print(WR_CODE, "  RRETURN(VALUE_NIL);\n");
   } else {
     // If this is a constructor, remember to return the new object!
-    wr_print(WR_CODE, "  stack_annot_pop();\n");
-    wr_print(WR_CODE, "  return __self;\n");
+    wr_print(WR_CODE, "  RRETURN(__self);\n");
   }
 
   wr_print(WR_CODE, "}\n");

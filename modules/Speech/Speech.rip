@@ -31,7 +31,7 @@ class Speech
     $
 
   say(text)
-    return $ int64_to_val(spd_say(@c, SPD_TEXT, val_to_string(__text))); $
+    return $ int64_to_val(spd_say(@c, SPD_TEXT, val_to_string(__text))) $
 
   # Volume should be between -100 and 100
   set_volume(volume)

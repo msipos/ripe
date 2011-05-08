@@ -249,7 +249,7 @@ class Array1
   sort!()
     $
       const int64 sz = @a.size;
-      if (sz < 2) RRETURN(VALUE_NIL)
+      if (sz < 2) RRETURN(VALUE_NIL);
       Value* arr = @a.data;
       Value* tmp = mem_malloc(sizeof(Value) * sz);
       merge_sort(arr, 0, sz-1, tmp, 0);

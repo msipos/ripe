@@ -91,10 +91,10 @@ namespace Sdl
     $
 
     width() | virtual_get
-      return $ int64_to_val(@surf->w); $
+      return $ int64_to_val(@surf->w) $
 
     height() | virtual_get
-      return $ int64_to_val(@surf->h); $
+      return $ int64_to_val(@surf->h) $
 
     new_screen(w, h, flags) | constructor
       $

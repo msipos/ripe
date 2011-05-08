@@ -36,7 +36,7 @@ class Array3
       int64 y = val_to_int64(__y);
       int64 z = val_to_int64(__z);
       int64 i = array3_index(&(@a), x, y, z); $
-    return $ @a.data[i]; $
+    return $ @a.data[i] $
 
   #$ rdoc-name Array3.index_set
   #$ rdoc-header Array3.index_set(Integer x, Integer y, Integer z, v)
@@ -45,8 +45,8 @@ class Array3
     $ int64 x = val_to_int64(__x);
       int64 y = val_to_int64(__y);
       int64 z = val_to_int64(__z);
-      int64 i = array3_index(&(@a), x, y, z); $
-    return $ @a.data[i] = __v; $
+      int64 i = array3_index(&(@a), x, y, z);
+      @a.data[i] = __v; $
 
   #$ rdoc-name Array3.set_const
   #$ rdoc-header Array3.set_const(v)

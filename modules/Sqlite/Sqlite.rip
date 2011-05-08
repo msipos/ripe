@@ -79,11 +79,11 @@ namespace Sqlite
       $ int64 col = val_to_int64(__i) - 1; $
       switch t
         case Sqlite.INTEGER
-          return $ int64_to_val(sqlite3_column_int64(@stmt, col)); $
+          return $ int64_to_val(sqlite3_column_int64(@stmt, col)) $
         case Sqlite.FLOAT
-          return $ double_to_val(sqlite3_column_double(@stmt, col)); $
+          return $ double_to_val(sqlite3_column_double(@stmt, col)) $
         case Sqlite.TEXT
-          return $ string_to_val((const char*) sqlite3_column_text(@stmt, col)); $
+          return $ string_to_val((const char*) sqlite3_column_text(@stmt, col)) $
 
     finalize()
       $ sqlite3_finalize(@stmt); $

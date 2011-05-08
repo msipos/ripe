@@ -6,9 +6,7 @@ $
 
 namespace Xml
   class Document
-    $
-      xmlDoc *doc;
-    $
+    $ xmlDoc *doc; $
 
     new_from_text(text) | constructor
       $

@@ -87,7 +87,10 @@ void gen_c()
       printf("    return c_data->func%d(func", n+1);
       print_mult("arg", n, 1, 1);
       printf(");\n");
-    } else printf("    assert_never();\n");
+    } else {
+      printf("    assert_never();\n");
+      printf("    return VALUE_NIL;\n");
+    }
   
     printf("  } else {\n");
 

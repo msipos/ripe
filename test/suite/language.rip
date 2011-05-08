@@ -258,7 +258,6 @@ blocks()
   curry(false, false)
 
   Test.test("called inside block", ttl+4, c_total)
-  
     
 main()
   Test.set_verbose(false)

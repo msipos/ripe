@@ -47,7 +47,7 @@ namespace Bio
       if (strlen(s1) != strlen(s2)){
         exc_raise("two sequences have different length");
       } $
-    return $ double_to_val(get_distance(s1, s2)); $
+    return $ double_to_val(get_distance(s1, s2)) $
 
   dist_strstr(s1, s2)
     $ char* s1 = val_to_string(__s1);
@@ -55,7 +55,7 @@ namespace Bio
       if (strlen(s1) != strlen(s2)){
         exc_raise("two sequences have different length");
       } $
-    return $ double_to_val(get_distance(s1, s2)); $
+    return $ double_to_val(get_distance(s1, s2)) $
 
   class BufferedFile
     var tf
@@ -189,7 +189,7 @@ namespace Bio
                 dist += @probs_T[i];
           }
         } $
-      return $ double_to_val(1.0 - dist / ((double)size)); $
+      return $ double_to_val(1.0 - dist / ((double)size)) $
 
     dist_p(prec)
       $ ProbRecord* pr = obj_c_data(__prec);
@@ -212,7 +212,7 @@ namespace Bio
           d = (@probs_T[i] - pr->probs_T[i]);
           dist += d*d;
         } $
-      return $ double_to_val(dist / ((double) size) / 5.0); $
+      return $ double_to_val(dist / ((double) size) / 5.0) $
 
   class Record
     var id
