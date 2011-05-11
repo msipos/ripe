@@ -59,6 +59,7 @@ static ClassInfo* class_info_new()
   dict_init_string(&(ci->vg_methods), sizeof(FuncInfo*));
   dict_init_string(&(ci->vs_methods), sizeof(FuncInfo*));
   dict_init_string(&(ci->props), sizeof(PropInfo*));
+  dict_init_string(&(ci->mixins), sizeof(int));
   return ci;
 }
 
@@ -164,10 +165,20 @@ static void absorb_class_enter(Node* n, const char* class_name)
   class_info->parent = NULL;
   if (node_has_node(n, "annotation")){
     Node* annot_list = node_get_node(n, "annotation");
-    if (not annot_check(annot_list, 1, "=parent")) {
+    if (not annot_check(annot_list, 2, "=parent", "=mixin")) {
       fatal_throw("invalid annotations in class '%s'", class_name);
     }
+
+    // Get parent (if any)
     class_info->parent = annot_get(annot_list, "parent");
+
+    // Get mixins (if any)
+    for(int num = 0;; num++){
+      const char* mixin = annot_get_full(annot_list, "mixin", num);
+      if (mixin == NULL) break;
+      dict_set(&(class_info->mixins), &mixin, &num);
+    }
+    
   }
   if (class_info->parent == NULL) class_info->parent = "";
 }
@@ -311,6 +322,13 @@ void stran_dump_to_file(FILE* f)
       encode_string(f, prop_name);
       encode_int(f, pi->type);
     }
+    
+    encode_int(f, ci->mixins.size);
+    DictIter* iter_mixins = dict_iter_new(&(ci->mixins));
+    while (dict_iter_has(iter_mixins)){
+      char* mixin = dict_iter_get_ptr(iter_mixins);
+      encode_string(f, mixin);
+    }
   }
   
   // Encode globals
@@ -375,6 +393,12 @@ void stran_absorb_file(const char* filename)
       const char* prop_name = decode_string(f);
       int type = decode_int(f); // Ignored for now
       stran_add_class_property(class_name, prop_name);
+    }
+    
+    int64 num_mixins = decode_int(f);
+    for (int j = 0; j < num_mixins; j++){
+      const char* mixin = decode_string(f);
+      dict_set(&(ci->mixins), &mixin, &j);
     }
   }
   

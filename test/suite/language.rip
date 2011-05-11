@@ -245,6 +245,22 @@ class MyChild | parent=MyParent
 
 shorthand() { Test.test("shorthand", 1, 1); success(); }
 
+class MyMixin1
+  mixin_method1()
+    Test.test("mixin1", 1, 1)
+
+class MyMixin2
+  mixin_method2(a)
+    Test.test("mixin2", 1, a)
+
+class MyDerived | mixin=MyMixin1, mixin=MyMixin2
+  test_me()
+    self.mixin_method1()
+    self.mixin_method2(1)
+  
+  new() | constructor
+    pass
+
 blocks()
   ttl = c_total
   b = block()
@@ -285,6 +301,9 @@ main()
   Test.test("class inheritance 1", obj.some_other_method(4), nil)
   obj.some_method(5)
   Test.test("class inheritance 2", obj.some_field, 5)
+
+  obj = MyDerived.new()
+  obj.test_me()
 
   exceptions()
   symbols()

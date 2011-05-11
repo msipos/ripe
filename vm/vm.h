@@ -102,11 +102,15 @@ void exc_raise_object(Value obj) __attribute__ ((noreturn));
 // Annotation stuff
 void stack_annot_push(char* annotation);
 void stack_annot_pop();
+static inline Value stack_annot_pop_pass(Value stuff)
+{
+  stack_annot_pop();
+  return stuff;
+}
 #define  RRETURN(x)  return stack_annot_pop_pass(x)
 
 void stack_push_catch_all();
 void stack_pop();
-Value stack_annot_pop_pass(Value stuff);
 void stack_push_finally();
 void stack_push_catch(Klass* exc_type);
 void stack_continue_unwinding() __attribute__ ((noreturn));

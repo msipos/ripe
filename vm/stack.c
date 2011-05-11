@@ -82,12 +82,6 @@ void stack_annot_push(char* annotation)
   stack_idx++;
 }
 
-Value stack_annot_pop_pass(Value stuff)
-{
-  stack_annot_pop();
-  return stuff;
-}
-
 void stack_annot_pop()
 {
   for(;;){

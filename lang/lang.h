@@ -157,7 +157,10 @@ typedef struct {
   Dict props;               // Only if type == CLASS_FIELD.
   Dict gets;                // Regardless of type.
   Dict sets;                // Regardless of type.
+
+  // These are populated by stran, and used by genist:
   const char* parent;
+  Dict mixins;
   
   // Used by genist:
   #define GENIST_UNVISITED  0
@@ -330,6 +333,7 @@ bool annot_check_simple(Node* annot_list, int num, const char* args[]);
 bool annot_check(Node* annot_list, int num, ...);
 bool annot_has(Node* annot_list, const char* s);
 const char* annot_get(Node* annot_list, const char* key);
+const char* annot_get_full(Node* annot_list, const char* key, int num);
 void lang_init();
 
 //////////////////////////////////////////////////////////////////////////////

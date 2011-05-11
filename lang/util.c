@@ -178,18 +178,26 @@ bool annot_has(Node* annot_list, const char* s)
   return false;
 }
 
-const char* annot_get(Node* annot_list, const char* key)
+const char* annot_get_full(Node* annot_list, const char* key, int num)
 {
-  assert(annot_list->type == ANNOT_LIST);
+  assert(annot_list->type == ANNOT_LIST); assert(num >= 0);
   
   for (int i = 0; i < node_num_children(annot_list); i++){
     Node* annot = node_get_child(annot_list, i);
     Node* first = node_get_child(annot, 0);
     if (node_num_children(annot) == 1) continue;
     Node* second = node_get_child(annot, 1);
-    if (strequal(first->text, key)) return util_dot_id(second);
+    if (strequal(first->text, key)) {
+      if (num == 0) return util_dot_id(second);
+      num--;
+    }
   }
   return NULL;
+}
+
+const char* annot_get(Node* annot_list, const char* key)
+{
+  return annot_get_full(annot_list, key, 0);
 }
 
 typedef struct {
