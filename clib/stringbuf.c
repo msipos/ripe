@@ -20,7 +20,7 @@
 void sbuf_init(StringBuf* sbuf, const char* s)
 {
   uint64 len = strlen(s);
-  sbuf->str = mem_malloc_atomic(len + 1);
+  sbuf->str = (char*) mem_malloc_atomic(len + 1);
   sbuf->alloc_size = len + 1;
   sbuf->size = len + 1;
   strcpy(sbuf->str, s);
@@ -43,7 +43,7 @@ void sbuf_printf(StringBuf* sbuf, const char* format, ...)
   uint tlen = strlen(tmpbuf);
   if (sbuf->size + tlen > sbuf->alloc_size){
     sbuf->alloc_size = (sbuf->size + tlen) * 2;
-    sbuf->str = mem_realloc(sbuf->str, sbuf->alloc_size);
+    sbuf->str = (char*) mem_realloc(sbuf->str, sbuf->alloc_size);
   }
   strcat(sbuf->str, tmpbuf);
   sbuf->size += tlen;
@@ -53,7 +53,7 @@ void sbuf_catc(StringBuf* sbuf, const char c)
 {
   if (sbuf->size + 1 > sbuf->alloc_size){
     sbuf->alloc_size *= 2;
-    sbuf->str = mem_realloc(sbuf->str, sbuf->alloc_size);
+    sbuf->str = (char*) mem_realloc(sbuf->str, sbuf->alloc_size);
   }
   sbuf->str[sbuf->size - 1] = c;
   sbuf->str[sbuf->size] = 0;
@@ -65,7 +65,7 @@ void sbuf_cat(StringBuf* sbuf, const char* s)
   int64 l = strlen(s);
   if (sbuf->size + l > sbuf->alloc_size){
     sbuf->alloc_size += l;
-    sbuf->str = mem_realloc(sbuf->str, sbuf->alloc_size);
+    sbuf->str = (char*) mem_realloc(sbuf->str, sbuf->alloc_size);
   }
   strcat(sbuf->str, s);
   sbuf->size += l;
@@ -75,7 +75,7 @@ void sbuf_ncat(StringBuf* sbuf, const char* s, int64 n)
 {
   if (sbuf->size + n > sbuf->alloc_size){
     sbuf->alloc_size += n;
-    sbuf->str = mem_realloc(sbuf->str, sbuf->alloc_size);
+    sbuf->str = (char*) mem_realloc(sbuf->str, sbuf->alloc_size);
   }
   strncat(sbuf->str, s, n);
   sbuf->size += n;
@@ -85,7 +85,7 @@ void sbuf_ncpy(StringBuf* sbuf, const char* s, int64 n)
 {
   if (sbuf->alloc_size < n + 1){
     sbuf->alloc_size = n + 1;
-    sbuf->str = mem_realloc(sbuf->str, n + 1);
+    sbuf->str = (char*) mem_realloc(sbuf->str, n + 1);
   }
   strncpy(sbuf->str, s, n);
   sbuf->str[n] = 0;

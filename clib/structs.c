@@ -19,7 +19,7 @@ void sarray_init(SArray* arr)
 {
   arr->size = 0;
   arr->alloc_size = 2;
-  arr->data = mem_malloc(2 * sizeof(SElement));
+  arr->data = (SElement*) mem_malloc(2 * sizeof(SElement));
 }
 
 static void sarray_expand(SArray* arr)
@@ -33,7 +33,7 @@ static void sarray_expand(SArray* arr)
   }
 
   arr->alloc_size *= 2;
-  arr->data = mem_realloc(arr->data, arr->alloc_size*sizeof(SElement));
+  arr->data = (SElement*) mem_realloc(arr->data, arr->alloc_size*sizeof(SElement));
 }
 
 void sarray_pop(SArray* arr)

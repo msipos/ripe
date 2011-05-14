@@ -3,6 +3,23 @@ import os, sys
 
 conf = {}
 
+def load_conf():
+    # Choose basic binaries, and return conf.
+    conf["CC"] = "gcc"
+    conf["CPP"] = "g++"
+    conf["LD"] = "ld"
+    conf["LEX"] = "flex"
+    conf["YACC"] = ["bison", "--warnings=all", "-v"]
+
+    # Some basic flags
+
+    if conf["LD"] == "ld":
+        conf["LFLAGS"] = ["-lm"]
+    if conf["CC"] == "gcc":
+        conf["CFLAGS"] = ["-Wall", "-Wfatal-errors", "-std=gnu99", "-I.",
+                          "-Wno-unused"]
+    return conf
+
 def link_objs(objs, output):
     if depends(output, objs):
         arr = flatten([conf["LD"], '-r', objs, '-o', output])

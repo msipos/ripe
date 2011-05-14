@@ -88,7 +88,7 @@ FILE* f_memlog;
 
 char* mem_strndup(const char* s, uint64 n)
 {
-  char* out = mem_malloc(n + 1);
+  char* out = (char*) mem_malloc(n + 1);
   strncpy(out, s, n);
   out[n-1] = 0;
   return out;

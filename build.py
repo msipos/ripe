@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
-# Possible build flags are "force", "quiet", "nodebug", "nogc", "profile"
-
+# Customize modules that will be compiled
 DATA_TYPES = ['Array1', 'Array2', 'Array3', 'Double', 'Error', 'Flags',
               'Integer', 'Map', 'Range', 'Set', 'String', 'StringBuf', 'Tuple']
 STDLIB = ['Character', 'DataFormat', 'Err', 'Iterable', 'Math', 'Num', 'Opt',
@@ -9,58 +8,71 @@ STDLIB = ['Character', 'DataFormat', 'Err', 'Iterable', 'Math', 'Num', 'Opt',
 OPTIONAL_MODULES = ['Bio', 'Curl', 'Fcgi', 'Gd', 'Gsl', 'Gtk', 'Http', 'Json',
                     'Lang', 'Povray', 'Pthread', 'Sci', 'Sdl', 'Speech',
                     'Sqlite', 'Xml']
-MODULES = DATA_TYPES + STDLIB
-DEF_MODULES = DATA_TYPES + STDLIB
 
 #       BUILD SCRIPT FROM HERE ON
 import os, sys, tools
+from getopt import getopt
 
-conf = tools.conf
-conf["CC"] = "gcc"
-conf["LD"] = "ld"
-conf["CFLAGS"] = ["-Wall", "-Wfatal-errors", "-std=gnu99", "-I.", "-Wno-unused"]
-conf["LFLAGS"] = ["-lm"]
-conf["YACC"] = ["bison", "--warnings=all", "-v"]
-conf["LEX"] = "flex"
+MODULES = DATA_TYPES + STDLIB
+DEF_MODULES = DATA_TYPES + STDLIB
+
+#  Parse command line options
+choice_gc = True
+choice_debug = False
+choice_force = False
+
+conf = tools.load_conf()
 conf["VERBOSITY"] = 1
+
+parsed, leftover = getopt(sys.argv[1:], "fdvq",
+                          ["force", "debug", "nogc", "verbose", "quiet"])
+if len(leftover) > 0:
+    sys.stderr.write("'{0}' not understood".format(" ".join(leftover)))
+    sys.exit(1)
+for k, v in parsed:
+    if k == "-d" or k == "--debug":
+        choice_debug = True
+    if k == "-f" or k == "--force":
+        choice_force = True
+    if k == "--nogc":
+        choice_gc = False
+    if k == "-v" or k == "--verbose":
+        conf["VERBOSITY"] += 1
+    if k == "-q" or k == "--quiet":
+        conf["VERBOSITY"] -= 1
+
 conf["RFLAGS"] = []
-if "valgrind" in sys.argv:
-    conf["VALGRIND"] = ["valgrind", "--leak-check=no", "--track-origins=yes",
-                        "--smc-check=all"]
-else:
-    conf["VALGRIND"] = []
-if "mudflap" in sys.argv:
-    conf["CFLAGS"].append("-fmudflap")
-    conf["LFLAGS"].append("-lmudflap")
-if "nogc" not in sys.argv:
+conf["FORCING"] = choice_gc
+if choice_gc:
     conf["CFLAGS"].append("-DCLIB_GC")
     conf["LFLAGS"].append("-lgc")
-if "slog" in sys.argv:
-    conf["CFLAGS"].append("-DSLOG")
-conf["FORCING"] = "force" in sys.argv
-if "quiet" in sys.argv:
-    conf["VERBOSITY"] = 0
-if "verbose" in sys.argv:
-    conf["VERBOSITY"] = 2
-if "profile" in sys.argv:
-    conf["CFLAGS"].append("-pg")
-    conf["LFLAGS"].append("-pg")
-    conf["CFLAGS"].append("-fno-omit-frame-pointer")
-    conf["CFLAGS"].append("-O3")
-    conf["CFLAGS"].append("-DNDEBUG")
-    conf["RFLAGS"].append("--optim-verify")
-if "nodebug" in sys.argv:
-    conf["CFLAGS"].append("-O3")
-    conf["CFLAGS"].append("-DNDEBUG")
-    conf["RFLAGS"].append("--optim-verify")
-else:
+if choice_debug:
     conf["CFLAGS"].append("-g")
-if "nostack" in sys.argv:
-    conf["CFLAGS"].append("-DNOSTACK")
-if "nothreads" in sys.argv:
-    conf["CFLAGS"].append("-DNOTHREADS")
-if "memlog" in sys.argv:
-    conf["CFLAGS"].append("-DMEMLOG")
+else:
+    conf["CFLAGS"].extend(["-O3", "-DNDEBUG"])
+    conf["RFLAGS"].append("--optim-verify")
+conf["VALGRIND"] = []
+
+#if "valgrind" in sys.argv:
+#    conf["VALGRIND"] = ["valgrind", "--leak-check=no", "--track-origins=yes",
+#                        "--smc-check=all"]
+#else:
+#    conf["VALGRIND"] = []
+#if "mudflap" in sys.argv:
+#    conf["CFLAGS"].append("-fmudflap")
+#    conf["LFLAGS"].append("-lmudflap")
+#if "slog" in sys.argv:
+#    conf["CFLAGS"].append("-DSLOG")
+#if "profile" in sys.argv:
+#    conf["CFLAGS"].extend(["-pg", "-fno-omit-frame-pointer", "-O3", "-DNDEBUG"])
+#    conf["LFLAGS"].append("-pg")
+#    conf["RFLAGS"].append("--optim-verify")
+#if "nostack" in sys.argv:
+#    conf["CFLAGS"].append("-DNOSTACK")
+#if "nothreads" in sys.argv:
+#    conf["CFLAGS"].append("-DNOTHREADS")
+#if "memlog" in sys.argv:
+#    conf["CFLAGS"].append("-DMEMLOG")
 
 # Construct required directories
 required_dirs = ['bin', 'product', 'product/include', 'product/include/clib',
@@ -72,11 +84,8 @@ for d in required_dirs:
 ###############################################################################
 # CLIB
 
-clib_hs =   [
-              'clib/clib.h'
-            ]
-clib_srcs = [
-              'clib/array.c',
+clib_hs =   [ 'clib/clib.h' ]
+clib_srcs = [ 'clib/array.c',
               'clib/dict.c',
               'clib/hash.c',
               'clib/mem.c',
@@ -85,8 +94,7 @@ clib_srcs = [
               'clib/structs.c',
               'clib/tok.c',
               'clib/utf8.c',
-              'clib/util.c',
-            ]
+              'clib/util.c' ]
 clib_objs = tools.cons_objs(clib_srcs, clib_hs)
 
 ###############################################################################
@@ -96,10 +104,7 @@ tools.cons_yacc('lang/parser.c', 'lang/parser.y',
           ['lang/lang.h'] + clib_hs)
 tools.cons_flex('lang/scanner.c', 'lang/scanner.l',
           ['lang/parser.h', 'lang/lang.h'] + clib_hs)
-
-lang_hs = [ 'lang/lang.h',
-            'lang/parser.h',
-            'lang/scanner.h', ]
+lang_hs = [ 'lang/lang.h', 'lang/parser.h', 'lang/scanner.h', ]
 lang_srcs = [ 'lang/astnode.c',
               'lang/aster.c',
               'lang/build-tree.c',
@@ -116,7 +121,6 @@ lang_srcs = [ 'lang/astnode.c',
               'lang/var.c',
               'lang/writer.c' ]
 lang_objs = tools.cons_objs(lang_srcs, lang_hs + clib_hs)
-# Construct VM object
 tools.link_objs(lang_objs, "lang/lang.o")
 
 ###############################################################################
@@ -140,35 +144,29 @@ tools.cons_bin('bin/ops-gen', ops_gen_objs, [])
 tools.cons_gen('bin/ops-gen', 'vm/ops-generated.c', 'c')
 tools.cons_gen('bin/ops-gen', 'vm/ops-generated.h', 'h')
 
-vm_hs = [
-          'vm/vm.h',
-          'vm/value_inline.c',
-          'vm/ops-generated.h',
-          'vm/func-generated.h',
-        ]
+vm_hs = [ 'vm/vm.h', 'vm/value_inline.c', 'vm/ops-generated.h',
+          'vm/func-generated.h' ]
 
 # VM
 # Vm support files (used by vm and testvm)
-vm_support_srcs = [
-            'vm/common.c',
-            'vm/sym-table.c',
-            'vm/ops.c',
-            'vm/ops-generated.c',
-            'vm/util.c',
-            'vm/klass.c',
-            'vm/stack.c',
-            'vm/format.c',
-            'vm/builtin/Object.c',
-            'vm/builtin/Function.c',
-            'vm/func-generated.c',
-            'vm/builtin/HashTable.c',
-            'vm/builtin/String.c',
-            'vm/builtin/Integer.c',
-            'vm/builtin/Double.c',
-            'vm/builtin/Arrays.c',
-            'vm/builtin/Range.c',
-            'vm/builtin/Tuple.c'
-          ]
+vm_support_srcs = [ 'vm/common.c',
+                    'vm/sym-table.c',
+                    'vm/ops.c',
+                    'vm/ops-generated.c',
+                    'vm/util.c',
+                    'vm/klass.c',
+                    'vm/stack.c',
+                    'vm/format.c',
+                    'vm/builtin/Object.c',
+                    'vm/builtin/Function.c',
+                    'vm/func-generated.c',
+                    'vm/builtin/HashTable.c',
+                    'vm/builtin/String.c',
+                    'vm/builtin/Integer.c',
+                    'vm/builtin/Double.c',
+                    'vm/builtin/Arrays.c',
+                    'vm/builtin/Range.c',
+                    'vm/builtin/Tuple.c' ]
 vm_support_objs = tools.cons_objs(vm_support_srcs, vm_hs + clib_hs)
 
 # vm objs

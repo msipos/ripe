@@ -64,7 +64,7 @@ void fatal_vthrow(const char* format, va_list ap)
   fatal_init();
 
   for (int i = 0; i < fatal_stack.size; i++){
-    const char* s = sarray_get_ptr(&fatal_stack, i);
+    const char* s = (const char*) sarray_get_ptr(&fatal_stack, i);
     if (i == 0) fprintf(stderr, " ERROR: %s:\n", s);
            else fprintf(stderr, "        %s:\n", s);
   }
@@ -91,7 +91,7 @@ void fatal_vwarn(const char* format, va_list ap)
   fatal_init();
 
   for (int i = 0; i < fatal_stack.size; i++){
-    const char* s = sarray_get_ptr(&fatal_stack, i);
+    const char* s = (const char*) sarray_get_ptr(&fatal_stack, i);
     if (i == 0) fprintf(stderr, " WARN: %s:\n", s);
            else fprintf(stderr, "       %s:\n", s);
   }
