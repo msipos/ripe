@@ -15,3 +15,29 @@
 
 #include "lang/lang.h"
 
+typedef struct {
+  int type;
+  const char* break_label;
+  const char* continue_label;
+} StackerElement;
+
+SArray stacker;
+
+void stacker_init()
+{
+  sarray_init(&stacker);
+}
+
+void stacker_push(int type, const char* break_label, const char* continue_label)
+{
+  StackerElement* el = mem_new(StackerElement);
+  el->type = type;
+  el->break_label = break_label;
+  el->continue_label = continue_label;
+  sarray_append_ptr(&stacker, el);
+}
+
+void stacker_pop()
+{
+  sarray_pop(&stacker);
+}

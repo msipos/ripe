@@ -38,7 +38,7 @@ static void sarray_expand(SArray* arr)
 
 void sarray_pop(SArray* arr)
 {
-  assert(arr->size > 0);
+  assert(arr != NULL); assert(arr->size > 0);
   arr->size--;
 }
 
@@ -56,4 +56,11 @@ void* sarray_get_ptr(SArray* arr, int idx)
   assert(arr != NULL); assert(idx >= 0); assert(idx < arr->size);
 
   return arr->data[idx].p;
+}
+
+void* sarray_pop_ptr(SArray* arr)
+{
+  assert(arr != NULL); assert(arr->size > 0);
+  arr->size--;
+  return arr->data[arr->size].p;
 }

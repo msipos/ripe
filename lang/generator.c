@@ -1018,6 +1018,8 @@ static void gen_var(Node* n, const char* name)
 
 void generate(Node* ast, const char* filename)
 {
+  stacker_init();
+
   line_filename = filename;
 
   Aster aster;
