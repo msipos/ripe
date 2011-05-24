@@ -103,7 +103,6 @@ static const char* closure_add(const char* name, const char* evaluated)
 ///////////////////////////////////////////////////////////////////////////////
 // EVALUATING AST
 ///////////////////////////////////////////////////////////////////////////////
-static uint dowhile_semaphore;
 static const char* eval_expr(Node* expr);
 
 static const char* eval_expr_list(Node* expr_list, bool first_comma)
@@ -626,11 +625,19 @@ static const char* gen_stmt(Node* stmt)
                 eval_expr(node_get_child(stmt, 0)));
     break;
   case STMT_LOOP:
-    sbuf_printf(&sb, "  for(;;){\n");
-    dowhile_semaphore++;
-    sbuf_printf(&sb, "%s", gen_block(node_get_child(stmt, 0)));
-    dowhile_semaphore--;
-    sbuf_printf(&sb, "  }\n");
+    {
+      const char* lbl_break = stacker_label();
+      const char* lbl_continue = stacker_label();
+      stacker_push(STACKER_LOOP, lbl_break, lbl_continue);
+      
+      sbuf_printf(&sb, "  for(;;){\n");
+      sbuf_printf(&sb, " %s:;\n", lbl_continue);
+      sbuf_printf(&sb, "%s", gen_block(node_get_child(stmt, 0)));
+      sbuf_printf(&sb, "  }\n");
+      sbuf_printf(&sb, " %s:;\n", lbl_break);
+
+      stacker_pop();
+    }
     break;
   case STMT_IF:
     sbuf_printf(&sb, "  if (%s == VALUE_TRUE) {\n",
@@ -649,25 +656,19 @@ static const char* gen_stmt(Node* stmt)
     sbuf_printf(&sb, "%s", gen_block(node_get_node(stmt, "block")));
     sbuf_printf(&sb, "  }\n");
     break;
-  case STMT_WHILE:
-    sbuf_printf(&sb, "  while (%s == VALUE_TRUE) {\n",
-             eval_expr(node_get_child(stmt, 0)));
-    dowhile_semaphore++;
-    sbuf_printf(&sb, "%s", gen_block(node_get_child(stmt, 1)));
-    dowhile_semaphore--;
-    sbuf_printf(&sb, "  }\n");
-    break;
   case STMT_BREAK:
-    if (dowhile_semaphore == 0){
-      fatal_node(stmt, "break outside a loop");
+    {
+      int num = 1;
+      if (node_has_string(stmt, "num")) num = atoi(node_get_string(stmt, "num"));
+      sbuf_printf(&sb, "  goto %s;\n", stacker_break(num));
     }
-    sbuf_printf(&sb, "  break;\n");
     break;
   case STMT_CONTINUE:
-    if (dowhile_semaphore == 0){
-      fatal_node(stmt, "continue outside a loop");
+    {
+      int num = 1;
+      if (node_has_string(stmt, "num")) num = atoi(node_get_string(stmt, "num"));
+      sbuf_printf(&sb, "  goto %s;\n", stacker_continue(num));
     }
-    sbuf_printf(&sb, "  continue;\n");
     break;
   case STMT_ASSIGN:
     sbuf_printf(&sb, "%s", gen_stmt_assign(node_get_child(stmt, 0), 
@@ -680,8 +681,10 @@ static const char* gen_stmt(Node* stmt)
       Node* expr = node_get_child(stmt, 1);
       Node* lvalue_list = node_get_child(stmt, 0);
 
+      // Outside scope begin
       var_push();
-
+      sbuf_printf(&sb, "  {\n");
+      
       // _iteratorX = expr.get_iter()
       const char* rip_iterator = mem_asprintf("_iterator%d", iterator_counter);
       Node* id_iterator = node_new_id(rip_iterator);
@@ -689,8 +692,12 @@ static const char* gen_stmt(Node* stmt)
                   gen_stmt_assign2(id_iterator, 
                                    node_new_field_call(expr, "get_iter", 0)));
 
+      // loop
+      const char* lbl_break = stacker_label();
+      const char* lbl_continue = stacker_label();
       sbuf_printf(&sb, "  for(;;){");
-
+      sbuf_printf(&sb, " %s:;\n", lbl_continue);
+     
       // _iterator_tempX = _iteratorX.iter()
       Node* iterator_call = node_new_field_call(id_iterator, "iter", 0);
       Node* id_temp = node_new_id(mem_asprintf("_iterator_temp%d",
@@ -701,9 +708,15 @@ static const char* gen_stmt(Node* stmt)
       sbuf_printf(&sb, "  if (%s == VALUE_EOF) break;\n", eval_expr(id_temp));
       sbuf_printf(&sb, "%s", gen_stmt_assign(lvalue_list, id_temp));
 
-      dowhile_semaphore++;
+      // Write out code
+      stacker_push(STACKER_FOR, lbl_break, lbl_continue);
       sbuf_printf(&sb, "%s", gen_block(node_get_child(stmt, 2)));
-      dowhile_semaphore--;
+      stacker_pop();
+
+      sbuf_printf(&sb, "  }\n"); // end loop
+      sbuf_printf(&sb, " %s:;\n", lbl_break);
+
+      // Outside scope end
       sbuf_printf(&sb, "  }\n");
       var_pop();
     }
@@ -762,6 +775,7 @@ static const char* gen_try_stuff(Node* try_stmt, Node* other_stmt)
 
   switch(other_stmt->type){
   case STMT_CATCH:
+    //   try ...
     sbuf_printf(&sb, "  if (setjmp(exc_jb) == 0){\n");
     if (node_has_node(other_stmt, "type")){
       sbuf_printf(&sb, "    stack_push_catch(%s);\n",
@@ -773,29 +787,46 @@ static const char* gen_try_stuff(Node* try_stmt, Node* other_stmt)
     } else {
       sbuf_printf(&sb, "    stack_push_catch_all();\n");
     }
+
+    // Generate try code
+    stacker_push(STACKER_TRY, NULL, NULL);
     sbuf_printf(&sb, "%s", gen_block(node_get_node(try_stmt, "block")));
+    stacker_pop();
+    
     sbuf_printf(&sb, "    stack_pop()\n;");
+
+    //   catch ...
     sbuf_printf(&sb, "  } else {\n");
     var_push();
-      if (node_has_node(other_stmt, "type")
-          and node_has_string(other_stmt, "name")){
-        const char* ripe_name = node_get_string(other_stmt, "name");
-        const char* c_name = util_c_name(ripe_name);
-        sbuf_printf(&sb, "  Value %s = exc_obj;\n", c_name);
-        var_add_local(ripe_name, c_name,
-                      eval_type(node_get_node(other_stmt, "type")));
-      }
-      sbuf_printf(&sb, "%s", gen_block(node_get_node(other_stmt, "block")));
+
+    if (node_has_node(other_stmt, "type")
+        and node_has_string(other_stmt, "name")){
+      const char* ripe_name = node_get_string(other_stmt, "name");
+      const char* c_name = util_c_name(ripe_name);
+      sbuf_printf(&sb, "  Value %s = exc_obj;\n", c_name);
+      var_add_local(ripe_name, c_name,
+                    eval_type(node_get_node(other_stmt, "type")));
+    }
+
+    // Generate catch code
+    stacker_push(STACKER_CATCH, NULL, NULL);
+    sbuf_printf(&sb, "%s", gen_block(node_get_node(other_stmt, "block")));
+    stacker_pop();
+
     var_pop();
     sbuf_printf(&sb, "  }\n");
     break;
   case STMT_FINALLY:
     sbuf_printf(&sb, "  if (setjmp(exc_jb) == 0){\n");
     sbuf_printf(&sb, "    stack_push_finally();\n");
+    stacker_push(STACKER_TRY, NULL, NULL);
     sbuf_printf(&sb, "%s", gen_block(node_get_node(try_stmt, "block")));
+    stacker_pop();
     sbuf_printf(&sb, "    stack_pop()\n;");
     sbuf_printf(&sb, "  }\n");
+    stacker_push(STACKER_FINALLY, NULL, NULL);
     sbuf_printf(&sb, "%s", gen_block(node_get_node(other_stmt, "block")));
+    stacker_pop();
     sbuf_printf(&sb, "  if (stack_unwinding == true)\n");
     sbuf_printf(&sb, "    stack_continue_unwinding();\n");
     break;
@@ -923,13 +954,15 @@ static void register_locals(const char* name)
 // Generate all the statements, and maybe return VALUE_NIL at the end.
 static void gen_code(Node* n, const char* name)
 {
+  // This function is only called by gen_function, gen_method or gen_constructor.
+  // Do not call it from anywhere else (use gen_block for that).
   context_fi = stran_get_function(name);
   fatal_push("while compiling function '%s'", name);
 
   wr_print(WR_CODE, "%s\n{\n", util_signature(name));
   wr_print(WR_CODE, "  stack_annot_push(\"%s\");\n", name);
   Node* stmt_list = node_get_node(n, "stmt_list");
-  dowhile_semaphore = 0;
+  stacker_init();
 
   var_push();
   register_locals(name);
@@ -973,6 +1006,7 @@ static void gen_code(Node* n, const char* name)
 
   wr_print(WR_CODE, "}\n");
 
+  assert(stacker_size() == 0);
   context_fi = NULL;
   fatal_pop();
 }
@@ -1018,8 +1052,6 @@ static void gen_var(Node* n, const char* name)
 
 void generate(Node* ast, const char* filename)
 {
-  stacker_init();
-
   line_filename = filename;
 
   Aster aster;

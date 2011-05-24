@@ -274,7 +274,23 @@ blocks()
   curry(false, false)
 
   Test.test("called inside block", ttl+4, c_total)
-    
+
+loops()
+  x = 0
+  y = 0
+  loop
+    loop
+      y = y + 1
+      if y == 3
+        break 2
+      loop
+        loop
+          x = x + 1
+          if x > 3
+            continue 3
+  Test.test("loops", x, 5)
+  Test.test("loops", y, 3)
+
 main()
   Test.set_verbose(false)
   operators()
@@ -285,6 +301,7 @@ main()
   ellipsis()
   shorthand()
   blocks()
+  loops()
 
   obj = Class.new("testfile")
   obj.test_filename("testfile")

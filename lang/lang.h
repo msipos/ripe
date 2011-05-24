@@ -242,7 +242,6 @@ int input_read(char* buf, int max_size); // Used by flex to do reading
 #define STMT_PASS         1105
 #define STMT_ASSIGN       1106
 
-#define STMT_WHILE        1110
 #define STMT_BREAK        1111
 #define STMT_CONTINUE     1112
 #define STMT_FOR          1113
@@ -312,11 +311,20 @@ const char* binary_op_map(int type);
 //////////////////////////////////////////////////////////////////////////////
 // lang/stacker.c
 //////////////////////////////////////////////////////////////////////////////
-#define STACKER_LOOP 1
+#define STACKER_LOOP    1
+#define STACKER_FOR     2
+#define STACKER_TRY     3
+#define STACKER_FINALLY 4
+#define STACKER_CATCH   5
 
 void stacker_init();
+// Return a unique label.
+const char* stacker_label();
 void stacker_push(int type, const char* break_label, const char* continue_label);
+const char* stacker_break(int num);
+const char* stacker_continue(int num);
 void stacker_pop();
+int stacker_size();
 
 //////////////////////////////////////////////////////////////////////////////
 // lang/util.c

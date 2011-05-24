@@ -235,10 +235,6 @@ stmt:      "return" rvalue     { $$ = node_new(STMT_RETURN);
                                  node_add_child($$, $2); };
 stmt:      "return"            { $$ = node_new(STMT_RETURN);
                                  node_add_child($$, node_new(K_NIL)); };
-stmt:      "while" rvalue block
-                               { $$ = node_new(STMT_WHILE);
-                                 node_add_child($$, $2);
-                                 node_add_child($$, $3); };
 stmt:      "loop" block        { $$ = node_new(STMT_LOOP);
                                  node_add_child($$, $2); };
 stmt:      "for" lvalue_plus "in" expr block
@@ -247,7 +243,11 @@ stmt:      "for" lvalue_plus "in" expr block
                                  node_add_child($$, $4);
                                  node_add_child($$, $5); };
 stmt:      "break"             { $$ = node_new_inherit(STMT_BREAK, $1); };
+stmt:      "break" INT         { $$ = node_new_inherit(STMT_BREAK, $1); 
+                                 node_set_string($$, "num", $2->text); };
 stmt:      "continue"          { $$ = node_new_inherit(STMT_CONTINUE, $1); };
+stmt:      "continue" INT      { $$ = node_new_inherit(STMT_CONTINUE, $1); 
+                                 node_set_string($$, "num", $2->text); };
 stmt:      "pass"              { $$ = node_new_inherit(STMT_PASS, $1); };
 
 stmt:      "try" block         { $$ = node_new(STMT_TRY);

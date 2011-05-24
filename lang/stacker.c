@@ -28,6 +28,13 @@ void stacker_init()
   sarray_init(&stacker);
 }
 
+const char* stacker_label()
+{
+  static int counter = 0;
+  counter++;
+  return mem_asprintf("_lbl_%d", counter);
+}
+
 void stacker_push(int type, const char* break_label, const char* continue_label)
 {
   StackerElement* el = mem_new(StackerElement);
@@ -41,3 +48,47 @@ void stacker_pop()
 {
   sarray_pop(&stacker);
 }
+
+int stacker_size()
+{
+  return stacker.size;
+}
+
+static StackerElement* stacker_unwind(int num)
+{
+  if (num < 1){
+    fatal_throw("invalid number of loops to unwind: %d", num);
+  }
+
+  int cur = stacker.size;
+  for(;;){
+    cur--;
+    num--;
+    if (cur < 0) {
+      fatal_throw("break or continue but not enough loops");
+    }
+    
+    StackerElement* el = sarray_get_ptr(&stacker, cur);
+    if (el->type == STACKER_TRY or el->type == STACKER_CATCH
+        or el->type == STACKER_FINALLY) {
+      fatal_throw("break or continue crosses try/catch/finally boundaries");
+    }
+    
+    if (num == 0) return el;
+  }
+}
+
+const char* stacker_break(int num)
+{
+  fatal_push("while unwinding 'break %d'", num);
+  return stacker_unwind(num)->break_label;
+  fatal_pop();
+}
+
+const char* stacker_continue(int num)
+{
+  fatal_push("while unwinding 'continue %d'", num);
+  return stacker_unwind(num)->continue_label;
+  fatal_pop();
+}
+
