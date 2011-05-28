@@ -22,3 +22,4 @@ lang/parser.output
 lang/scanner.c
 lang/scanner.h
 memlog
+*.expand

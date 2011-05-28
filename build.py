@@ -23,9 +23,10 @@ choice_force = False
 
 conf = tools.load_conf()
 conf["VERBOSITY"] = 1
+conf["DUMP_RTL"] = False
 
 parsed, leftover = getopt(sys.argv[1:], "fdvq",
-                          ["force", "debug", "nogc", "verbose", "quiet"])
+                          ["force", "debug", "nogc", "verbose", "quiet", "call-graph"])
 if len(leftover) > 0:
     sys.stderr.write("'{0}' not understood".format(" ".join(leftover)))
     sys.exit(1)
@@ -40,9 +41,12 @@ for k, v in parsed:
         conf["VERBOSITY"] += 1
     if k == "-q" or k == "--quiet":
         conf["VERBOSITY"] -= 1
+    if k == "--call-graph":
+        conf["CFLAGS"].append("-fdump-rtl-expand")
+        conf["DUMP_RTL"] = True
 
 conf["RFLAGS"] = []
-conf["FORCING"] = choice_gc
+conf["FORCING"] = choice_force
 if choice_gc:
     conf["CFLAGS"].append("-DCLIB_GC")
     conf["LFLAGS"].append("-lgc")
@@ -109,6 +113,7 @@ lang_srcs = [ 'lang/astnode.c',
               'lang/aster.c',
               'lang/build-tree.c',
               'lang/cache.c',
+              'lang/eval.c',
               'lang/generator.c',
               'lang/genist.c',
               'lang/input.c',
@@ -131,6 +136,17 @@ ripe_hs = [ 'ripe/ripe.h' ]
 ripe_srcs = [ 'ripe/cli.c', 'ripe/ripe.c' ]
 ripe_objs = tools.cons_objs(ripe_srcs, ripe_hs + clib_hs + lang_hs)
 tools.cons_bin('bin/ripeboot', ripe_objs + clib_objs + lang_objs, [])
+
+if conf["DUMP_RTL"] == True:
+    # Construct a list of RTL dumps
+    objs = lang_objs
+    dumps = []
+    for obj in objs:
+        obj = obj.replace('.o', '.c')
+        dump = obj + '.144r.expand'
+        if os.path.exists(dump):
+            dumps.append(dump)
+    tools.call(['cat'] + dumps + ['>', 'lang.dump'])
 
 ###############################################################################
 # VM
