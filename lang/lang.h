@@ -301,7 +301,13 @@ const char* ee_type(const char* type, EE* ee); // Evaluate ee as a particular
                                                // type. May fatal_* out if
                                                // types not compatible.
 
+// Evaluate an expression
 EE* eval_expr(Node* expr);
+static inline const char* eval_Value(Node* expr)
+{
+  return eval_expr(expr)->text;
+}
+
 const char* eval_type(Node* n);
 const char* eval_index(Node* self, Node* idx, Node* assign);
 

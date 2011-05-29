@@ -18,7 +18,7 @@
 EE* ee_new(const char* type, const char* text)
 {
   EE* ee = mem_new(EE);
-  ee->type = mem_strdup(type);
+  if (type != UNTYPED) ee->type = mem_strdup(type);
   ee->text = mem_strdup(text);
   return ee;
 }
@@ -51,11 +51,11 @@ static const char* eval_expr_list(Node* expr_list, bool first_comma)
     if (i == 0 and not first_comma){
       sbuf_printf(&sb_temp, 
                   "%s", 
-                  ee_Value(eval_expr(node_get_child(expr_list, i))));
+                  eval_Value(node_get_child(expr_list, i)));
     } else {
       sbuf_printf(&sb_temp,
                   ", %s",
-                  ee_Value(eval_expr(node_get_child(expr_list, i))));
+                  eval_Value(node_get_child(expr_list, i)));
     }
   }
   const char* result = mem_strdup(sb_temp.str);
@@ -94,9 +94,9 @@ static const char* eval_static_call(const char* ssym, Node* arg_list)
   for (int i = 0; i < min_params; i++){
     Node* arg = node_get_child(arg_list, i);
     if (i == 0)
-      buf = mem_asprintf("%s%s", buf, eval_expr(arg));
+      buf = mem_asprintf("%s%s", buf, eval_Value(arg));
     else
-      buf = mem_asprintf("%s, %s", buf, eval_expr(arg));
+      buf = mem_asprintf("%s, %s", buf, eval_Value(arg));
   }
   if (is_vararg){
     if (min_params == 0)
@@ -106,7 +106,7 @@ static const char* eval_static_call(const char* ssym, Node* arg_list)
 
     for (int i = min_params; i < num_args; i++){
       Node* arg = node_get_child(arg_list, i);
-      buf = mem_asprintf("%s, %s", buf, eval_expr(arg));
+      buf = mem_asprintf("%s, %s", buf, eval_Value(arg));
     }
     buf = mem_asprintf("%s)", buf);
   }
@@ -120,7 +120,7 @@ static const char* eval_obj_call(Node* obj, const char* method_name,
 {
   return mem_asprintf("method_call%d(%s, %s %s)",
                       node_num_children(expr_list),
-                      eval_expr(obj),
+                      eval_Value(obj),
                       cache_dsym(method_name),
                       eval_expr_list(expr_list, true));
 }
@@ -176,14 +176,16 @@ const char* eval_type(Node* n)
 EE* eval_expr(Node* expr)
 {
   if (is_unary_op(expr))
-    return ee_new (UNTYPED, mem_asprintf("%s(%s)",
-                                         unary_op_map(expr->type),
-                                         eval_expr(node_get_child(expr, 0))));
+    return ee_new(UNTYPED, 
+                  mem_asprintf("%s(%s)",
+                               unary_op_map(expr->type),
+                               eval_Value(node_get_child(expr, 0))));
   if (is_binary_op(expr))
-    return ee_new (UNTYPED, mem_asprintf("%s(%s, %s)",
-                                     binary_op_map(expr->type),
-                                     eval_expr(node_get_child(expr, 0)),
-                                     eval_expr(node_get_child(expr, 1))));
+    return ee_new (UNTYPED, 
+                   mem_asprintf("%s(%s, %s)",
+                                binary_op_map(expr->type),
+                                eval_Value(node_get_child(expr, 0)),
+                                eval_Value(node_get_child(expr, 1))));
 
   switch(expr->type){
   case K_TRUE:
@@ -242,13 +244,13 @@ EE* eval_expr(Node* expr)
           case 2:
             is_map = true;
             args = mem_asprintf("%s, %s, %s", args,
-                                eval_expr(node_get_child(m, 0)),
-                                eval_expr(node_get_child(m, 1)));
+                                eval_Value(node_get_child(m, 0)),
+                                eval_Value(node_get_child(m, 1)));
             break;
           case 1:
             is_set = true;
             args = mem_asprintf("%s, %s", args,
-                                eval_expr(node_get_child(m, 0)));
+                                eval_Value(node_get_child(m, 0)));
             break;
           default:
             assert_never();
@@ -300,9 +302,9 @@ EE* eval_expr(Node* expr)
       
 
       return ee_new(UNTYPED, mem_asprintf("func_call%d(%s %s)", 
-                                          node_num_children(arg_list),
-                                          ee_Value(eval_expr(expr)),
-                                          eval_expr_list(arg_list, true));
+                                          node_num_children(args),
+                                          eval_Value(callee),
+                                          eval_expr_list(args, true)));
     }
   case EXPR_RANGE_BOUNDED:
     {
@@ -311,19 +313,19 @@ EE* eval_expr(Node* expr)
       return ee_new("Range",
                     mem_asprintf("range_to_val(RANGE_BOUNDED, "
                                  "val_to_int64(%s), val_to_int64(%s))",
-                                 eval_expr(left),
-                                 eval_expr(right)));
+                                 eval_Value(left),
+                                 eval_Value(right)));
     }
   case EXPR_RANGE_BOUNDED_LEFT:
     return ee_new("Range", 
                   mem_asprintf("range_to_val(RANGE_BOUNDED_LEFT, "
                                "val_to_int64(%s), 0)",
-                               eval_expr(node_get_child(expr, 0))));
+                               eval_Value(node_get_child(expr, 0))));
   case EXPR_RANGE_BOUNDED_RIGHT:
     return ee_new("Range",
                   mem_asprintf("range_to_val(RANGE_BOUNDED_RIGHT, "
                                "0, val_to_int64(%s))",
-                               eval_expr(node_get_child(expr, 0))));
+                               eval_Value(node_get_child(expr, 0))));
   case EXPR_RANGE_UNBOUNDED:
     return ee_new("Range", "range_to_val(RANGE_UNBOUNDED, 0, 0)");
   case EXPR_FIELD:
@@ -337,7 +339,7 @@ EE* eval_expr(Node* expr)
 
         return ee_new(UNTYPED, 
                       mem_asprintf("field_get(%s, %s)",
-                                   eval_expr(left),
+                                   eval_Value(left),
                                    cache_dsym(field)));
       } else {
         // Could be a global variable.
@@ -368,14 +370,17 @@ EE* eval_expr(Node* expr)
         fatal_warn("careless return in C code may disrupt the stack (use RRETURN)");
       }
 
-      if (context_fi->type == METHOD
-          or context_fi->type == CONSTRUCTOR
-          or context_fi->type == VIRTUAL_GET
-          or context_fi->type == VIRTUAL_SET){
-        if (strchr(str, '@') != NULL and context_ci->type != CLASS_CDATA)
-          fatal_node(expr, "@ in C code in a class that is not cdata");
-        str = util_replace(str, '@', "_c_data->");
+      if (context_fi != NULL){
+        if (context_fi->type == METHOD
+             or context_fi->type == CONSTRUCTOR
+             or context_fi->type == VIRTUAL_GET
+             or context_fi->type == VIRTUAL_SET){
+          if (strchr(str, '@') != NULL and context_ci->type != CLASS_CDATA)
+            fatal_node(expr, "@ in C code in a class that is not cdata");
+          str = util_replace(str, '@', "_c_data->");
+        }
       }
+
       return ee_new(UNTYPED, str);
     }
   case EXPR_IS_TYPE:
@@ -386,7 +391,7 @@ EE* eval_expr(Node* expr)
       }
       return ee_new("Bool", 
                     mem_asprintf("pack_bool(obj_klass(%s) == %s)",
-                    eval_expr(node_get_child(expr, 0)),
+                    eval_Value(node_get_child(expr, 0)),
                     cache_type(type)));
     }
   case EXPR_BLOCK:

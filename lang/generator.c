@@ -99,7 +99,7 @@ static const char* gen_stmt_assign2(Node* lvalue, Node* rvalue)
   StringBuf sb;
   sbuf_init(&sb, "");
 
-  const char* right = eval_expr(rvalue);
+  const char* right = eval_Value(rvalue);
   switch(lvalue->type){
   case ID:
     {
@@ -131,7 +131,7 @@ static const char* gen_stmt_assign2(Node* lvalue, Node* rvalue)
     break;
   case EXPR_FIELD:
     sbuf_printf(&sb, "  field_set(%s, %s, %s);\n",
-                eval_expr(node_get_child(lvalue, 0)),
+                eval_Value(node_get_child(lvalue, 0)),
                 cache_dsym(node_get_string(lvalue, "name")),
                 right);
     break;
@@ -192,9 +192,9 @@ static const char* gen_stmt(Node* stmt)
     {
       Node* expr = node_get_child(stmt, 0);
       if (expr->type == C_CODE) {
-        sbuf_printf(&sb, "  %s\n", eval_expr(expr));
+        sbuf_printf(&sb, "  %s\n", eval_Value(expr));
       } else {
-        sbuf_printf(&sb, "  %s;\n", eval_expr(expr));
+        sbuf_printf(&sb, "  %s;\n", eval_Value(expr));
       }
     }
     break;
@@ -203,7 +203,7 @@ static const char* gen_stmt(Node* stmt)
       fatal_node(stmt, "return not allowed in a constructor");
     }
     sbuf_printf(&sb, "  RRETURN(%s);\n",
-                eval_expr(node_get_child(stmt, 0)));
+                eval_Value(node_get_child(stmt, 0)));
     break;
   case STMT_LOOP:
     {
@@ -222,13 +222,13 @@ static const char* gen_stmt(Node* stmt)
     break;
   case STMT_IF:
     sbuf_printf(&sb, "  if (%s == VALUE_TRUE) {\n",
-             eval_expr(node_get_node(stmt, "expr")));
+             eval_Value(node_get_node(stmt, "expr")));
     sbuf_printf(&sb, "%s", gen_block(node_get_node(stmt, "block")));
     sbuf_printf(&sb, "  }\n");
     break;
   case STMT_ELIF:
     sbuf_printf(&sb, "  else if (%s == VALUE_TRUE) {\n",
-             eval_expr(node_get_node(stmt, "expr")));
+             eval_Value(node_get_node(stmt, "expr")));
     sbuf_printf(&sb, "%s", gen_block(node_get_node(stmt, "block")));
     sbuf_printf(&sb, "  }\n");
     break;
@@ -286,7 +286,8 @@ static const char* gen_stmt(Node* stmt)
       sbuf_printf(&sb, "%s", gen_stmt_assign2(id_temp, iterator_call));
 
       // if _iterator_tempX == eof break
-      sbuf_printf(&sb, "  if (%s == VALUE_EOF) break;\n", eval_expr(id_temp));
+      sbuf_printf(&sb, "  if (%s == VALUE_EOF) break;\n",
+                  eval_Value(id_temp));
       sbuf_printf(&sb, "%s", gen_stmt_assign(lvalue_list, id_temp));
 
       // Write out code
@@ -311,7 +312,7 @@ static const char* gen_stmt(Node* stmt)
 
       sbuf_printf(&sb, "  {\n");
       sbuf_printf(&sb, "  Value %s = %s;\n", c_expr_value,
-                                                     eval_expr(expr));
+                  eval_Value(expr));
       int num_cases = node_num_children(case_list);
       for (int i = 0; i < num_cases; i++){
         Node* node_case = node_get_child(case_list, i);
@@ -320,7 +321,7 @@ static const char* gen_stmt(Node* stmt)
         const char* word = "else if";
         if (i == 0) word = "if";
         sbuf_printf(&sb, "  %s (op_equal(%s, %s) == VALUE_TRUE) {\n",
-                    word, c_expr_value, eval_expr(node_case_expr));
+                    word, c_expr_value, eval_Value(node_case_expr));
         sbuf_printf(&sb, "%s", gen_block(block));
         sbuf_printf(&sb, "  }\n");
       }
@@ -336,7 +337,7 @@ static const char* gen_stmt(Node* stmt)
     break;
   case STMT_RAISE:
     sbuf_printf(&sb, "  exc_raise_object(%s);\n",
-             eval_expr(node_get_child(stmt, 0)));
+                eval_Value(node_get_child(stmt, 0)));
     break;
   default:
     fatal_node(stmt, "invalid statement type %d", stmt->type);
@@ -503,7 +504,7 @@ const char* gen_block(Node* block)
     if (context_block != NULL and i == block->children.size - 1){
       if (stmt->type == STMT_EXPR){
         sbuf_printf(&sb, "  RRETURN(\n%s);\n", 
-                    eval_expr(node_get_child(stmt, 0)));
+                    eval_Value(node_get_child(stmt, 0)));
       } else {
         sbuf_printf(&sb, "%s", gen_stmt(stmt));
         sbuf_printf(&sb, "  RRETURN(VALUE_NIL);\n");
@@ -627,7 +628,7 @@ static void gen_var(Node* n, const char* name)
 
   if (node_has_node(n, "value")){
     Node* expr = node_get_node(n, "value");
-    wr_print(WR_INIT3, "  %s = %s;\n", gi->c_name, eval_expr(expr));
+    wr_print(WR_INIT3, "  %s = %s;\n", gi->c_name, eval_Value(expr));
   }
 }
 
