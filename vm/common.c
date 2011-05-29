@@ -18,44 +18,48 @@
 int sys_argc;
 char** sys_argv;
 
-Klass* klass_Function;
-Klass* klass_Nil;
-Klass* klass_Eof;
-Klass* klass_Bool;
-Klass* klass_Integer;
-Klass* klass_Double;
 Klass* klass_Array1;
 Klass* klass_Array3;
+Klass* klass_Bool;
+Klass* klass_Destroyed;
+Klass* klass_Double;
+Klass* klass_Eof;
+Klass* klass_Error;
+Klass* klass_Function;
+Klass* klass_Integer;
+Klass* klass_Nil;
+Klass* klass_Map;
 Klass* klass_Range;
+Klass* klass_Set;
 Klass* klass_String;
 Klass* klass_Tuple;
-Klass* klass_Map;
-Klass* klass_Set;
-Klass* klass_Error;
-Value dsym_to_string;
 Value dsym_contains;
+Value dsym_destructor;
 Value dsym_name;
 Value dsym_text;
+Value dsym_to_string;
 
 void common_init_phase15()
 {
-  klass_Function = klass_get(dsym_get("Function"));
-  klass_Nil = klass_get(dsym_get("Nil"));
-  klass_Eof = klass_get(dsym_get("Eof"));
-  klass_Bool = klass_get(dsym_get("Bool"));
-  klass_Integer = klass_get(dsym_get("Integer"));
-  klass_Double = klass_get(dsym_get("Double"));
   klass_Array1 = klass_get(dsym_get("Array1"));
   klass_Array3 = klass_get(dsym_get("Array3"));
+  klass_Bool = klass_get(dsym_get("Bool"));
+  klass_Destroyed = klass_get(dsym_get("Destroyed"));
+  klass_Double = klass_get(dsym_get("Double"));
+  klass_Error = klass_get(dsym_get("Error"));
+  klass_Eof = klass_get(dsym_get("Eof"));
+  klass_Function = klass_get(dsym_get("Function"));
+  klass_Integer = klass_get(dsym_get("Integer"));
+  klass_Map = klass_get(dsym_get("Map"));
+  klass_Nil = klass_get(dsym_get("Nil"));
   klass_Range = klass_get(dsym_get("Range"));
+  klass_Set = klass_get(dsym_get("Set"));
   klass_String = klass_get(dsym_get("String"));
   klass_Tuple = klass_get(dsym_get("Tuple"));
-  klass_Map = klass_get(dsym_get("Map"));
-  klass_Set = klass_get(dsym_get("Set"));
-  klass_Error = klass_get(dsym_get("Error"));
 
-  dsym_to_string = dsym_get("to_string");
   dsym_contains = dsym_get("contains?");
+  dsym_destructor = dsym_get("destructor");
   dsym_name = dsym_get("name");
   dsym_text = dsym_get("text");
+  dsym_to_string = dsym_get("to_string");  
 }

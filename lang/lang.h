@@ -241,6 +241,7 @@ int input_read(char* buf, int max_size); // Used by flex to do reading
 #define STMT_ELSE         1104
 #define STMT_PASS         1105
 #define STMT_ASSIGN       1106
+#define STMT_DESTROY      1107
 
 #define STMT_BREAK        1111
 #define STMT_CONTINUE     1112

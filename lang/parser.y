@@ -83,9 +83,7 @@
 %token   K_IN          "in"
 %token   K_PASS        "pass"
 %token   K_CLASS       "class"
-%token   K_CONSTRUCTOR "constructor"
-%token   K_VIRTUAL_GET "virtual_get"
-%token   K_VIRTUAL_SET "virtual_set"
+%token   K_DESTROY     "destroy"
 %token   K_VAR         "var"
 %token   K_BLOCK       "block"
 %token   K_ARROW       "=>"
@@ -235,6 +233,9 @@ stmt:      "return" rvalue     { $$ = node_new(STMT_RETURN);
                                  node_add_child($$, $2); };
 stmt:      "return"            { $$ = node_new(STMT_RETURN);
                                  node_add_child($$, node_new(K_NIL)); };
+stmt:      "destroy" rvalue    { $$ = node_new(STMT_DESTROY);
+                                 node_add_child($$, $2); }
+
 stmt:      "loop" block        { $$ = node_new(STMT_LOOP);
                                  node_add_child($$, $2); };
 stmt:      "for" lvalue_plus "in" expr block

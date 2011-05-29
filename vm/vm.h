@@ -47,6 +47,8 @@ extern Value dsym_modulo, dsym_modulo2;
 //////////////////////////////////////////////////////////////////////////////
 // klass.c
 //////////////////////////////////////////////////////////////////////////////
+#include "vm/func-generated.h"
+
 struct KlassT {
   struct KlassT* parent;
   Value name;
@@ -57,6 +59,7 @@ struct KlassT {
   Dict writable_fields;
   Dict fields;
   int obj_size;
+  CFunc1 destructor;
 };
 typedef struct KlassT Klass;
 
@@ -66,25 +69,27 @@ typedef struct KlassT Klass;
 extern int sys_argc;
 extern char** sys_argv;
 
-extern Klass* klass_Function;
-extern Klass* klass_Nil;
-extern Klass* klass_Eof;
-extern Klass* klass_Bool;
-extern Klass* klass_Integer;
-extern Klass* klass_Double;
 extern Klass* klass_Array1;
 extern Klass* klass_Array3;
+extern Klass* klass_Bool;
+extern Klass* klass_Destroyed;
+extern Klass* klass_Double;
+extern Klass* klass_Eof;
+extern Klass* klass_Error;
+extern Klass* klass_Function;
+extern Klass* klass_Integer;
+extern Klass* klass_Map;
+extern Klass* klass_Nil;
 extern Klass* klass_Range;
+extern Klass* klass_Set;
 extern Klass* klass_String;
 extern Klass* klass_Tuple;
-extern Klass* klass_Map;
-extern Klass* klass_Set;
-extern Klass* klass_Error;
 
-extern Value dsym_to_string;
 extern Value dsym_contains;
+extern Value dsym_destructor;
 extern Value dsym_name;
 extern Value dsym_text;
+extern Value dsym_to_string;
 
 void common_init_phase15();
 
@@ -147,6 +152,7 @@ void klass_dump();
 
 Value obj_new(Klass* klass, void** data);
 Value obj_new2(Klass* klass);
+void obj_destroy(Value obj);
 
 // Verify an object is of given type.
 static inline Klass* obj_klass(Value v_obj)
@@ -326,7 +332,6 @@ void init1_Function();
 void init2_Function();
 Value func_to_val(void* c_func, int num_params);
 Value block_to_val(void* c_func, int num_params, int block_elems, ...);
-#include "vm/func-generated.h"
 void func_set_vararg(Value v_func);
 void* func_get_ptr(Value v_func, int16 num_params);
 // TODO: Change this if you want stack with optimizations

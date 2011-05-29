@@ -59,6 +59,7 @@ Klass* klass_new(Value name, int cdata_size)
   dict_init(&(klass->fields), sizeof(Value), sizeof(uint64),
             dict_hash_uint32, dict_equal_uint32);
   klass->num_fields = 0;
+  klass->destructor = VALUE_NIL;
 
   array_append(&klasses, klass);
   dict_set(&dsym_to_klass, &name, &klass);
@@ -105,7 +106,9 @@ void klass_new_virtual_writer(Klass* klass, Value name, Value func)
 
 void klass_new_method(Klass* klass, Value name, Value method)
 {
-  dict_set(&(klass->methods), &name, &method);
+  if (name == dsym_destructor){
+    klass->destructor = (CFunc1) func_get_ptr(method, 1);
+  } else dict_set(&(klass->methods), &name, &method);
 }
 
 void klass_init_phase15()
@@ -140,6 +143,23 @@ Value obj_new2(Klass* klass)
   void* obj = mem_malloc(klass->obj_size);
   *((Klass**) obj) = klass;
   return pack_ptr(obj);
+}
+
+void obj_destroy(Value obj)
+{
+  if ((obj & MASK_TAIL) == 0){
+    Klass* klass = obj_klass(obj);
+    
+    // Call destructor if it exists
+    if (klass->destructor != VALUE_NIL){
+      klass->destructor(obj);
+    }
+    
+    // Now, morph the object
+    void* pobj = unpack_ptr(obj);
+    memset(pobj, 0, klass->obj_size);
+    *((Klass**) pobj) = klass_Destroyed;
+  }
 }
 
 Value obj_verify_assign(Value v_obj, Klass* klass)

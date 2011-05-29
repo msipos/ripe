@@ -205,6 +205,10 @@ static const char* gen_stmt(Node* stmt)
     sbuf_printf(&sb, "  RRETURN(%s);\n",
                 eval_Value(node_get_child(stmt, 0)));
     break;
+  case STMT_DESTROY:
+    sbuf_printf(&sb, "  obj_destroy(%s);\n",
+                eval_Value(node_get_child(stmt, 0)));
+    break;
   case STMT_LOOP:
     {
       const char* lbl_break = stacker_label();

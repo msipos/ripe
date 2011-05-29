@@ -60,6 +60,7 @@
           <keyword>for</keyword>
           <keyword>in</keyword>
           <keyword>break</keyword>
+          <keyword>destroy</keyword>
           <keyword>return</keyword>
           <keyword>continue</keyword>
           <keyword>is</keyword>

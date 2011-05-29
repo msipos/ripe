@@ -1,8 +1,9 @@
 #!/usr/bin/python
 
 # Customize modules that will be compiled
-DATA_TYPES = ['Array1', 'Array2', 'Array3', 'Double', 'Error', 'Flags',
-              'Integer', 'Map', 'Range', 'Set', 'String', 'StringBuf', 'Tuple']
+DATA_TYPES = ['Array1', 'Array2', 'Array3', 'Destroyed', 'Double', 'Error',
+              'Flags',  'Integer', 'Map', 'Range', 'Set', 'String', 'StringBuf',
+              'Tuple']
 STDLIB = ['Character', 'DataFormat', 'Err', 'Iterable', 'Math', 'Num', 'Opt',
           'Os', 'Out', 'Path', 'Test', 'TextFile', 'Time']
 OPTIONAL_MODULES = ['Bio', 'Curl', 'Fcgi', 'Gd', 'Gsl', 'Gtk', 'Http', 'Json',
