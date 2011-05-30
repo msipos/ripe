@@ -108,7 +108,7 @@ tools.cons_yacc('lang/parser.c', 'lang/parser.y',
           ['lang/lang.h'] + clib_hs)
 tools.cons_flex('lang/scanner.c', 'lang/scanner.l',
           ['lang/parser.h', 'lang/lang.h'] + clib_hs)
-lang_hs = [ 'lang/lang.h', 'lang/parser.h', 'lang/scanner.h', ]
+lang_hs = [ 'lang/lang.h', 'lang/parser.h', 'lang/scanner.h' ]
 lang_srcs = [ 'lang/astnode.c',
               'lang/aster.c',
               'lang/build-tree.c',

@@ -286,6 +286,26 @@ int input_read(char* buf, int max_size); // Used by flex to do reading
 #include "lang/scanner.h"
 
 //////////////////////////////////////////////////////////////////////////////
+// lang/eval.c
+//////////////////////////////////////////////////////////////////////////////
+
+// Data structure representing an evaluated expression (with an associated type)
+#define UNTYPED   ((const char*) 1)
+typedef struct {
+  const char* type;  // If UNTYPED, then unknown type.
+  const char* text;  // Guaranteed non-NULL.
+} EE;
+EE* ee_new(const char* type, const char* text);
+const char* ee_Value(EE* ee); // Evaluate ee as a Value.
+const char* ee_type(const char* type, EE* ee); // Evaluate ee as a particular
+                                               // type. May fatal_* out if
+                                               // types not compatible.
+
+EE* eval_expr(Node* expr);
+const char* eval_type(Node* n);
+const char* eval_index(Node* self, Node* idx, Node* assign);
+
+//////////////////////////////////////////////////////////////////////////////
 // lang/generator.c
 //////////////////////////////////////////////////////////////////////////////
 
@@ -295,7 +315,20 @@ void genist_run();
 // lang/generator.c
 //////////////////////////////////////////////////////////////////////////////
 
+extern FuncInfo* context_fi;
+extern ClassInfo* context_ci;
+typedef struct {
+  StringBuf sbuf_code;
+  SArray closure_names;
+  SArray closure_exprs;
+  const char* func_name;
+} BlockContext;
+extern BlockContext* context_block;
+
 // Uses fatal_* mechanism in case of error.
+void fatal_node(Node* node, const char* format, ...);
+const char* closure_add(const char* name, const char* evaluated);
+const char* gen_block(Node* block) ATTR_WARN_UNUSED_RESULT;
 void generate(Node* ast, const char* filename);
 
 //////////////////////////////////////////////////////////////////////////////
