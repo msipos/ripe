@@ -81,14 +81,16 @@ static StackerElement* stacker_unwind(int num)
 const char* stacker_break(int num)
 {
   fatal_push("while unwinding 'break %d'", num);
-  return stacker_unwind(num)->break_label;
+  const char* rv = stacker_unwind(num)->break_label;
   fatal_pop();
+  return rv;
 }
 
 const char* stacker_continue(int num)
 {
   fatal_push("while unwinding 'continue %d'", num);
-  return stacker_unwind(num)->continue_label;
+  const char* rv = stacker_unwind(num)->continue_label;
   fatal_pop();
+  return rv;
 }
 
