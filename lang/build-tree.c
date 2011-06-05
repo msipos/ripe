@@ -15,7 +15,7 @@
 
 #include "lang/lang.h"
 
-static const char* dump_current_line();
+static const char* dump_current_line(void);
 
 /////////////////////////////////////////////////////////////////////////////
 // Input
@@ -54,7 +54,7 @@ int input_read(char* buf, int max_size)
 
 // Helper buffer for start conditions.
 StringBuf buf_sb;
-void buf_reset()
+void buf_reset(void)
 {
   sbuf_clear(&buf_sb);
 }
@@ -78,10 +78,10 @@ Node* rc_lval;
 Array raw_line;
 Array line;
 Array indents;
-int next_token;
+uint next_token;  // Index in line array.
 int prev_indentation;
 
-static void lex_init()
+static void lex_init(void)
 {
   sbuf_init(&buf_sb, "");
   array_init(&line, Node*);
@@ -91,7 +91,7 @@ static void lex_init()
   prev_indentation = -1;
 }
 
-static Node* lex_read()
+static Node* lex_read(void)
 {
   int lineno = input_lineno;
   int tok = yylex();
@@ -105,7 +105,7 @@ static Node* lex_read()
 }
 
 // Returns non-zero if EOF reached.
-static int lex_read_line()
+static int lex_read_line(void)
 {
   array_clear(&raw_line);
 
@@ -163,7 +163,7 @@ static int lex_read_line()
 }
 
 // Bison calls this.
-int rc_lex()
+int rc_lex(void)
 {
   if (next_token == line.size){
     // We must read another line and populate the line array.
@@ -228,7 +228,7 @@ int rc_lex()
       // Dump everything else in raw_line that's not whitespace into line.
       // While dumping, convert all ';' nodes into SEP, '{' and '}' to 
       // START and END respectively.
-      for (int i = 0; i < raw_line.size; i++){
+      for (uint i = 0; i < raw_line.size; i++){
         Node* n = array_get(&raw_line, Node*, i);
         switch (n->type){
           case WHITESPACE:
@@ -264,7 +264,7 @@ int rc_lex()
 static const char* dump_current_line()
 {
   const char* buf = "";
-  for (int i = 0; i < line.size; i++){
+  for (uint i = 0; i < line.size; i++){
     Node* n = array_get(&line, Node*, i);
     buf = mem_asprintf("%s %s", buf, util_node_type(n->type));
   }

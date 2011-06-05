@@ -113,7 +113,7 @@ void conf_load(Conf* conf, const char* filename)
 #include <string.h>
 const char* conf_query(Conf* conf, const char* key)
 {
-  for (int i = 0; i < conf->keys.size; i++){
+  for (uint i = 0; i < conf->keys.size; i++){
     const char* tkey = array_get(&(conf->keys), char*, i);
     const char* tvalue = array_get(&(conf->values), char*, i);
     if (strcmp(key, tkey) == 0){

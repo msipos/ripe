@@ -82,7 +82,7 @@ static void proc_class_exit(Node* n, const char* class_name)
 
   // Populate all the fields
   if (ci->type == CLASS_FIELD) {
-    for (int i = 0; i < ci->props.alloc_size; i++){
+    for (uint i = 0; i < ci->props.alloc_size; i++){
       if (dict_has_bucket(&(ci->props), i)){
         char* prop_name = *(char**) dict_get_bucket_key(&(ci->props), i);
         PropInfo* pi = *(PropInfo**) dict_get_bucket_value(&(ci->props), i);

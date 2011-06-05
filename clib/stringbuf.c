@@ -83,7 +83,7 @@ void sbuf_ncat(StringBuf* sbuf, const char* s, int64 n)
 
 void sbuf_ncpy(StringBuf* sbuf, const char* s, int64 n)
 {
-  if (sbuf->alloc_size < n + 1){
+  if (sbuf->alloc_size < (uint64) n + 1){
     sbuf->alloc_size = n + 1;
     sbuf->str = (char*) mem_realloc(sbuf->str, n + 1);
   }

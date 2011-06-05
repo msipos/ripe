@@ -176,7 +176,7 @@ Node* node_new_expr_list()
   return node_new(EXPR_LIST);
 }
 
-Node* node_new_field_call(Node* callee, char* field_name, int64 num, ...)
+Node* node_new_field_call(Node* callee, const char* field_name, int64 num, ...)
 {
   Node* field = node_new(EXPR_FIELD);
   node_add_child(field, callee);

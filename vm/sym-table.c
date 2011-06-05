@@ -28,6 +28,11 @@ Value dsym_lte, dsym_lte2;
 Value dsym_bit_and, dsym_bit_or, dsym_bit_xor;
 Value dsym_bit_and2, dsym_bit_or2, dsym_bit_xor2;
 Value dsym_modulo, dsym_modulo2;
+Value dsym_contains;
+Value dsym_destructor;
+Value dsym_name;
+Value dsym_text;
+Value dsym_to_string;
 
 void sym_init()
 {
@@ -55,6 +60,12 @@ void sym_init()
   dsym_bit_xor2 = dsym_get("__bit_xor2");
   dsym_modulo = dsym_get("__modulo");
   dsym_modulo2 = dsym_get("__modulo2");
+
+  dsym_contains = dsym_get("contains?");
+  dsym_destructor = dsym_get("destructor");
+  dsym_name = dsym_get("name");
+  dsym_text = dsym_get("text");
+  dsym_to_string = dsym_get("to_string");  
 }
 
 Value ssym_get(const char* name)

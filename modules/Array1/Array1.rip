@@ -6,7 +6,7 @@
 $
   typedef Value (*CmpFunc) (Value, Value);
 
-  void merge_sort2(Value* arr, int64 a, int64 b, Value* tmp,
+  static void merge_sort2(Value* arr, int64 a, int64 b, Value* tmp,
                    CmpFunc cfunc)
   {
     if (a == b) return;
@@ -57,8 +57,8 @@ $
     }
   }
 
-  void merge_sort(Value* arr, int64 a, int64 b, Value* tmp,
-                   Value cmp_func)
+  static void merge_sort(Value* arr, int64 a, int64 b, Value* tmp,
+                         Value cmp_func)
   {
     CmpFunc cfunc;
     if (cmp_func == VALUE_NIL) cfunc = &op_lt;

@@ -33,11 +33,6 @@ Klass* klass_Range;
 Klass* klass_Set;
 Klass* klass_String;
 Klass* klass_Tuple;
-Value dsym_contains;
-Value dsym_destructor;
-Value dsym_name;
-Value dsym_text;
-Value dsym_to_string;
 
 void common_init_phase15()
 {
@@ -56,10 +51,4 @@ void common_init_phase15()
   klass_Set = klass_get(dsym_get("Set"));
   klass_String = klass_get(dsym_get("String"));
   klass_Tuple = klass_get(dsym_get("Tuple"));
-
-  dsym_contains = dsym_get("contains?");
-  dsym_destructor = dsym_get("destructor");
-  dsym_name = dsym_get("name");
-  dsym_text = dsym_get("text");
-  dsym_to_string = dsym_get("to_string");  
 }

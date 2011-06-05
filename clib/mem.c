@@ -53,7 +53,7 @@ void* gc_calloc_atomic(size_t sz)
 }
 #endif
 
-char* mem_asprintf2(char* format, ...)
+char* mem_asprintf2(const char* format, ...)
 {
   #ifdef CLIB_GC
 

@@ -27,7 +27,7 @@ typedef uint64 Value;
 //////////////////////////////////////////////////////////////////////////////
 // sym-table.c
 //////////////////////////////////////////////////////////////////////////////
-void sym_init();
+void sym_init(void);
 Value ssym_get(const char* name);
 Value ssym_set(const char* name, Value val);
 Value dsym_get(const char* name);
@@ -43,6 +43,12 @@ extern Value dsym_lte, dsym_lte2;
 extern Value dsym_bit_and, dsym_bit_or, dsym_bit_xor;
 extern Value dsym_bit_and2, dsym_bit_or2, dsym_bit_xor2;
 extern Value dsym_modulo, dsym_modulo2;
+
+extern Value dsym_contains;
+extern Value dsym_destructor;
+extern Value dsym_name;
+extern Value dsym_text;
+extern Value dsym_to_string;
 
 //////////////////////////////////////////////////////////////////////////////
 // klass.c
@@ -85,13 +91,7 @@ extern Klass* klass_Set;
 extern Klass* klass_String;
 extern Klass* klass_Tuple;
 
-extern Value dsym_contains;
-extern Value dsym_destructor;
-extern Value dsym_name;
-extern Value dsym_text;
-extern Value dsym_to_string;
-
-void common_init_phase15();
+void common_init_phase15(void);
 
 //////////////////////////////////////////////////////////////////////////////
 // stack.c
@@ -99,14 +99,14 @@ void common_init_phase15();
 
 #include <setjmp.h>
 
-void stack_init();
-void stack_display();
-void exc_raise(char* format, ...) __attribute__ ((noreturn));
+void stack_init(void);
+void stack_display(void);
+void exc_raise(const char* format, ...) __attribute__ ((noreturn));
 void exc_raise_object(Value obj) __attribute__ ((noreturn));
 
 // Annotation stuff
-void stack_annot_push(char* annotation);
-void stack_annot_pop();
+void stack_annot_push(const char* annotation);
+void stack_annot_pop(void);
 static inline Value stack_annot_pop_pass(Value stuff)
 {
   stack_annot_pop();
@@ -114,11 +114,11 @@ static inline Value stack_annot_pop_pass(Value stuff)
 }
 #define  RRETURN(x)  return stack_annot_pop_pass(x)
 
-void stack_push_catch_all();
-void stack_pop();
-void stack_push_finally();
+void stack_push_catch_all(void);
+void stack_pop(void);
+void stack_push_finally(void);
 void stack_push_catch(Klass* exc_type);
-void stack_continue_unwinding() __attribute__ ((noreturn));
+void stack_continue_unwinding(void) __attribute__ ((noreturn));
 
 extern THREAD_LOCAL jmp_buf exc_jb;
 extern THREAD_LOCAL Value exc_obj;
@@ -146,9 +146,9 @@ Klass* klass_get(Value name);
 static inline const char* klass_name(Klass* klass){
   return dsym_reverse_get(klass->name);
 }
-void klass_init();
-void klass_init_phase15();
-void klass_dump();
+void klass_init(void);
+void klass_init_phase15(void);
+void klass_dump(void);
 
 Value obj_new(Klass* klass, void** data);
 Value obj_new2(Klass* klass);
@@ -263,7 +263,7 @@ typedef struct {
 } FormatParseElement;
 
 typedef struct {
-  int size;
+  uint size;
   FormatParseElement* elements;
 } FormatParse;
 
@@ -328,8 +328,8 @@ double val_to_double(Value v);
 // Function.c
 //////////////////////////////////////////////////////////////////////////////
 extern Klass* klass_func;
-void init1_Function();
-void init2_Function();
+void init1_Function(void);
+void init2_Function(void);
 Value func_to_val(void* c_func, int num_params);
 Value block_to_val(void* c_func, int num_params, int block_elems, ...);
 void func_set_vararg(Value v_func);
@@ -368,8 +368,8 @@ Value ht_new_set(int64 num, ...);
 //////////////////////////////////////////////////////////////////////////////
 // Integer.c
 //////////////////////////////////////////////////////////////////////////////
-void init1_Integer();
-void init2_Integer();
+void init1_Integer(void);
+void init2_Integer(void);
 #define int64_to_val(a) pack_int64(a)
 #define val_to_int64(v)  ({ obj_verify(v, klass_Integer); unpack_int64(v); })
 int64 val_to_int64_soft(Value v);
@@ -429,8 +429,8 @@ typedef struct {
 //////////////////////////////////////////////////////////////////////////////
 // Object.c
 //////////////////////////////////////////////////////////////////////////////
-void init1_Object();
-void init2_Object();
+void init1_Object(void);
+void init2_Object(void);
 
 //////////////////////////////////////////////////////////////////////////////
 // Range.c

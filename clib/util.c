@@ -28,7 +28,7 @@ void err_throw(Error* e, const char* format, ...)
 
 static bool fatal_initialized = false;
 static SArray fatal_stack;
-static void fatal_init()
+static void fatal_init(void)
 {
   if (not fatal_initialized) {
     sarray_init(&fatal_stack);
@@ -63,7 +63,7 @@ void fatal_vthrow(const char* format, va_list ap)
 {
   fatal_init();
 
-  for (int i = 0; i < fatal_stack.size; i++){
+  for (uint i = 0; i < fatal_stack.size; i++){
     const char* s = (const char*) sarray_get_ptr(&fatal_stack, i);
     if (i == 0) fprintf(stderr, " ERROR: %s:\n", s);
            else fprintf(stderr, "        %s:\n", s);
@@ -86,11 +86,11 @@ void fatal_throw(const char* format, ...)
   fatal_vthrow(format, ap);
 }
 
-void fatal_vwarn(const char* format, va_list ap)
+static void fatal_vwarn(const char* format, va_list ap)
 {
   fatal_init();
 
-  for (int i = 0; i < fatal_stack.size; i++){
+  for (uint i = 0; i < fatal_stack.size; i++){
     const char* s = (const char*) sarray_get_ptr(&fatal_stack, i);
     if (i == 0) fprintf(stderr, " WARN: %s:\n", s);
            else fprintf(stderr, "       %s:\n", s);

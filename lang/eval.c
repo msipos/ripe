@@ -47,7 +47,7 @@ static const char* eval_expr_list(Node* expr_list, bool first_comma)
   assert(expr_list->type == EXPR_LIST);
   StringBuf sb_temp;
   sbuf_init(&sb_temp, "");
-  for (int i = 0; i < expr_list->children.size; i++){
+  for (uint i = 0; i < expr_list->children.size; i++){
     if (i == 0 and not first_comma){
       sbuf_printf(&sb_temp, 
                   "%s", 
@@ -445,7 +445,7 @@ EE* eval_expr(Node* expr)
                                         context_block->func_name,
                                         node_num_children(param_list),
                                         context_block->closure_names.size);
-      for (int i = 0; i < context_block->closure_names.size; i++){
+      for (uint i = 0; i < context_block->closure_names.size; i++){
         const char* evaluated = sarray_get_ptr(&(context_block->closure_exprs),
                                                i);
         result = mem_asprintf("%s, %s", result, evaluated);

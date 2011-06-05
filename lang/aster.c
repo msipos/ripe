@@ -32,7 +32,7 @@ static bool bad_params(Node* n)
 
 static void aster_process_r(Node* ast, Aster* aster)
 {
-  for (int i = 0; i < ast->children.size; i++){
+  for (unsigned int i = 0; i < ast->children.size; i++){
     Node* n = node_get_child(ast, i);
     switch(n->type){
     case FUNCTION:

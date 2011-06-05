@@ -28,7 +28,7 @@ void klass_init()
 
 void klass_dump()
 {
-  for (int i = 0; i < klasses.size; i++){
+  for (uint i = 0; i < klasses.size; i++){
     Klass* klass = array_get(&klasses, Klass*, i);
     printf("%p %s %d\n", klass, dsym_reverse_get(klass->name), klass->obj_size);
   }
@@ -113,7 +113,7 @@ void klass_new_method(Klass* klass, Value name, Value method)
 
 void klass_init_phase15()
 {
-  for (int i = 0; i < klasses.size; i++){
+  for (uint i = 0; i < klasses.size; i++){
     Klass* klass = array_get(&klasses, Klass*, i);
     if (klass->cdata_size > 0 and klass->num_fields > 0){
       exc_raise("class '%s' has both cdata and fields", dsym_reverse_get(klass->name));
@@ -138,6 +138,7 @@ Value obj_new(Klass* klass, void** data)
   *((Klass**) obj) = klass;
   return pack_ptr(obj);
 }
+
 Value obj_new2(Klass* klass)
 {
   void* obj = mem_malloc(klass->obj_size);
@@ -147,7 +148,7 @@ Value obj_new2(Klass* klass)
 
 void obj_destroy(Value obj)
 {
-  if ((obj & MASK_TAIL) == 0){
+  if ((obj & MASK_TAIL) == 0){ // Only destroy objects (not direct values)
     Klass* klass = obj_klass(obj);
     
     // Call destructor if it exists

@@ -16,9 +16,9 @@
 // Error handling
 jmp_buf jb;
 char* json_error_text;
-static void json_error(int error, char* format, ...) ATTR_NORETURN;
+static void json_error(int error, const char* format, ...) ATTR_NORETURN;
 
-static void json_error(int error, char* format, ...)
+static void json_error(int error, const char* format, ...)
 {
   va_list ap;
   va_start (ap, format);
@@ -141,7 +141,7 @@ static int json_lex(char* input, int* cur, json_token_info* tok_info)
   }
 }
 
-void json_parse2(char* input)
+static void json_parse2(char* input)
 {
   int c = 0;
   json_token_info tok_info;
@@ -171,13 +171,13 @@ void json_parse2(char* input)
   }
 }
 
-int peek_type(char* input, int c)
+static int peek_type(char* input, int c)
 {
   json_token_info tok_info;
   return json_lex(input, &c, &tok_info);
 }
 
-Value json_parse_r(char* input, int* c)
+static Value json_parse_r(char* input, int* c)
 {
   json_token_info tok_info;
   int tok = json_lex(input, c, &tok_info);

@@ -19,7 +19,7 @@
 const char* cflags = "";
 const char* lflags = "";
 
-void bootstrap(const char* out_filename, int arg1, int argc, char* const* argv)
+static void bootstrap(const char* out_filename, int arg1, int argc, char* const* argv)
 {
   Array asts, objs, ast_filenames;
   array_init(&asts, Node*);
@@ -57,7 +57,7 @@ void bootstrap(const char* out_filename, int arg1, int argc, char* const* argv)
 
   genist_run();
 
-  for (int i = 0; i < asts.size; i++){
+  for (uint i = 0; i < asts.size; i++){
     Node* ast = array_get(&asts, Node*, i);
     const char* arg = array_get(&ast_filenames, const char*, i);
 
@@ -65,7 +65,7 @@ void bootstrap(const char* out_filename, int arg1, int argc, char* const* argv)
   }
 
   // Now generate ASTs into dump objects.
-  for (int i = 0; i < asts.size; i++){
+  for (uint i = 0; i < asts.size; i++){
     Node* ast = array_get(&asts, Node*, i);
     const char* arg = array_get(&ast_filenames, const char*, i);
 
@@ -95,8 +95,8 @@ void bootstrap(const char* out_filename, int arg1, int argc, char* const* argv)
   remove(tmp_c_path);
 
   // Finally compile into the output file
-  char* objs_txt = "";
-  for (int i = 0; i < objs.size; i++){
+  const char* objs_txt = "";
+  for (uint i = 0; i < objs.size; i++){
     const char* o_path = array_get(&objs, const char*, i);
     objs_txt = mem_asprintf("%s %s", objs_txt, o_path);
   }

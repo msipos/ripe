@@ -81,7 +81,7 @@ Value array1_pop(Array1* a)
   if (a->size == 0)
     exc_raise("pop() from an empty array");
 
-  int64 size = a->size - 1;
+  uint64 size = a->size - 1;
   Value rv = a->data[size];
   if (size*4 < a->alloc_size){
     a->alloc_size /= 2;
@@ -94,7 +94,7 @@ Value array1_pop(Array1* a)
 
 void array1_push(Array1* a, Value val)
 {
-  int64 size = a->size + 1;
+  uint64 size = a->size + 1;
   a->size = size;
   if (size > a->alloc_size) {
     a->alloc_size *= 2;

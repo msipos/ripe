@@ -108,12 +108,12 @@ char* format_to_string(const char* fstr, uint64 num_values, Value* values)
         break;
       case FORMAT_NUMBER:
         {
-          int64 n = fp.elements[i].number-1;
+          int n = fp.elements[i].number-1;
 
           if (n < 0){
             exc_raise("0 or negative argument to format '%s'", fstr);
           }
-          if (n >= num_values){
+          if ((uint) n >= num_values){
             exc_raise("not enough arguments to format '%s' (looked for "
                       "argument %"PRId64" but have %"PRId64" arguments)",
                       fstr, n+1, num_values);

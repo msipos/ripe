@@ -192,7 +192,7 @@ uint32 hash_bytes(const char * data, int len);
   char* mem_strdup2(const char* s);
   #define mem_deinit2()
 #endif
-char* mem_asprintf2(char* format, ...);
+char* mem_asprintf2(const char* format, ...);
 
 #ifdef MEMLOG
   extern FILE* f_memlog;
@@ -275,8 +275,8 @@ char* mem_strndup(const char* s, uint64 n);
 ///////////////////////////////////////////////////////////////////////
 
 bool path_exists(const char* filename);
-const char* path_get_app_dir();
-const char* path_get_temp_dir();
+const char* path_get_app_dir(void);
+const char* path_get_temp_dir(void);
 const char* path_temp_name(const char* prefix, const char* suffix);
 
 ///////////////////////////////////////////////////////////////////////
@@ -309,8 +309,8 @@ typedef union {
 
 // Simplified data structures
 typedef struct {
-  int size;
-  int alloc_size;
+  uint size;
+  uint alloc_size;
   SElement* data;
 } SArray;
 
@@ -372,7 +372,7 @@ void slog(const char* format, ...);
 #define slog(...)
 #endif
 void fatal_push(const char* format, ...);
-void fatal_pop();
+void fatal_pop(void);
 void fatal_throw(const char* format, ...) __attribute__ ((noreturn));
 void fatal_vthrow(const char* format, va_list ap) __attribute__ ((noreturn));
 void fatal_warn(const char* format, ...);

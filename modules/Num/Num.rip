@@ -34,7 +34,7 @@ namespace Num
       $ int64 x = unpack_int64(__x);
         uint64 size = @a.size;
 
-        if (x < 1 or x > size){
+        if (x < 1 or (uint64) x > size){
           exc_raise("invalid index (%"PRId64") in array of "
                     "size (%"PRIu64")", x, size);
         }
@@ -51,7 +51,7 @@ namespace Num
       $ int64 x = unpack_int64(__x);
         uint64 size = @a.size;
 
-        if (x < 1 or x > size){
+        if (x < 1 or (uint64) x > size){
           exc_raise("invalid index (%"PRId64") in array of "
                     "size (%"PRIu64")", x, size);
         }
@@ -147,7 +147,7 @@ namespace Num
         uint64 size_x = @a.size_x;
         uint64 size_y = @a.size_y;
 
-        if (x < 1 or y < 1 or x > size_x or y > size_y){
+        if (x < 1 or y < 1 or (uint64) x > size_x or (uint64) y > size_y){
           exc_raise("invalid index (%"PRId64", %"PRId64") in array of "
                     "size (%"PRIu64" x %"PRIu64")", x, y, size_x, size_y);
         }
@@ -171,7 +171,7 @@ namespace Num
         uint64 size_x = @a.size_x;
         uint64 size_y = @a.size_y;
 
-        if (x < 1 or y < 1 or x > size_x or y > size_y){
+        if (x < 1 or y < 1 or (uint64) x > size_x or (uint64) y > size_y){
           exc_raise("invalid index (%"PRId64", %"PRId64") in array of "
                     "size (%"PRIu64" x %"PRIu64")", x, y, size_x, size_y);
         }

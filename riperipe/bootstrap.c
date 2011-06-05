@@ -1,7 +1,12 @@
-void init1a_User();
-void init1b_User();
-void init2_User();
-void init3_User();
+void init1a_User(void);
+void init1b_User(void);
+void init2_User(void);
+void init3_User(void);
+
+void ripe_module1a(void);
+void ripe_module1b(void);
+void ripe_module2(void);
+void ripe_module3(void);
 
 void ripe_module1a()
 {

@@ -84,7 +84,7 @@ class Map
 class MapIterator
   $
     HashTable* ht;
-    int64 cur;
+    uint64 cur;
   $
   new(map) | constructor
     $

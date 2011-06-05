@@ -9,7 +9,7 @@
 
   // Buffer for start conditions in the lexer
   // These are implemented in build-tree.c but they are needed here.
-  void buf_reset();
+  void buf_reset(void);
   void buf_cat(const char* text);
 %}
 

@@ -35,7 +35,7 @@ namespace Sdl
         $
           int64 color = val_to_int64(__color);
           SDL_Surface** psurf = obj_c_data(__surf);
-          SDL_Color sdl_color = {RED(color), GREEN(color), BLUE(color)};
+          SDL_Color sdl_color = {RED(color), GREEN(color), BLUE(color), 0};
           *psurf = TTF_RenderText_Blended(@f, val_to_string(__text), sdl_color);
           if (!(*psurf)){
             exc_raise("failed to render string '%s'", val_to_string(__text));

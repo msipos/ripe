@@ -26,7 +26,7 @@ typedef struct {
   int type;
   Klass* exc_type;
   char jb[sizeof(jmp_buf)];
-  char* annotation;
+  const char* annotation;
 } Element;
 
 #define STACK_SIZE 2000
@@ -75,7 +75,7 @@ void stack_pop()
   stack_idx--;
 }
 
-void stack_annot_push(char* annotation)
+void stack_annot_push(const char* annotation)
 {
   stack[stack_idx].type = TYPE_ANNOT;
   stack[stack_idx].annotation = annotation;
@@ -173,7 +173,7 @@ void stack_continue_unwinding()
   exit(1);
 }
 
-void exc_raise(char* format, ...)
+void exc_raise(const char* format, ...)
 {
   va_list ap;
   va_start (ap, format);

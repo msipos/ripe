@@ -78,7 +78,7 @@ const char* c_template =
 
 const char* h_template = "Value op_%s(Value a, Value b);\n";
 
-void func_numeric_numeric(const char* name, const char* op){
+static void func_numeric_numeric(const char* name, const char* op){
   printf(c_template,
          name, name,
          name,
@@ -90,7 +90,7 @@ void func_numeric_numeric(const char* name, const char* op){
          op);
 }
 
-void func_bool_numeric(const char* name, const char* op){
+static void func_bool_numeric(const char* name, const char* op){
   printf(c_template,
          name, name,
          name,
@@ -102,12 +102,12 @@ void func_bool_numeric(const char* name, const char* op){
          op);
 }
 
-void func_int_int(const char* name, const char* op)
+static void func_int_int(const char* name, const char* op)
 {
   printf(c_template_int, name, name, name, op, name);
 }
 
-void gen_c()
+static void gen_c(void)
 {
   printf("// ops-generated source file\n\n");
 
@@ -126,7 +126,7 @@ void gen_c()
   func_int_int("modulo", "%");
 }
 
-void gen_h()
+static void gen_h(void)
 {
   printf("// ops-generated header file\n\n");
 

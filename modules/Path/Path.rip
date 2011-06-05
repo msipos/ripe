@@ -59,7 +59,7 @@ namespace Path
     $
       char* s = val_to_string(__name);
       int64 n = 0;
-      char* ext = strrchr(s, '.');
+      const char* ext = strrchr(s, '.');
       char* sep = strrchr(s, '/');
       if (ext == NULL or sep > ext){
         ext = "";

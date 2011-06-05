@@ -16,7 +16,9 @@ def load_conf():
     if conf["LD"] == "ld":
         conf["LFLAGS"] = ["-lm"]
     if conf["CC"] == "gcc":
-        conf["CFLAGS"] = ["-Wall", "-Wfatal-errors", "-std=gnu99", "-I.",
+        conf["CFLAGS"] = ["-Wstrict-prototypes", "-Wmissing-prototypes", 
+                          "-Wmissing-declarations",  "-Wwrite-strings", "-Wextra", 
+                          "-Wundef", "-Wall", "-Wfatal-errors", "-std=gnu99", "-I.",
                           "-Wno-unused"]
     return conf
 

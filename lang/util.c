@@ -103,6 +103,7 @@ const char* util_signature(const char* ripe_name)
   sbuf_init(&sb, "");
   sbuf_printf(&sb, "Value %s(", fi->c_name);
 
+  if (fi->num_params == 0) sbuf_printf(&sb, "void");
   for (int i = 0; i < fi->num_params; i++){
     sbuf_printf(&sb, "Value %s", util_c_name(fi->param_names[i]));
     if (i != fi->num_params - 1){

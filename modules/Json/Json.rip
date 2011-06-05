@@ -16,7 +16,7 @@ namespace Json
       Value v = json_parse(val_to_string(__s), &error, &error_text);
       if (error){
     $
-    raise Json.Error.new("parsing error: '{}'".f($ string_to_val(error_text) $))
+    raise Json.Error.new("JSON parsing error: '{}'".f($ string_to_val(error_text) $))
     $
       }
     $

@@ -16,13 +16,13 @@
 #include "vm/vm.h"
 
 // Prototype for module initializers
-void ripe_module1a();
-void ripe_module1b();
-void ripe_module2();
-void ripe_module3();
+void ripe_module1a(void);
+void ripe_module1b(void);
+void ripe_module2(void);
+void ripe_module3(void);
 
 // Prototype for Main
-Value ripe_main();
+Value ripe_main(void);
 
 int main(int argc, char** argv)
 {

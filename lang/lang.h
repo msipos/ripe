@@ -58,8 +58,8 @@ void node_draw(Node* ast);
 Node* node_new_id(const char* id);
 Node* node_new_int(int64 i);
 Node* node_new_expr_index1(Node* left, Node* index);
-Node* node_new_expr_list();
-Node* node_new_field_call(Node* callee, char* field_name, int64 num, ...);
+Node* node_new_expr_list(void);
+Node* node_new_field_call(Node* callee, const char* field_name, int64 num, ...);
 Node* node_new_type(const char* type);
 
 //////////////////////////////////////////////////////////////////////////////
@@ -169,7 +169,7 @@ typedef struct {
   int genist_marker;        // Initialize to GENIST_UNVISITED
 } ClassInfo;
 
-void stran_init();
+void stran_init(void);
 // Returns non-zero for error. (see stran_error.text)
 void stran_absorb_ast(Node* ast, const char* filename);
 void stran_absorb_file(const char* filename);
@@ -187,7 +187,7 @@ void stran_add_class_method(const char* class_name, const char* name,
                             FuncInfo* fi, FunctionType type);
 void stran_add_class_property(const char* class_name, const char* name);
 
-Dict* stran_get_classes(); // Used by genist.
+Dict* stran_get_classes(void); // Used by genist.
 
 //////////////////////////////////////////////////////////////////////////////
 // lang/proc.c
@@ -199,7 +199,7 @@ void proc_process_ast(Node* ast, const char* filename);
 // lang/cache.c
 //////////////////////////////////////////////////////////////////////////////
 
-void cache_init();
+void cache_init(void);
 void cache_prototype(const char* ripe_name);
 const char* cache_dsym(const char* symbol);
 const char* cache_type(const char* type);
@@ -209,6 +209,10 @@ void cache_global_prototype(const char* global);
 // lang/build-tree.c
 //////////////////////////////////////////////////////////////////////////////
 
+// Used by the scanner.l
+void buf_reset(void);
+void buf_cat(const char* text);
+
 // Parse the given file.
 Node* build_tree(RipeInput* in);
 
@@ -216,8 +220,8 @@ Node* build_tree(RipeInput* in);
 #define YYSTYPE Node*
 extern Node* rc_result;
 void rc_error(const char*s);
-int rc_parse();
-int rc_lex();
+int rc_parse(void);
+int rc_lex(void);
 int input_read(char* buf, int max_size); // Used by flex to do reading
 
 // Types of AST nonterminal nodes:
@@ -316,7 +320,7 @@ const char* eval_index(Node* self, Node* idx, Node* assign);
 // lang/generator.c
 //////////////////////////////////////////////////////////////////////////////
 
-void genist_run();
+void genist_run(void);
 
 //////////////////////////////////////////////////////////////////////////////
 // lang/generator.c
@@ -357,14 +361,14 @@ const char* binary_op_map(int type);
 #define STACKER_FINALLY 4
 #define STACKER_CATCH   5
 
-void stacker_init();
+void stacker_init(void);
 // Return a unique label.
-const char* stacker_label();
+const char* stacker_label(void);
 void stacker_push(int type, const char* break_label, const char* continue_label);
 const char* stacker_break(int num);
 const char* stacker_continue(int num);
-void stacker_pop();
-int stacker_size();
+void stacker_pop(void);
+int stacker_size(void);
 
 //////////////////////////////////////////////////////////////////////////////
 // lang/util.c
@@ -386,14 +390,14 @@ bool annot_check(Node* annot_list, int num, ...);
 bool annot_has(Node* annot_list, const char* s);
 const char* annot_get(Node* annot_list, const char* key);
 const char* annot_get_full(Node* annot_list, const char* key, int num);
-void lang_init();
+void lang_init(void);
 
 //////////////////////////////////////////////////////////////////////////////
 // lang/var.c
 //////////////////////////////////////////////////////////////////////////////
-void var_init();
-void var_push();
-void var_pop();
+void var_init(void);
+void var_push(void);
+void var_pop(void);
 void var_add_local(const char* ripe_name, const char* c_name, const char* type);
 void var_add_local2(const char* ripe_name, const char* c_name, 
                     const char* type, int kind);
@@ -416,7 +420,7 @@ int var_query_kind(const char* ripe_name);
 #define WR_CODE    5
 #define WR_HEADER  6
 
-void wr_init();
+void wr_init(void);
 void wr_print(int destination, const char* format, ...);
 const char* wr_dump(const char* module_name);
 

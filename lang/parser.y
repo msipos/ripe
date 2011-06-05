@@ -22,7 +22,7 @@
 %{
   #include "lang/lang.h"
 
-  Node* operator(Node* a, Node* op, Node* b)
+  static Node* operator(Node* a, Node* op, Node* b)
   {
     node_add_child(op, a);
     node_add_child(op, b);

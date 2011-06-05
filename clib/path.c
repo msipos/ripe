@@ -33,7 +33,7 @@ bool path_exists(const char* filename)
 const char* path_get_app_dir()
 {
   char buf[1024];
-  size_t len;
+  ssize_t len;
   if ((len = readlink("/proc/self/exe", buf, 1024)) != -1){
     buf[len] = 0; // readlink does not terminate buf with 0
     char* slash = strrchr(buf, SEPARATOR);

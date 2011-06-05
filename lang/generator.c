@@ -80,7 +80,7 @@ const char* closure_add(const char* name, const char* evaluated)
 {
   assert(context_block != NULL);
   
-  for (int i = 0; i < context_block->closure_names.size; i++){
+  for (uint i = 0; i < context_block->closure_names.size; i++){
     const char* n = sarray_get_ptr(&(context_block->closure_names), i);
     if (strequal(name, n)){
       return mem_asprintf("_c_data->block_data[%d]", i);
@@ -472,7 +472,7 @@ const char* gen_block(Node* block)
       // The following code generates this structure:
       Node* try = node_get_child(block, itry);
       Node* other = node_get_child(block, itry+1);
-      int inext = itry+2;
+      uint inext = itry+2;
       for(;;){
         // Combine try_block + other into try_block:
         Node* new_block = node_new(STMT_LIST);
@@ -545,6 +545,10 @@ static void gen_code(Node* n, const char* name)
   context_fi = stran_get_function(name);
   fatal_push("while compiling function '%s'", name);
 
+  // Write prototype
+  wr_print(WR_HEADER, "%s;\n", util_signature(name));
+  
+  // Write code
   wr_print(WR_CODE, "%s\n{\n", util_signature(name));
   wr_print(WR_CODE, "  stack_annot_push(\"%s\");\n", name);
   Node* stmt_list = node_get_node(n, "stmt_list");

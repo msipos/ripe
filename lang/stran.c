@@ -50,7 +50,7 @@ static const char* stran_param(Node* param)
   }
 }
 
-static ClassInfo* class_info_new()
+static ClassInfo* class_info_new(void)
 {
   ClassInfo* ci = mem_new(ClassInfo);
   ci->num_props = 0;
