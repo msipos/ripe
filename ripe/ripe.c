@@ -36,7 +36,7 @@ static void bootstrap(const char* out_filename, int arg1, int argc, char* const*
       fatal_pop();
 
       fatal_push("while building AST for '%s'", arg);
-      Node* ast = build_tree(&input);
+      Node* ast = build_tree(&input, PARSE_PROGRAM);
       fatal_pop();
 
       array_append(&asts, ast);
@@ -70,6 +70,8 @@ static void bootstrap(const char* out_filename, int arg1, int argc, char* const*
     const char* arg = array_get(&ast_filenames, const char*, i);
 
     fatal_push("while generating code in '%s'", arg);
+
+    tree_morph(ast);
     generate(ast, arg);
     fatal_pop();
   }

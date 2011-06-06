@@ -14,7 +14,7 @@ class Node
     Fatal.push("while building AST of '{}'".f(filename))
     $ RipeInput input;
       input_from_file(&input, val_to_string(__filename));
-      @n = build_tree(&input); $
+      @n = build_tree(&input, PARSE_PROGRAM); $
     Fatal.pop()
 
   ptr() | virtual_get

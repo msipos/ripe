@@ -84,6 +84,7 @@ void array_delete(Array* arr);
 #define array_data(arr, T)          ((T*) (arr)->data)
 #define array_get(arr, T, i)        (((T *) (arr)->data)[i])
 void array_get2(Array* arr, void* dest, int i);
+void array_set2(Array* arr, void* src, int i);
 #define array_append(arr, value)  { array_expand(arr); \
                                     ((typeof(value) *) (arr)->data)[(arr)->size] = value; \
                                     (arr)->size++; }

@@ -124,6 +124,7 @@ lang_srcs = [ 'lang/astnode.c',
               'lang/proc.c',
               'lang/stran.c',
               'lang/stacker.c',
+              'lang/tree-morph.c',
               'lang/util.c',
               'lang/var.c',
               'lang/writer.c' ]

@@ -24,6 +24,7 @@ RipeInput* input;
 int input_lineno;
 int cur_line1, cur_line2;
 int input_colno;
+ParsingMode parsing_mode;
 
 int input_read(char* buf, int max_size)
 {
@@ -165,6 +166,20 @@ static int lex_read_line(void)
 // Bison calls this.
 int rc_lex(void)
 {
+  // Handle first token.
+  switch (parsing_mode){
+    case PARSE_PROGRAM:
+      rc_lval = node_new(CHOICE_PROGRAM);
+      parsing_mode = PARSE_PROCESSING;
+      return CHOICE_PROGRAM;
+    case PARSE_EXPR:
+      break;
+    case PARSE_PROCESSING:
+      // Moving on.
+      break;
+  }
+  
+  // Otherwise, move on to rest of the tokens.
   if (next_token == line.size){
     // We must read another line and populate the line array.
     array_clear(&line);
@@ -278,11 +293,12 @@ static const char* dump_current_line()
 Node* rc_result;
 #include <errno.h>
 const char* build_tree_error;
-Node* build_tree(RipeInput* in)
+Node* build_tree(RipeInput* in, ParsingMode mode)
 {
   input = in;
   input_lineno = 1;
   input_colno = 1;
+  parsing_mode = mode;
   lex_init();
   rc_parse();
 

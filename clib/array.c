@@ -60,6 +60,14 @@ void array_get2(Array* arr, void* dest, int i)
   memmove(dest, arr->data + i*arr->el_size, arr->el_size);
 }
 
+void array_set2(Array* arr, void* src, int i)
+{
+  assert(i >= 0);
+  assert(i < arr->size);
+
+  memmove(arr->data + i*arr->el_size, src, arr->el_size);
+}
+
 void array_prepend(Array* arr, uint sz, void* el)
 {
   array_expand(arr);

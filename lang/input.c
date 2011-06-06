@@ -38,3 +38,11 @@ void input_from_file(RipeInput* input, const char* filename)
   }
   fclose(f);
 }
+
+void input_from_string(RipeInput* input, const char* filename, const char* str)
+{
+  input->filename = filename;
+  array_init(&(input->lines), char*);
+  char* s = mem_strdup(str);
+  array_append2(&(input->lines), &s);
+}

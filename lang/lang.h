@@ -105,6 +105,7 @@ typedef struct {
   Array lines;
 } RipeInput;
 void input_from_file(RipeInput* input, const char* filename);
+void input_from_string(RipeInput* input, const char* filename, const char* str);
 
 //////////////////////////////////////////////////////////////////////////////
 // lang/pp.c
@@ -214,7 +215,12 @@ void buf_reset(void);
 void buf_cat(const char* text);
 
 // Parse the given file.
-Node* build_tree(RipeInput* in);
+typedef enum {
+  PARSE_PROGRAM,     // Ast = program
+  PARSE_EXPR,        // Ast = single expressions
+  PARSE_PROCESSING   // Internally used by build-tree.c
+} ParsingMode;
+Node* build_tree(RipeInput* in, ParsingMode mode);
 
 // Interface to bison & flex
 #define YYSTYPE Node*
@@ -289,6 +295,11 @@ int input_read(char* buf, int max_size); // Used by flex to do reading
 
 #include "lang/parser.h"
 #include "lang/scanner.h"
+
+//////////////////////////////////////////////////////////////////////////////
+// lang/tree-morph.c
+//////////////////////////////////////////////////////////////////////////////
+void tree_morph(Node* ast);
 
 //////////////////////////////////////////////////////////////////////////////
 // lang/eval.c
