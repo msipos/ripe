@@ -345,6 +345,13 @@ main()
   i = i.pack(1, 4, 0)
   Test.test("integer bitfield packing", i, 16)
 
+  i = 0
+  Test.test("integer set_bit", 4, i.set_bit(3))
+  i = 4
+  Test.test("integer remove_bit", 0, i.remove_bit(3))
+  i = 9
+  Test.test("integer get_bit", true, i.get_bit(4))
+
   # Special values of Double's
   inf = Math.INF; Test.test("positive infinity", inf.to_string(), "inf");
   ninf = Math.NINF; Test.test("negative infinity", ninf.to_string(), "-inf");

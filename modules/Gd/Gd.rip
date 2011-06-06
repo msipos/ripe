@@ -59,6 +59,15 @@ namespace Gd
       $
       return $ int64_to_val(bw) $
 
+    line_rgb(x1, y1, x2, y2, r, g, b)
+      $ int color = gdImageColorAllocate(@image,
+                                         val_to_int64(__r),
+                                         val_to_int64(__g),
+                                         val_to_int64(__b));
+        gdImageLine(@image, val_to_int64(__x1)-1, val_to_int64(__y1)-1,
+                            val_to_int64(__x2)-1, val_to_int64(__y2)-1,
+                            color); $
+
     filled_rectangle_rgb(x1, y1, x2, y2, r, g, b)
       $
         int color = gdImageColorAllocate(@image,

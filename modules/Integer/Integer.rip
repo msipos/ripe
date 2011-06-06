@@ -94,3 +94,34 @@ class Integer
       self = self & (~mask);
       self = self | ((unpack_int64(__i) << loc) & mask); $
     return $ pack_int64(self) $
+  
+  get_bit(Integer loc)
+    $ int64 loc = unpack_int64(__loc);
+      if (loc < 1 or loc > 62){
+        exc_raise("invalid loc(%"PRId64") in bitfield", loc);
+      }
+      loc--;
+      int64 self = unpack_int64(__self);
+      int64 mask = 1 << loc; $
+    return $ pack_bool(self & mask) $
+  
+  set_bit(Integer loc)
+    $ int64 loc = unpack_int64(__loc);
+      if (loc < 1 or loc > 62){
+        exc_raise("invalid loc(%"PRId64") in bitfield", loc);
+      }
+      loc--;
+      int64 self = unpack_int64(__self);
+      int64 mask = 1 << loc; $
+    return $ pack_int64(self | mask) $
+  
+  remove_bit(Integer loc)
+    $ int64 loc = unpack_int64(__loc);
+      if (loc < 1 or loc > 62){
+        exc_raise("invalid loc(%"PRId64") in bitfield", loc);
+      }
+      loc--;
+      uint64 self = (uint64) unpack_int64(__self);
+      int64 mask = 1 << loc; $
+    return $ pack_int64(self & (~mask)) $
+
