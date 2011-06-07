@@ -299,6 +299,9 @@ main()
   Test.test("Integer.odd?", 8 .odd?(), false)
   Test.test("Integer.even?", 7 .even?(), false)
   Test.test("Integer.even?", 8 .even?(), true)
+  Test.test("Integer.to_string", 13.to_string(2, 0), "1101")
+  Test.test("Integer.to_string", 32.to_string(2, 0), "100000")
+  Test.test("Integer.to_string", 32.to_string(2, 8), "00100000")
 
   # Tally results
   arr = Test.get_results()

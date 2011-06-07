@@ -34,6 +34,41 @@ class Integer
       sprintf(buf, "%"PRId64, unpack_int64(__self)); $
     return $ string_to_val(buf) $
 
+  to_string(Integer base, Integer pad_width)
+    out = nil
+    switch base
+      case 10
+        out = self.to_s()
+      case 2
+        $ char buf[70];
+          char* s = buf;
+          uint64 self = (uint64) unpack_int64(__self);
+          uint64 fl = ((uint64) 1) << 61;
+
+          bool started = false;
+          while (fl != 0){
+            if (fl & self) {
+              *s = '1';
+              s++;
+              started = true;
+            } else {
+              if (started) {
+                *s = '0';
+                s++;
+              }
+            }
+            fl = fl >> 1;
+          }
+          *s = 0; $
+        out = $ string_to_val(buf) $
+      else
+        raise Error.new("Invalid base")
+    loop
+      if out.size < pad_width
+        out = "0" + out
+      else
+        return out
+
   #$ rdoc-name Integer.odd?
   #$ rdoc-header Integer.odd?()
   #$ Returns true if Integer is odd.
@@ -94,7 +129,7 @@ class Integer
       self = self & (~mask);
       self = self | ((unpack_int64(__i) << loc) & mask); $
     return $ pack_int64(self) $
-  
+
   get_bit(Integer loc)
     $ int64 loc = unpack_int64(__loc);
       if (loc < 1 or loc > 62){
@@ -104,7 +139,7 @@ class Integer
       int64 self = unpack_int64(__self);
       int64 mask = 1 << loc; $
     return $ pack_bool(self & mask) $
-  
+
   set_bit(Integer loc)
     $ int64 loc = unpack_int64(__loc);
       if (loc < 1 or loc > 62){
@@ -114,7 +149,7 @@ class Integer
       int64 self = unpack_int64(__self);
       int64 mask = 1 << loc; $
     return $ pack_int64(self | mask) $
-  
+
   remove_bit(Integer loc)
     $ int64 loc = unpack_int64(__loc);
       if (loc < 1 or loc > 62){
@@ -124,4 +159,3 @@ class Integer
       uint64 self = (uint64) unpack_int64(__self);
       int64 mask = 1 << loc; $
     return $ pack_int64(self & (~mask)) $
-
