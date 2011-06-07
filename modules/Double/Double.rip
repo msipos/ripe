@@ -31,10 +31,10 @@ Double(arg)
 #$ rdoc-header Double
 #$ A class for a floating point number.
 class Double
-  #$ rdoc-name Double.to_string
-  #$ rdoc-header Double.to_string()
+  #$ rdoc-name Double.to_s
+  #$ rdoc-header Double.to_s()
   #$ Returns the string representation of the number.
-  to_string()
+  to_s()
     $ char buf[128];
       sprintf(buf, "%.12f", unpack_double(__self)); $
     return $ string_to_val(buf) $

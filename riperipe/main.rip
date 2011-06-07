@@ -128,7 +128,7 @@ go_dump(files)
 
   out = StringBuf.new()
   dump("User", out)
-  Out.println(out.to_string())
+  Out.println(out.to_s())
 
 go_bootstrap(files, outfile)
   asts, rips, objs = go_standard(files)

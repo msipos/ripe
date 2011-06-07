@@ -29,7 +29,7 @@ void init1_Object(){
   klass_object = klass_new(dsym_get("Object"),
                            0);
   klass_new_method(klass_object,
-                   dsym_get("to_string"),
+                   dsym_get("to_s"),
                    func1_to_val(ripe_to_string));
 }
 

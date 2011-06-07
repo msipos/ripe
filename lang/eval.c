@@ -143,7 +143,7 @@ const char* eval_index(Node* self, Node* idx, Node* assign)
 
 // Attempt to evaluate the expression as an identifier with dots, otherwise
 // return NULL.
-// I.e. Std.println would evaluate and return "Std.println", but (1+1).to_string
+// I.e. Std.println would evaluate and return "Std.println", but (1+1).to_s
 // would not.
 static const char* eval_expr_as_id(Node* expr)
 {

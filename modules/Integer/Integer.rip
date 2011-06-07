@@ -29,7 +29,7 @@ Integer(arg)
 #$ rdoc-header Integer
 #$ Class for an Integer datatype.
 class Integer
-  to_string()
+  to_s()
     $ char buf[128];
       sprintf(buf, "%"PRId64, unpack_int64(__self)); $
     return $ string_to_val(buf) $

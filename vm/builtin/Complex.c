@@ -131,7 +131,7 @@ void init1_Complex()
                         func1_to_val(ripe_complex_get_real));
   klass_new_method(klass_Complex, dsym_get("get_imag"),
                         func1_to_val(ripe_complex_get_imag));
-  klass_new_method(klass_Complex, dsym_get("to_string"),
+  klass_new_method(klass_Complex, dsym_get("to_s"),
                         func1_to_val(ripe_complex_to_string));
   klass_new_method(klass_Complex, dsym_get("__slash"),
                         func2_to_val(ripe_complex_slash));

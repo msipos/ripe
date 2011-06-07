@@ -49,10 +49,10 @@ class Map
       ht_set2(&(@ht), __key, __value);
     $
 
-  #$ rdoc-name Map.to_string
-  #$ rdoc-header Map.to_string()
+  #$ rdoc-name Map.to_s
+  #$ rdoc-header Map.to_s()
   #$ Return a human var representation of the Map.
-  to_string()
+  to_s()
     $
       StringBuf sb;
       sbuf_init(&sb, "");

@@ -25,7 +25,7 @@ namespace Json
   encode(obj)
     out = StringBuf.new()
     Json.encode_to_stringbuf(out, obj)
-    return out.to_string()
+    return out.to_s()
 
   encode_to_stringbuf(StringBuf buf, obj)
     if obj is Map
@@ -53,10 +53,10 @@ namespace Json
       buf.print("]")
       return
     if obj is Integer
-      buf.print(obj.to_string())
+      buf.print(obj.to_s())
       return
     if obj is Double
-      buf.print(obj.to_string())
+      buf.print(obj.to_s())
       return
     if obj is String
       buf.print("\"")

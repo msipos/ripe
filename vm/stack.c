@@ -162,8 +162,8 @@ void stack_continue_unwinding()
   }
 
   if (do_to_string){
-    if (method_has(exc_obj, dsym_to_string)){
-      Value vtext = method_call0(exc_obj, dsym_to_string);
+    if (method_has(exc_obj, dsym_to_s)){
+      Value vtext = method_call0(exc_obj, dsym_to_s);
       if (obj_klass(vtext) == klass_String){
         fprintf(stderr, "  object representation: '%s'\n", val_to_string(vtext));
       }

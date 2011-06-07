@@ -141,13 +141,13 @@ operators()
 var var_arr = nil
 
 test_vars1(arg1, *arg2)
-  Test.test("vararg", arg2.to_string(), var_arr.to_string())
+  Test.test("vararg", arg2.to_s(), var_arr.to_s())
 
 test_vars0(*args)
-  Test.test("vararg", args.to_string(), var_arr.to_string())
+  Test.test("vararg", args.to_s(), var_arr.to_s())
 
 test_vars3(arg1, arg2, arg3, *args)
-  Test.test("vararg", args.to_string(), var_arr.to_string())
+  Test.test("vararg", args.to_s(), var_arr.to_s())
 
 vararg()
   var_arr = tuple()
@@ -353,8 +353,8 @@ main()
   Test.test("integer get_bit", true, i.get_bit(4))
 
   # Special values of Double's
-  inf = Math.INF; Test.test("positive infinity", inf.to_string(), "inf");
-  ninf = Math.NINF; Test.test("negative infinity", ninf.to_string(), "-inf");
+  inf = Math.INF; Test.test("positive infinity", inf.to_s(), "inf");
+  ninf = Math.NINF; Test.test("negative infinity", ninf.to_s(), "-inf");
 
   # Embedded expressions in strings
   i = 5

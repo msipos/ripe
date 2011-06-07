@@ -45,10 +45,10 @@ class Set
   remove(key)
     return $ pack_bool(ht_remove(&(@ht), __key)) $
 
-  #$ rdoc-name Set.to_string
-  #$ rdoc-header Set.to_string()
+  #$ rdoc-name Set.to_s
+  #$ rdoc-header Set.to_s()
   #$ Return a string representation of the Set and its contents.
-  to_string()
+  to_s()
     $
       StringBuf sb;
       sbuf_init(&sb, "");

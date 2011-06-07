@@ -92,10 +92,10 @@ class String
       mem_free(@s.str);
       @s.str = mem_strdup(s); $
 
-  #$ rdoc-name String.to_string
-  #$ rdoc-header String.to_string()
+  #$ rdoc-name String.to_s
+  #$ rdoc-header String.to_s()
   #$ Returns self.
-  to_string()
+  to_s()
     return self
 
   #$ rdoc-name String.rotate!
@@ -308,7 +308,7 @@ class String
         exc_raise("attempted to print to a constant string '%s'", @s.str);
       } $
     for arg in args
-      s = arg.to_string()
+      s = arg.to_s()
       $
         const char* arg = val_to_string(__s);
         @s.str = mem_realloc(@s.str, strlen(@s.str) + strlen(arg) + 1);

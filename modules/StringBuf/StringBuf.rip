@@ -26,5 +26,5 @@ class StringBuf
     self.print(obj)
     self.print("\n")
 
-  to_string()
+  to_s()
     return $ string_const_to_val(@str) $

@@ -13,7 +13,7 @@ class Range
     Range range;
   $
 
-  to_string()
+  to_s()
     return "%a:%a".f(self.start, self.finish)
 
   #$ rdoc-name Range.get_iter

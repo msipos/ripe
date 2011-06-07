@@ -1,13 +1,13 @@
 class Nil
-  to_string()
+  to_s()
     return "nil"
 
 class Bool
-  to_string()
+  to_s()
     if self
       return "true"
     return "false"
 
 class Eof
-  to_string()
+  to_s()
     return "eof"

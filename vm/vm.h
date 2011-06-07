@@ -48,7 +48,7 @@ extern Value dsym_contains;
 extern Value dsym_destructor;
 extern Value dsym_name;
 extern Value dsym_text;
-extern Value dsym_to_string;
+extern Value dsym_to_s;
 
 //////////////////////////////////////////////////////////////////////////////
 // klass.c

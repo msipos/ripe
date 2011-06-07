@@ -1,7 +1,7 @@
 Map()
   map = { 1 => "one", 2 => "two", 5 => "five" }
   name = "map1"
-  Test.test(name, "Map (1 => one, 2 => two, 5 => five)", map.to_string())
+  Test.test(name, "Map (1 => one, 2 => two, 5 => five)", map.to_s())
   Test.test(name, map[1], "one")
   Test.test(name, map[2], "two")
   Test.test(name, map[5], "five")
@@ -63,9 +63,9 @@ Set()
 arrays()
   name = "arrays"
   my_arr = [1, 2, 3, 4]
-  Test.test(name, my_arr.to_string(), "[1, 2, 3, 4]")
+  Test.test(name, my_arr.to_s(), "[1, 2, 3, 4]")
   my_arr = []
-  Test.test(name, my_arr.to_string(), "[]")
+  Test.test(name, my_arr.to_s(), "[]")
 
   name = "Array3"
   arr = Array3.new_const(100, 200, 300, 0)
@@ -77,22 +77,22 @@ arrays()
   Test.test(name, arr[5, 10, 15], 5*10*15)
   arr = [5, 3, 1, 2, 4]
   arr.sort!()
-  Test.test("Array1.sort!()", arr.to_string(),
-                              [1, 2, 3, 4, 5].to_string())
+  Test.test("Array1.sort!()", arr.to_s(),
+                              [1, 2, 3, 4, 5].to_s())
   arr = ["serbia", "france", "england", "usa", "italy", "japan"]
   arr.sort!()
-  Test.test("Array1.sort!()", arr.to_string(),
-     ["england", "france", "italy", "japan", "serbia", "usa"].to_string())
+  Test.test("Array1.sort!()", arr.to_s(),
+     ["england", "france", "italy", "japan", "serbia", "usa"].to_s())
 
   arr.insert(3, "germany")
   Test.test("Array1.insert()",
-            arr.to_string(),
+            arr.to_s(),
             ["england", "france", "germany", "italy", "japan", "serbia",
-             "usa"].to_string())
+             "usa"].to_s())
 
   arr.remove(2)
-  Test.test("Array1.remove()", arr.to_string(),
-            ["england", "germany", "italy", "japan", "serbia", "usa"].to_string())
+  Test.test("Array1.remove()", arr.to_s(),
+            ["england", "germany", "italy", "japan", "serbia", "usa"].to_s())
 
   arr.insert(2, "france")
   view = Array1View.new(arr, 2:4)
@@ -117,17 +117,17 @@ subarrays()
   name = "subarrays"
   my_arr = ["one", "two", "three", "four", "five", "six"]
   test_arr = my_arr[2:4]
-  Test.test(name, test_arr.to_string(), "[two, three, four]")
+  Test.test(name, test_arr.to_s(), "[two, three, four]")
   test_arr = my_arr[:4]
-  Test.test(name, test_arr.to_string(), "[one, two, three, four]")
+  Test.test(name, test_arr.to_s(), "[one, two, three, four]")
   test_arr = my_arr[5:]
-  Test.test(name, test_arr.to_string(), "[five, six]")
+  Test.test(name, test_arr.to_s(), "[five, six]")
   test_arr = my_arr[1:1]
-  Test.test(name, test_arr.to_string(), "[one]")
+  Test.test(name, test_arr.to_s(), "[one]")
   test_arr = my_arr[6:1]
-  Test.test(name, test_arr.to_string(), "[six, five, four, three, two, one]")
+  Test.test(name, test_arr.to_s(), "[six, five, four, three, two, one]")
   test_arr = my_arr[:]
-  Test.test(name, test_arr.to_string(), "[one, two, three, four, five, six]")
+  Test.test(name, test_arr.to_s(), "[one, two, three, four, five, six]")
 
 TextFile()
   tf = TextFile.new("test/suite/textfile", TextFile.Write)
@@ -148,7 +148,7 @@ TextFile()
 
 Tuple()
   t = tuple(1, 2, 3)
-  Test.test("tuple", t.to_string(), "tuple(1, 2, 3)")
+  Test.test("tuple", t.to_s(), "tuple(1, 2, 3)")
   u = tuple(1, 2, 3)
   v = tuple(1, 2)
   m = Map.new()
@@ -166,7 +166,7 @@ array_iterators()
   arr2 = []
   for element in arr
     arr2.push(element)
-  Test.test("Array.get_iter()", arr.to_string(), arr2.to_string())
+  Test.test("Array.get_iter()", arr.to_s(), arr2.to_s())
 
 range_iterators()
   arr = []
@@ -177,7 +177,7 @@ range_iterators()
     arr2.push(i)
     if i == 5
       break
-  Test.test("Range.get_iter()", arr.to_string(), arr2.to_string())
+  Test.test("Range.get_iter()", arr.to_s(), arr2.to_s())
 
 String()
   s = "  test \t \n"
@@ -186,8 +186,8 @@ String()
   #Test.test("String.strip()", s.strip("\""), "test")
   Test.test(
              "String.split()",
-             ["red", "riding", "hood"].to_string(),
-             "red   riding hood   ".split_whitespace().to_string()
+             ["red", "riding", "hood"].to_s(),
+             "red   riding hood   ".split_whitespace().to_s()
            )
   cat = "cat"
   Test.test("String.index()", cat[2], 'a')
@@ -234,7 +234,7 @@ String()
   sbuf.print("hello ")
   sbuf.print("world ")
   sbuf.print(42)
-  Test.test("StringBuf", sbuf.to_string(), "hello world 42")
+  Test.test("StringBuf", sbuf.to_s(), "hello world 42")
 
 Std()
   Test.test("Integer()", 123, Integer("123"))
@@ -248,7 +248,7 @@ Os()
   Test.test("Os.get_environment()", true, env.size > 0)
   Test.test("Os.get_env()", nil, Os.get_env("THIS_ENV_VAR_DEFINITELY_DOES_NOT_EXIST"))
   Test.test("Os.get_env()", true, Os.get_env("HOME") != nil)
-  Test.test("Os.get_env()", Os.get_env("HOME"), Os.get_env("HOME").to_string())
+  Test.test("Os.get_env()", Os.get_env("HOME"), Os.get_env("HOME").to_s())
 
 Time()
   t1 = Time.get_current()

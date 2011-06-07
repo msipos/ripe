@@ -7,7 +7,7 @@ class Tuple
   get_iter()
     return TupleIterator.new(self)
 
-  to_string()
+  to_s()
     $ char buf[1024];
       buf[0] = 0;
       strcat(buf, "tuple(");

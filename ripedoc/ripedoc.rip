@@ -7,7 +7,7 @@ begins_with(string, start)
   return true
 
 pad(text, width)
-  text = text.to_string()
+  text = text.to_s()
   if text.size < width
     return String.new_uniform(' ', width - text.size) + text
   return text

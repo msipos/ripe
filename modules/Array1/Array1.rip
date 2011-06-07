@@ -271,11 +271,11 @@ class Array1
       mem_free(tmp);
     $
 
-  #$ rdoc-name Array1.to_string
-  #$ rdoc-header Array1.to_string()
+  #$ rdoc-name Array1.to_s
+  #$ rdoc-header Array1.to_s()
   #$ Returns a string representation of the array.
-  to_string()
-    return ArrayUtil.to_string(self)
+  to_s()
+    return ArrayUtil.to_s(self)
 
   #$ rdoc-name Array1.size
   #$ rdoc-header Array1.size
@@ -336,11 +336,11 @@ class Array1View
   get_iter()
     return Array1Iterator.new(self)
 
-  #$ rdoc-name Array1View.to_string
-  #$ rdoc-header Array1View.to_string()
-  #$ Behaves just like Array1.to_string().
-  to_string()
-    return ArrayUtil.to_string(self)
+  #$ rdoc-name Array1View.to_s
+  #$ rdoc-header Array1View.to_s()
+  #$ Behaves just like Array1.to_s().
+  to_s()
+    return ArrayUtil.to_s(self)
 
 #$ rdoc-name Array1Iterator
 #$ rdoc-header Array1Iterator
@@ -382,7 +382,7 @@ namespace ArrayUtil
       return size
     return ArrayUtil.index(size, finish)
 
-  to_string(arr)
+  to_s(arr)
     sz = arr.size
     if sz == 0
       return "[]"

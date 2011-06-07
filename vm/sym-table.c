@@ -32,7 +32,7 @@ Value dsym_contains;
 Value dsym_destructor;
 Value dsym_name;
 Value dsym_text;
-Value dsym_to_string;
+Value dsym_to_s;
 
 void sym_init()
 {
@@ -65,7 +65,7 @@ void sym_init()
   dsym_destructor = dsym_get("destructor");
   dsym_name = dsym_get("name");
   dsym_text = dsym_get("text");
-  dsym_to_string = dsym_get("to_string");  
+  dsym_to_s = dsym_get("to_s");  
 }
 
 Value ssym_get(const char* name)
