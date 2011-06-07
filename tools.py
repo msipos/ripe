@@ -168,7 +168,7 @@ def pprint(flag, src, target = None):
         print(" " + flag
                   + color_src + pad(src, src_len) + color_reset
                   + color_arrow + ' -> ' + color_reset
-                  + color_src + pad(target, target_len)) + color_reset
+                  + color_src + pad(target, target_len) + color_reset)
     else:
         print(" " + flag + color_src + src + color_reset)
 

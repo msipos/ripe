@@ -173,7 +173,9 @@ int rc_lex(void)
       parsing_mode = PARSE_PROCESSING;
       return CHOICE_PROGRAM;
     case PARSE_EXPR:
-      break;
+      rc_lval = node_new(CHOICE_EXPR);
+      parsing_mode = PARSE_PROCESSING;
+      return CHOICE_EXPR;
     case PARSE_PROCESSING:
       // Moving on.
       break;
@@ -292,7 +294,6 @@ static const char* dump_current_line()
 
 Node* rc_result;
 #include <errno.h>
-const char* build_tree_error;
 Node* build_tree(RipeInput* in, ParsingMode mode)
 {
   input = in;

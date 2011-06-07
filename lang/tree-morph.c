@@ -18,7 +18,55 @@
 static Node* morph(Node* n)
 {
   if (n->type == STRING){
-    //printf("%s\n", (n->text));
+    char* text = (char*) mem_strdup(n->text);
+
+    // If no `, then we're good to go.
+    if (strchr(text, '`') == NULL) return n;
+    
+    StringBuf sb;
+    sbuf_init(&sb, "");
+
+    const char* s = text;
+    Node* expr_list = node_new(EXPR_LIST); // Place to put all the expressions
+    while (strchr(s, '`') != NULL){
+      char* s1 = strchr(s, '`');
+      char* s2 = strchr(s1+1, '`');
+      if (s2 == NULL) fatal_throw("unbalanced '`' inside string '%s'", text);
+      *s1 = 0;
+      *s2 = 0;
+
+      // Any stuff before the first `
+      if (s1 > s){
+        sbuf_printf(&sb, "%s", s);
+      }
+
+      // Replacement for the expression
+      sbuf_printf(&sb, "{}");
+      
+      // Parse the input
+      fatal_push("while parsing expression '%s'", s1+1);
+      RipeInput input;
+      input_from_string(&input, "string", s1+1);
+      Node* expr = build_tree(&input, PARSE_EXPR);
+      node_add_child(expr_list, expr);
+      fatal_pop();
+
+      s = s2 + 1;
+    }
+    
+    // Any stuff after the last `
+    sbuf_printf(&sb, "%s", s);
+    
+    // Node construction
+    Node* new_string = node_new(STRING);
+    new_string->text = mem_strdup(sb.str);
+    Node* field = node_new(EXPR_FIELD);
+    node_add_child(field, new_string);
+    node_set_string(field, "name", "f");
+    Node* expr_call = node_new(EXPR_CALL);
+    node_set_node(expr_call, "callee", field);
+    node_set_node(expr_call, "args", expr_list);
+    return expr_call;
   }
   return n;
 }

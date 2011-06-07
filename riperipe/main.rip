@@ -69,6 +69,7 @@ stran_asts(asts, rips)
 process_asts(asts, rips)
   for i in 1:asts.size
     Lang.process(asts[i], rips[i])
+    Lang.tree_morph(asts[i])
 
 generate_asts(asts, rips)
   for i in 1:asts.size

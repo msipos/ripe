@@ -38,6 +38,10 @@ namespace Lang
   genist_run()
     $ genist_run(); $
 
+  tree_morph(Node ast)
+    ptr = ast.ptr
+    $ tree_morph(val_to_ptr_unsafe(__ptr)); $
+
   namespace Stran
     absorb_ast(Node ast, String filename)
       ptr = ast.ptr

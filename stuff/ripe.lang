@@ -26,6 +26,14 @@
             )
           </match>
         </context>
+        
+        <context id="complex-interpolation">
+          <start>\`</start>
+          <end>\`</end>
+          <include>
+            <context ref="ripe:*"/>
+          </include>
+        </context>
 
         <context id="comment" style-ref="comment">
           <start>\#</start>
@@ -37,6 +45,7 @@
           <end>"</end>
           <include>
             <context ref="escaped-char"/>
+            <context ref="complex-interpolation"/>
           </include>
         </context>
 

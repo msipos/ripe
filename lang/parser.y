@@ -50,8 +50,9 @@
 %token   END
 %token   C_CODE
 %token   CHOICE_PROGRAM  // Virtual token, that is returned by the lexer if we
-                         // want a proram.
- 
+                         // want to parse a proram.
+%token   CHOICE_EXPR     // Virtual token, that is returned by the lexer if we
+                         // want to parse an expression.
 // Keywords are labeled with K_ prefix. All keywords should appear in lex_get2()
 // in addition to here.
 %token   K_NAMESPACE   "namespace"
@@ -110,7 +111,9 @@
 
 %% ////////////////////////////////////////////////////////////// Grammar rules
 
-program:   CHOICE_PROGRAM START top_decls END { rc_result = $3; };
+result:   CHOICE_PROGRAM START top_decls END { rc_result = $3; };
+result:   CHOICE_EXPR START expr END         { rc_result = $3; };
+
 
 // "top" declarations can appear at the top level.
 top_decl:  C_CODE              { $$ = $1; };

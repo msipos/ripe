@@ -356,6 +356,11 @@ main()
   inf = Math.INF; Test.test("positive infinity", inf.to_string(), "inf");
   ninf = Math.NINF; Test.test("negative infinity", ninf.to_string(), "-inf");
 
+  # Embedded expressions in strings
+  i = 5
+  j = 6
+  Test.test("backtick expressions in strings", "`i` `j`", "5 6")
+
   # Tally results
   arr = Test.get_results()
   correct = arr[1] - arr[2]
