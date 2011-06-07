@@ -108,8 +108,8 @@ namespace Gd
     size_y() | virtual_get
       return $ int64_to_val(gdImageSY(@image)) $
 
-    #destroy()
-    #  $ gdImageDestroy(@image); $
+    destructor()
+      $ gdImageDestroy(@image); $
 
   color(image, r, g, b)
     $  gdImagePtr* image = obj_c_data(__image); $

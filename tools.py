@@ -2,6 +2,12 @@ from subprocess import check_call as ccall
 import os, sys
 
 conf = {}
+color_flag = "\x1b[1;32m"
+color_reset = "\x1b[0;37m"
+color_arrow = "\x1b[34m"
+color_src = "\x1b[33m"
+color_dest = "\x1b[33m"
+color_warning = "\x1b[31;1m"
 
 def load_conf():
     # Choose basic binaries, and return conf.
@@ -16,8 +22,8 @@ def load_conf():
     if conf["LD"] == "ld":
         conf["LFLAGS"] = ["-lm"]
     if conf["CC"] == "gcc":
-        conf["CFLAGS"] = ["-Wstrict-prototypes", "-Wmissing-prototypes", 
-                          "-Wmissing-declarations",  "-Wwrite-strings", "-Wextra", 
+        conf["CFLAGS"] = ["-Wstrict-prototypes", "-Wmissing-prototypes",
+                          "-Wmissing-declarations",  "-Wwrite-strings", "-Wextra",
                           "-Wundef", "-Wall", "-Wfatal-errors", "-std=gnu99", "-I.",
                           "-Wno-unused"]
     return conf
@@ -155,14 +161,16 @@ def pprint(flag, src, target = None):
     if conf["VERBOSITY"] < 1:
         return
     flag_len = 3
-    src_len = 30
-    target_len = 30
-    flag = "[" + flag + "]"
+    src_len = 34
+    target_len = 34
+    flag = color_flag + pad("[" + flag + "]",6) + color_reset
     if target != None:
-        print(" " + pad(flag, flag_len + 3) + pad(src, src_len) + ' -> '
-              + pad(target, target_len))
+        print(" " + flag
+                  + color_src + pad(src, src_len) + color_reset
+                  + color_arrow + ' -> ' + color_reset
+                  + color_src + pad(target, target_len)) + color_reset
     else:
-        print(" " + pad(flag, flag_len + 3) + src)
+        print(" " + flag + color_src + src + color_reset)
 
 def flatten(x):
     # From:  http://kogs-www.informatik.uni-hamburg.de/~meine/python_tricks

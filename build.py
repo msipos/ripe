@@ -271,12 +271,13 @@ def type_module(module):
     path = 'modules/%s/%s.rip' % (module, module)
     out = 'product/modules/%s/%s.typ' % (module, module)
     if tools.depends(out, type_deps + [path]):
-        sys.stdout.write(module + " ")
+        sys.stdout.write(tools.color_src + module + tools.color_reset + " ")
         tools.mkdir_safe('product/modules/%s' % module)
         tools.call(['product/ripe', '-t', path, '>', out])
     return out
 
-sys.stdout.write("Generating module types...")
+sys.stdout.write(" " + tools.color_flag +
+                 "Generating module types... " + tools.color_reset)
 type_infos = []
 for module in MODULES + OPTIONAL_MODULES:
     type_infos.append(type_module(module))
@@ -326,7 +327,13 @@ if "nomods" not in sys.argv:
     for module in OPTIONAL_MODULES:
         build_module(module, False)
     if len(failed_modules) > 0:
-        print("WARNING: Failed building optional module(s): %s" % ", ".join(failed_modules))
+        failed_modules2 = []
+        for fm in failed_modules:
+            failed_modules2.append(tools.color_src + fm
+                                 + tools.color_reset)
+        print(tools.color_warning + "WARNING:" + tools.color_reset
+          + " Failed building optional module(s): %s" % (
+            ", ".join(failed_modules2)))
 
 if "doc" in sys.argv:
   tools.call(["ripedoc/build.sh", "2>", "/dev/null"])
