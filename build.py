@@ -50,7 +50,7 @@ conf["RFLAGS"] = []
 conf["FORCING"] = choice_force
 if choice_gc:
     conf["CFLAGS"].append("-DCLIB_GC")
-    conf["LFLAGS"].append("-lgc")
+    conf["LFLAGS"].append("-lgc -lpthread -ldl")
 if choice_debug:
     conf["CFLAGS"].append("-g")
 else:

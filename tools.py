@@ -20,7 +20,7 @@ def load_conf():
     # Some basic flags
 
     if conf["LD"] == "ld":
-        conf["LFLAGS"] = ["-lm"]
+        conf["LFLAGS"] = ["-Wl,--no-as-needed", "-lm"]
     if conf["CC"] == "gcc":
         conf["CFLAGS"] = ["-Wstrict-prototypes", "-Wmissing-prototypes",
                           "-Wmissing-declarations",  "-Wwrite-strings", "-Wextra",
