@@ -1,0 +1,86 @@
+var Integer N = 150
+var Integer num_points = 5000
+var Gsl.Rng rng = Gsl.Rng.new()
+var Double p = 1.0 - 0.05
+
+main()
+  rng.seed_random()
+
+  args = Os.get_args()
+  p = 1.0 - Double(args[1])
+  mode = args[2]
+
+  Sdl.Surface screen = Sdl.Surface.new_screen(N, N, 0)
+  black = Sdl.color(0, 0, 0, 255)
+  white = Sdl.color(255, 255, 255, 255)
+
+  Array1 points = []
+  for i in 1:num_points
+    if mode == "random"
+      points.push([rng.uniform_int(1, N),
+                   rng.uniform_int(1, N)])
+    else
+      points.push([N/2, N/2])
+
+  Integer MAX = 15000
+  if mode == "random"
+    MAX = 40000
+
+  for Integer t in 1:
+    for j in 1:300
+      Array1 point = points[rng.uniform_int(1, num_points)]
+      if rng.roll(p)
+        l = rng.uniform_int(1, 4)
+        switch l
+          case 1
+            point[1] = point[1] + 1
+            if point[1] > N
+              point[1] = 1
+          case 2
+            point[1] = point[1] - 1
+            if point[1] < 1
+              point[1] = N
+          case 3
+            point[2] = point[2] + 1
+            if point[2] > N
+              point[2] = 1
+          case 4
+            point[2] = point[2] - 1
+            if point[2] < 1
+              point[2] = N
+      else
+        Array1 point2 = points[rng.uniform_int(1, num_points)]
+        point2[1] = point[1]
+        point2[2] = point[2]
+    screen.fill(black)
+    for Array1 point in points
+      screen.put_pixel(point[1], point[2], white)
+    screen.flip()
+
+    if t modulo 100 == 0
+      if mode == "random"
+        Integer DELTA = N/10
+        Array2 arr = Array2.new_const(10, 10, 0)
+        for Array1 point in points
+          dx = (point[1]-1) / DELTA + 1
+          dy = (point[2]-1) / DELTA + 1
+          arr[dx,dy] = arr[dx,dy] + 1
+        Double avg = N*N / Double(num_points)
+        Double moment = 0.0
+        for dx in 1:10
+          for dy in 1:10
+            moment = moment + (arr[dx,dy] - avg)^2.0
+        moment = moment / 100.0
+        Out.println("{} {}".f(t, moment))
+      else
+        Integer xsq = 0; Integer ysq = 0
+        for Array1 point in points
+          xsq = xsq + (point[1] - N/2)^2
+          ysq = ysq + (point[2] - N/2)^2
+
+        Out.println("{} {} {}".f(t,
+                                 Double(xsq) / num_points,
+                                 Double(ysq) / num_points))
+
+    if t > MAX
+      break
