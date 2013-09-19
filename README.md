@@ -15,9 +15,11 @@ It is:
 
 It has:
 
+* a bootstrapped compiler (see `riperipe` directory)
 * whitespace syntax (like Python but more terse)
 * closures (well, anonymous blocks with access to outer scope constants)
-* a tiny runtime library including a bit of everything (see modules directory)
+* function, class, method annotations
+* a tiny runtime library including a bit of everything (see `modules` directory)
 * no interpreter and no interpreter lock (true threading implemented with pthread)
 * fancy colorized build system
 
@@ -26,7 +28,7 @@ It generates tiny programs with the entire runtime compiled in (or it can be run
 The problems are:
 
 * no generics (you must use dynamic typing to get over that)
-* Boehm garbage collection is conservative, it has no knowledge of type information from the compiler
+* Boehm garbage collection is conservative, it gets no type information from the compiler
 
 How to install
 ==============
@@ -43,6 +45,10 @@ Installation requirements:
 * bison
 * flex
 * python (for the build script)
+
+Optional requirements for some modules:
+* libsdl1.2-dev, libsdl-gfx1.2-dev libsdl-ttf2.0-dev libsdl-image1.2-dev (for SDL module)
+* libgsl0-dev (for GSL module)
 
 Installation instructions
 -------------------------
